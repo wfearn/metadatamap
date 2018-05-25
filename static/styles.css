@@ -1,0 +1,140 @@
+/*Set the cursor to 'move' over draggable*/
+[draggable=true]{
+  cursor: pointer;
+}
+
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 3px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  max-width: 5px;
+  font-size: 12px;
+}
+
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+tr:hover:nth-child(n){
+
+}
+.outlined {
+  border: 1px solid yellow;
+}
+
+.label {
+  background-color: purple;
+  text-align: center;
+  min-width: None;
+}
+.doc-title {
+  height: 50px;
+  font-size: 10px;
+  text-align: center;
+}
+.selected {
+  padding-left: 10px;
+  padding-right: 10px;
+  font-size: 14px;
+}
+.vertical-text {
+  transform: rotate(90deg);
+  transform-origin: left top 1;
+}
+.topic{
+  max-width: None;
+  font-size: 16px;
+}
+
+.dragging {
+ /* background-color: red !important;
+  max-width: None;
+  min-width: 50px;
+  width: 150px;
+  */
+}
+.dragging:nth-child(n){
+
+}
+.dragover {
+  background-color: grey !important;
+}
+.percentage {
+}
+.percentage:hover{
+}
+
+.min-height {
+  min-height: 10px;
+}
+body {
+    font-family: 'Arvo';
+    font-size: 16px;
+    padding: 20px 100px 0px 100px;
+    background: #f3f3f3;
+}
+
+/* List */
+
+ul {
+    list-style: none;
+}
+
+li {
+    background: #fff;
+    width: 500px;
+    min-height: 30px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 1em;
+    display: flex;
+    align-items: center;
+}
+
+.delete {
+    display: none;
+    margin-left: auto;
+}
+
+li:hover .delete {
+    display: block;
+}
+
+label {
+    width: 400px;
+}
+
+.completed {
+    text-decoration: line-through;
+}
+
+/* Form */
+
+input[type=checkbox] {
+    transform: scale(1.5);
+    margin-right: 10px;
+}
+
+input[type=text] {
+    font-size: 1em;
+}
+
+button {
+    font-family: 'Arvo';
+    font-size: 1em;
+}
+
+/* Controls */
+
+.controls {
+    margin-top: 20px;
+}
