@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css"/>
+    <title>Vue DragTable</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>MetadataMap</h1>
+      <table>
+        <colgroup>
+          <col> <!-- Topics Colum -->
+            <template v-for="label in labels">
+              <col>
+              <col v-for="doc in docsByLabel[label]"
+                   class="">
+              <col>
+            </template>
+        </colgroup>
+        <tbody>
+            <th></th>
+            <th v-for="label in labels" class="label"
+                v-bind:style="{'background-color': labelColor(label)}"
+                v-bind:colspan="docsByLabel[label].length + 2">{{ label }}</th>
+          <tr>
+          <th>Doc ID  &rarr;</th>
+          <template v-for="label in labels">
+            <th v-bind:id="'leftLabelDivider_'+label"
+                v-bind:style="{'background-color': labelColor(label)}"
+                v-on:dragover.prevent
+                v-on:dragenter="dragIntoDivider(label)"></th>
+            <template v-for="doc in docsByLabel[label]">
+              <th class="doc-title"
+                  v-bind:style="{'background-color': labelColor(label, 1.5)}"
+                  v-bind:id="'doc'+doc.docNum"
+                  v-on:click="selectDocument(doc)"
+                  draggable="true"
+                  v-on:dragstart="dragItem(doc, 'doc'+doc.docNum, docs)"
+                  v-on:dragend="dragEnd(doc, 'doc'+doc.docNum, docs)"
+                  v-on:dragenter="dragOver(doc, 'doc'+doc.docNum, docs)"
+                  v-on:dragover.prevent
+                  v-on:dragleave="dragLeave(doc, 'doc'+doc.docNum, docs)"
+                  v-on:drop="dropItem(doc, 'doc'+doc.docNum, docs)">
+                    <div class="vertical-text">{{ doc.docNum }}</div>
+                  </th>
+            </template>
+            <th v-bind:id="'rightLabelDivider_'+label"
+                v-bind:style="{'background-color': labelColor(label)}"
+                v-on:dragover.prevent
+                v-on:dragenter="dragIntoDivider(label)"></th>
+
+<!--
+            <th v-for="doc in filterDocs(label)">{{ doc.docNum }}</th>
+-->
+          </template>
+          </tr>
+          <tr v-for="topic in topics">
+            <td
+                v-bind:id="'topic' + topic.topicNum"
+                class="topic"
+                v-on:click="selectTopic(topic)"
+                draggable="true"
+                v-on:dragstart="dragItem(topic, 'topic'+topic.topicNum, topics)"
+                v-on:dragend="dragEnd(topic, 'topic'+topic.topicNum, topics)"
+                v-on:dragenter="dragOver(topic, 'topic'+topic.topicNum, topics)"
+                v-on:dragover.prevent
+                v-on:dragleave="dragLeave(topic, 'topic'+topic.topicNum, topics)"
+                v-on:drop="dropItem(topic, 'topic'+topic.topicNum, topics)" >{{
+                topic.topic }}</td>
+            <!--
+            <td v-for="doc in docs">
+              <div class="percentage">{{ doc[topic.topic] }}</div>
+            </td>
+            -->
+
+            <template v-for="label in labels">
+              <td v-bind:style="{'background-color': labelColor(label)}" ></td>
+              <td v-for="doc in docsByLabel[label]"
+                  v-bind:style="{'background-color':
+                  heatmap(doc[topic.topic], colors[doc.label])}" >
+                <span v-show="doc.dragging || doc.selected"> {{ doc[topic['topic']] }} </span>
+              </td>
+              <!-- >{{ doc[topic['topic']] }}</td> -->
+              <td v-bind:style="{'background-color': labelColor(label)}"></td>
+            </template>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="selectedDoc.docNum" class="document-info">
+        <h2>Doc Number: {{ selectedDoc.docNum }}</h2>
+        <div>
+          {{ selectedDoc.text }}
+        </div>
+        <hr/>
+        <div>
+          Current Label : {{ selectedDoc.label }}
+        </div>
+        <hr/>
+        <div>
+          True Label : {{ selectedDoc.trueLabel }}
+        </div>
+        <hr/>
+        <template v-for="topic in topics">
+          <div>
+            {{topic.topic}} : {{ selectedDoc[topic.topic] }}
+          </div>
+        </template>
+        <hr/>
+        <div>
+          Tokens : {{ selectedDoc.tokens }}
+        </div>
+        <hr/>
+      </div> <!-- End Document Info -->
+      <div v-if="selectedTopic.topic" class="topic-info">
+        <h2>Topic : {{ selectedTopic.topic }}</h2>
+        <hr/>
+        <h3> Related words </h3>
+        <template v-for="relatedWord in selectedTopic.relatedWords">
+          <div>
+            {{ relatedWord }}
+          </div>
+        </template>
+      </div> <!-- End Topic Info -->
+    </div> <!-- End Vue App -->
+    <script src="https://unpkg.com/vue"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="static/script.js"></script>
+  </body>
+</html>
