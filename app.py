@@ -6,8 +6,37 @@ import time
 
 app = Flask(__name__)
 app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
-LABEL_NAME = 'coarse_newsgroup'
-LABEL_NAME = 'binary_rating'
+
+class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
+    pass
+parser=argparse.ArgumentParser(
+    description='Used for hosting tbuie with a given dataset',
+    epilog=('See https://github.com/byu-aml-lab/tbuie\n' +
+            '  and https://github.com/byu-aml-lab/ankura/tree/ankura2/ankura\n' +
+            '  for source and dependencies\n \n'),
+    formatter_class=CustomFormatter)
+parser.add_argument('dataset', metavar='dataset',
+                    choices=['newsgroups', 'yelp', 'tripadvisor', 'amazon'],
+                    help='The name of a dataset to use in this instance of tbuie')
+parser.add_argument('port', nargs='?', default=5000, type=int,
+                    help='Port to be used in hosting the webpage')
+args=parser.parse_args()
+
+dataset_name = args.dataset
+port = args.port
+
+if dataset_name == 'newsgroups':
+    attr_name = 'coarse_newsgroup'
+    corpus = ankura.corpus.newsgroups()
+elif dataset_name == 'yelp':
+    attr_name = 'binary_rating'
+    corpus = ankura.corpus.yelp()
+elif dataset_name == 'tripadvisor':
+    attr_name = 'label'
+    corpus = ankura.corpus.tripadvisor()
+elif dataset_name == 'amazon':
+    attr_name = 'binary_rating'
+    corpus = ankura.corpus.amazon()
 
 Z_ATTR = 'z'
 THETA_ATTR = 'theta'
@@ -16,15 +45,6 @@ THETA_ATTR = 'theta'
 @app.route('/index')
 def index():
     return send_from_directory('.','index.html')
-
-@app.route('/dragtable')
-def dragtable():
-    return render_template('dragtable_index.html')
-
-@app.route('/table')
-def table():
-    print('TABLE')
-    return send_from_directory('templates','table.html')
 
 @app.route('/testDocs')
 def testDocs():
@@ -43,9 +63,9 @@ def testDocs():
     for i, doc in enumerate(train_corpus.documents):
         tmp_dict = dict()
         tmp_dict['docNum'] = i
-        tmp_dict['label'] = doc.metadata[LABEL_NAME]
+        tmp_dict['label'] = doc.metadata[attr_name]
         tmp_dict['text'] = doc.text
-        tmp_dict['trueLabel'] = doc.metadata[LABEL_NAME]
+        tmp_dict['trueLabel'] = doc.metadata[attr_name]
 
         tmp_dict['tokens'] = [train_corpus.vocabulary[tok.token] for tok in doc.tokens]
         #Generate random densities/probabilities (Normed so sum is 1)
@@ -95,7 +115,7 @@ def getDocsLabelsTopics():
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
     print('Constructing Q...')
-    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, LABEL_NAME, set(train_ids), label_weight, smoothing)
+    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, set(train_ids), label_weight, smoothing)
 
     print('Running GramSchmidt')
     anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q, num_topics,
@@ -116,12 +136,12 @@ def getDocsLabelsTopics():
     ankura.topic.variational_assign(train_corpus, topics)
 
     print('Retrieving free classifier...')
-    classifier = ankura.topic.free_classifier_dream(corpus, LABEL_NAME, train_ids, topics, C, labels)
+    classifier = ankura.topic.free_classifier_dream(corpus, attr_name, train_ids, topics, C, labels)
 
     print('Calculating base accuracy...')
     contingency = ankura.validate.Contingency()
     for i, doc in enumerate(test_corpus.documents):
-        contingency[doc.metadata[LABEL_NAME], classifier(doc)] += 1
+        contingency[doc.metadata[attr_name], classifier(doc)] += 1
 
     total_time_end = time.time()
     total_time = total_time_end - total_time_start
