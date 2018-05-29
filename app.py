@@ -3,9 +3,14 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 import numpy as np
 import json
 import time
+import argparse
 
 app = Flask(__name__)
 app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
+
+Z_ATTR = 'z'
+THETA_ATTR = 'theta'
+
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
@@ -16,7 +21,7 @@ parser=argparse.ArgumentParser(
             '  for source and dependencies\n \n'),
     formatter_class=CustomFormatter)
 parser.add_argument('dataset', metavar='dataset',
-                    choices=['newsgroups', 'yelp', 'tripadvisor', 'amazon'],
+                    choices=['yelp', 'tripadvisor', 'amazon'],
                     help='The name of a dataset to use in this instance of tbuie')
 parser.add_argument('port', nargs='?', default=5000, type=int,
                     help='Port to be used in hosting the webpage')
@@ -36,15 +41,20 @@ elif dataset_name == 'tripadvisor':
     corpus = ankura.corpus.tripadvisor()
 elif dataset_name == 'amazon':
     attr_name = 'binary_rating'
-    corpus = ankura.corpus.amazon()
 
-Z_ATTR = 'z'
-THETA_ATTR = 'theta'
 
 @app.route('/')
 @app.route('/index')
 def index():
     return send_from_directory('.','index.html')
+
+#Send the vocabulary to the client
+@app.route('/api/vocab')
+def api_vocab():
+    return jsonify(vocab=corpus.vocabulary)
+
+
+
 
 @app.route('/testDocs')
 def testDocs():
