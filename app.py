@@ -41,6 +41,7 @@ elif dataset_name == 'tripadvisor':
     corpus = ankura.corpus.tripadvisor()
 elif dataset_name == 'amazon':
     attr_name = 'binary_rating'
+    corpus = ankura.corpus.amazon()
 
 
 @app.route('/')
@@ -52,9 +53,6 @@ def index():
 @app.route('/api/vocab')
 def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
-
-
-
 
 @app.route('/testDocs')
 def testDocs():
@@ -78,15 +76,9 @@ def testDocs():
         tmp_dict['trueLabel'] = doc.metadata[attr_name]
 
         tmp_dict['tokens'] = [train_corpus.vocabulary[tok.token] for tok in doc.tokens]
-        #Generate random densities/probabilities (Normed so sum is 1)
         probabilities = doc.metadata[THETA_ATTR]
-        #print(probabilities)
-
-        #Convert to percentages and put in dictionary
         for topic, prob in zip(topics, probabilities):
             tmp_dict[topic['topic']] = round(prob*100, 1)
-
-        #Document dictionary is currently {1:{'topic' : 'probability'}}
         docs.append(tmp_dict)
 
     print(docs)
@@ -99,12 +91,32 @@ def testDocs():
 
     return jsonify(docs=docs, labels=labels, topics=topics)
 
-
-
 num_topics = 20
-train_size = 1000
+train_size = 100
 label_weight = 1
-dataset = 'yelp'
+@ankura.util.pickle_cache(f'SemiSup{dataset}_K{num_topics}_train{train_size}_lw{label_weight}.pickle')
+def load_data():
+    print('Splitting train/dev and test...')
+    # Split to labeled and unlabeled
+    split = ankura.pipeline.train_test_split(corpus, num_train=train_size,
+                                             return_ids=True, remove_testonly_words=False)
+    (labeled_ids, labeled_corpus), (unlabled_ids, unlabeled_corpus) = split
+
+    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name,
+                                                        set(labeled_ids),
+                                                        label_weight=label_weight, smoothing=smoothing)
+
+    gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q,
+                                                           k=number_of_topics, return_indices=True)
+    gs_anchor_vectors = Q[gs_anchor_indices]
+    gs_anchor_tokens = [[corpus.vocabulary[index]] for index in gs_anchor_indices]
+
+    return (Q, labels, labeled_ids, unlabeled_ids
+            gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens)
+
+
+
+
 @ankura.util.pickle_cache(f'{dataset}_K{num_topics}_train{train_size}_lw{label_weight}.pickle')
 def getDocsLabelsTopics():
     smoothing = 1e-4
@@ -112,20 +124,21 @@ def getDocsLabelsTopics():
     #train_size = 10000
     test_size = 8000
 
-    print('Importing corpus...')
-    if dataset == 'amazon':
-        corpus = ankura.corpus.amazon()
-    if dataset == 'yelp':
-        corpus = ankura.corpus.yelp()
+    #print('Importing corpus...')
+    #if dataset == 'amazon':
+    #    corpus = ankura.corpus.amazon()
+    #if dataset == 'yelp':
+    #    corpus = ankura.corpus.yelp()
 
-    total_time_start = time.time()
+    #total_time_start = time.time()
 
     print('Splitting training, test sets...')
     split = ankura.pipeline.train_test_split(corpus, num_train=train_size, num_test=test_size, return_ids=True)
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
     print('Constructing Q...')
-    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, set(train_ids), label_weight, smoothing)
+    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, set(train_ids),
+                                                         label_weight, smoothing)
 
     print('Running GramSchmidt')
     anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q, num_topics,
@@ -146,7 +159,8 @@ def getDocsLabelsTopics():
     ankura.topic.variational_assign(train_corpus, topics)
 
     print('Retrieving free classifier...')
-    classifier = ankura.topic.free_classifier_dream(corpus, attr_name, train_ids, topics, C, labels)
+    classifier = ankura.topic.free_classifier_dream(corpus, attr_name, set(train_ids),
+                                                    topics, C, labels)
 
     print('Calculating base accuracy...')
     contingency = ankura.validate.Contingency()
