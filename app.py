@@ -4,12 +4,37 @@ import numpy as np
 import json
 import time
 import argparse
+import os
+import contextlib
+import random
 
+# Init flask app
 app = Flask(__name__)
-app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
 
+# I think this is unnecessary for what we are doing as there are no cookies
+# app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
+
+# Attribute names:
+# Document topics
 Z_ATTR = 'z'
+
+# Token topics
 THETA_ATTR = 'theta'
+
+# Seed used in the shuffle
+SHUFFLE_SEED = 8448
+
+# Parameters that affect the naming of the pickle (changing these will rename
+#  the pickle, generating a new pickle if one of that name doesn't already
+#  exist)
+num_topics = 20
+train_size = 100
+label_weight = 1
+
+# Does NOT change pickle name. Changing these params requires making a clean version (run program
+#  and include the -c or --clean argument)
+smoothing = 1e-4
+epsilon = 1e-5
 
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
@@ -25,10 +50,13 @@ parser.add_argument('dataset', metavar='dataset',
                     help='The name of a dataset to use in this instance of tbuie')
 parser.add_argument('port', nargs='?', default=5000, type=int,
                     help='Port to be used in hosting the webpage')
+parser.add_argument('-c', '--clean', action='store_true')
 args=parser.parse_args()
+print(args)
 
 dataset_name = args.dataset
 port = args.port
+clean = args.clean
 
 if dataset_name == 'newsgroups':
     attr_name = 'coarse_newsgroup'
@@ -42,6 +70,52 @@ elif dataset_name == 'tripadvisor':
 elif dataset_name == 'amazon':
     attr_name = 'binary_rating'
     corpus = ankura.corpus.amazon()
+
+# Set seed and shuffle corpus documents
+random.seed(SHUFFLE_SEED)
+random.shuffle(corpus.documents)
+
+# Place to save pickle files
+folder = 'PickledFiles'
+with contextlib.suppress(FileExistsError):
+    os.mkdir(folder)
+
+# Naming of this pickle file
+filename =
+(f'SemiSup{dataset_name}_K{num_topics}_train{train_size}_lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
+full_filename = os.path.join(folder, filename)
+
+if clean: # If clean, remove file and remake
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(full_filename)
+
+@ankura.util.pickle_cache(full_filename)
+def load_initial_data():
+    print('Splitting train/dev and test...')
+    # Split to labeled and unlabeled
+    split = ankura.pipeline.train_test_split(corpus, num_train=train_size,
+                                             return_ids=True, remove_testonly_words=False)
+    (labeled_ids, labeled_corpus), (unlabeled_ids, unlabeled_corpus) = split
+
+    print('Constructing Q...')
+    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name,
+                                                        set(labeled_ids),
+                                                        label_weight=label_weight, smoothing=smoothing)
+
+    gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q,
+                                                           k=num_topics, return_indices=True)
+    gs_anchor_vectors = Q[gs_anchor_indices]
+    gs_anchor_tokens = [[corpus.vocabulary[index]] for index in gs_anchor_indices]
+
+    return (Q, labels, labeled_ids, unlabeled_ids,
+            gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens)
+
+(Q, labels, labeled_ids, unlabeled_ids,
+ gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
+
+
+
+
 
 
 @app.route('/')
@@ -91,36 +165,9 @@ def testDocs():
 
     return jsonify(docs=docs, labels=labels, topics=topics)
 
-num_topics = 20
-train_size = 100
-label_weight = 1
-@ankura.util.pickle_cache(f'SemiSup{dataset}_K{num_topics}_train{train_size}_lw{label_weight}.pickle')
-def load_data():
-    print('Splitting train/dev and test...')
-    # Split to labeled and unlabeled
-    split = ankura.pipeline.train_test_split(corpus, num_train=train_size,
-                                             return_ids=True, remove_testonly_words=False)
-    (labeled_ids, labeled_corpus), (unlabled_ids, unlabeled_corpus) = split
 
-    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name,
-                                                        set(labeled_ids),
-                                                        label_weight=label_weight, smoothing=smoothing)
-
-    gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q,
-                                                           k=number_of_topics, return_indices=True)
-    gs_anchor_vectors = Q[gs_anchor_indices]
-    gs_anchor_tokens = [[corpus.vocabulary[index]] for index in gs_anchor_indices]
-
-    return (Q, labels, labeled_ids, unlabeled_ids
-            gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens)
-
-
-
-
-@ankura.util.pickle_cache(f'{dataset}_K{num_topics}_train{train_size}_lw{label_weight}.pickle')
+@ankura.util.pickle_cache(f'{dataset_name}_K{num_topics}_train{train_size}_lw{label_weight}.pickle')
 def getDocsLabelsTopics():
-    smoothing = 1e-4
-    epsilon = 1e-5
     #train_size = 10000
     test_size = 8000
 
@@ -130,7 +177,7 @@ def getDocsLabelsTopics():
     #if dataset == 'yelp':
     #    corpus = ankura.corpus.yelp()
 
-    #total_time_start = time.time()
+    total_time_start = time.time()
 
     print('Splitting training, test sets...')
     split = ankura.pipeline.train_test_split(corpus, num_train=train_size, num_test=test_size, return_ids=True)
