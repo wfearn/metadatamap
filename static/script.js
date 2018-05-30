@@ -1,8 +1,3 @@
-
-
-
-
-
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
@@ -20,6 +15,7 @@ var app = new Vue({
     docs: {},
     labels: [],
     topics: [],
+    vocab: [],
     colors: {},
     drag: {},
     selectedDoc: {},
@@ -29,6 +25,19 @@ var app = new Vue({
     },
   mounted: function () {
     this.loading = true;
+
+    this.getVocab();
+
+    // axios.get('/testDocs').then(response => {
+    //   this.docs = response.data.docs;
+    //   this.labels = reponse.data.labels;
+    //   this.topics = reponse.data.topics;
+    // }).catch(error => {
+    //     console.log('error in /testDocs');
+    // });
+
+    this.loading = false;
+
     var self = this;
     $.ajax({
      // url: '/dist',
@@ -55,13 +64,8 @@ var app = new Vue({
         alert('AJAX Error');
       }
     });
-  },
+  }, //End mounted
   computed: {
-    activeTodos: function(){
-      return this.todos.filter(function(item){
-        return !item.completed;
-      });
-    },
     docsByLabel: function(){
       docsByLabelObj = {}
       console.log(this.labels);
@@ -70,8 +74,15 @@ var app = new Vue({
       }
       return docsByLabelObj;
     },
-  },
+  }, //End computed
   methods: {
+    getVocab: function(){
+      axios.get('/api/vocab').then(response => {
+        this.vocab = response.data.vocab;
+      }).catch(error => {
+        console.log('error in api/vocab')
+      });
+    },
     colSize: function(label){
       var count = 0;
       for (var i=0; i<docs.length; i++){
@@ -203,71 +214,5 @@ var app = new Vue({
     labelColor(label, fraction=3){
       return this.heatmap(this.maxTopic/fraction, this.colors[label]);
     },
-  },
+  }, //End methods
 });
-
-//var app = new Vue({
-//  el: '#',
-//  data: {
-//    todos: [],
-//    message: '',
-//    show: 'all',
-//    drag: {},
-//    },
-//  computed: {
-//    activeTodos: function(){
-//      return this.todos.filter(function(item){
-//        return !item.completed;
-//      });
-//    },
-//    filteredTodos: function(){
-//      if (this.show==='active')
-//        return this.todos.filter(function(item){
-//          return !item.completed;
-//        });
-//      if (this.show==='completed')
-//        return this.todos.filter(function(item){
-//          return item.completed;
-//        });
-//      return this.todos;
-//    },
-//  },
-//  methods: {
-//    addItem: function(){
-//      this.todos.push({text: this.message, completed:false});
-//      this.message = '';
-//    },
-//    completeItem: function(item){
-//      item.completed = !item.completed;
-//    },
-//    deleteItem: function(item){
-//      var index = this.todos.indexOf(item);
-//      if (index>-1)
-//        this.todos.splice(index,1);
-//    },
-//    showAll: function(){
-//      this.show = 'all';
-//    },
-//    showActive: function(){
-//      this.show = 'active';
-//    },
-//    showCompleted: function(){
-//      this.show = 'completed';
-//    },
-//    deleteCompleted: function(){
-//      this.todos = this.todos.filter(function(item){
-//        return !item.completed;
-//      });
-//    },
-//    dragItem: function(item){
-//      this.drag = item;
-//      //item
-//    },
-//    dropItem: function(item){
-//      var indexItem = this.todos.indexOf(this.drag);
-//      var indexTarget = this.todos.indexOf(item);
-//      this.todos.splice(indexItem,1);
-//      this.todos.splice(indexTarget,0,this.drag);
-//    },
-//  },
-//});
