@@ -36,7 +36,6 @@ label_weight = 1
 smoothing = 1e-4
 epsilon = 1e-5
 
-
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
 parser=argparse.ArgumentParser(
@@ -71,9 +70,10 @@ elif dataset_name == 'amazon':
     attr_name = 'binary_rating'
     corpus = ankura.corpus.amazon()
 
-# Set seed and shuffle corpus documents
-random.seed(SHUFFLE_SEED)
-random.shuffle(corpus.documents)
+# Set seed and shuffle corpus documents if SHUFFLE_SEED
+if SHUFFLE_SEED:
+    random.seed(SHUFFLE_SEED)
+    random.shuffle(corpus.documents)
 
 # Place to save pickle files
 folder = 'PickledFiles'
@@ -81,25 +81,32 @@ with contextlib.suppress(FileExistsError):
     os.mkdir(folder)
 
 # Naming of this pickle file
-filename =
-(f'SemiSup{dataset_name}_K{num_topics}_train{train_size}_lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
+filename = (f'SemiSup{dataset_name}_K{num_topics}_train{train_size}_' +
+            f'lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
 full_filename = os.path.join(folder, filename)
 
-if clean: # If clean, remove file and remake
+# Checks to see if on second stage initializaiton for Flask
+if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove file and remake
+    clean=False
     with contextlib.suppress(FileNotFoundError):
         os.remove(full_filename)
 
 @ankura.util.pickle_cache(full_filename)
 def load_initial_data():
-    print('Splitting train/dev and test...')
+    print('Loading initial data...')
+
+    # I think these are unneeded after shuffling corpus
+    # print('Splitting train/dev and test...')
     # Split to labeled and unlabeled
-    split = ankura.pipeline.train_test_split(corpus, num_train=train_size,
-                                             return_ids=True, remove_testonly_words=False)
-    (labeled_ids, labeled_corpus), (unlabeled_ids, unlabeled_corpus) = split
+    # split = ankura.pipeline.train_test_split(corpus, num_train=train_size,
+    #                                          return_ids=True, remove_testonly_words=False)
+    # (labeled_ids, labeled_corpus), (unlabeled_ids, unlabeled_corpus) = split
+
+    labeled_ids = set(range(train_size))
+    unlabeled_ids = set(range(train_size, len(corpus.documents)))
 
     print('Constructing Q...')
-    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name,
-                                                        set(labeled_ids),
+    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, labeled_ids,
                                                         label_weight=label_weight, smoothing=smoothing)
 
     gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q,
@@ -116,8 +123,6 @@ def load_initial_data():
 
 
 
-
-
 @app.route('/')
 @app.route('/index')
 def index():
@@ -127,6 +132,24 @@ def index():
 @app.route('/api/vocab')
 def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
+
+# Get initial stuff (labeled docs, labels, initial anchor words and topics)
+
+# Get unlabeled documents (Maybe 20 to start and then a few more every time
+# after that)
+
+# Recalculate updates to document labels
+# -quick Q
+#   - Needed for changing from unlabeled to labeled
+#   - Will need to change labeled to other labeled? or labeled to unlabeled?
+
+# Recalculate everything for anchor changes (TBUIE)
+
+# Label the rest and see accuracy for whole set
+
+# OUTSIDE - Let Dream return probabilities
+# OUTSIDE - Something with number of documents Q construction normalizes for
+#  (needed for quick Q)
 
 @app.route('/testDocs')
 def testDocs():
@@ -155,7 +178,6 @@ def testDocs():
             tmp_dict[topic['topic']] = round(prob*100, 1)
         docs.append(tmp_dict)
 
-    print(docs)
     if True:
         docs = [doc for d, doc in enumerate(docs) if d%10==0]
 
@@ -168,6 +190,7 @@ def testDocs():
 
 @ankura.util.pickle_cache(f'{dataset_name}_K{num_topics}_train{train_size}_lw{label_weight}.pickle')
 def getDocsLabelsTopics():
+    print('getDocsLabelsTopics')
     #train_size = 10000
     test_size = 8000
 
@@ -300,4 +323,4 @@ def dots():
     return render_template('dots.html')
 
 if __name__ =="__main__":
-    app.run(debug=True)
+    app.run(debug=False)
