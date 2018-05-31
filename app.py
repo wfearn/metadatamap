@@ -146,30 +146,25 @@ def api_update_anchors():
     #  - Need to reevaluate topics for ALL sent documents
     pass
 
+# POST - FINISHED
+# @app.route('', methods=['POST'])
+# def finished():
+#  - Check the labeled documents for correctness of user classification
+#  - Classify the rest of the documents and get accuracy
+#  - Classify the test set and get accuracy
+#  - Save the results, probably similar to TBUIE's saving method
+
+
+# Maybe
 # POST - Something to do with getting more documents?
-#@app.route('', methods=['POST'])
+# @app.route('', methods=['POST'])
 
+# Maybe
 # POST - Something about reshuffling unlabelable documents?
-#@app.route('', methods=['POST'])
+# @app.route('', methods=['POST'])
 
-# Get initial stuff (labeled docs, labels, initial anchor words and topics)
 
-# Get unlabeled documents (Maybe 20 to start and then a few more every time
-# after that)
 
-# Recalculate updates to document labels
-# -quick Q
-#   - Needed for changing from unlabeled to labeled
-#   - Will need to change labeled to other labeled? or labeled to unlabeled?
-
-# Recalculate everything for anchor changes (TBUIE)
-
-# Label the rest and see accuracy for whole set
-
-# OUTSIDE - Let Dream return probabilities
-# OUTSIDE - Something with number of documents Q construction normalizes for # (D)
-#  (needed for quick Q)
-# OUTSIDE - Single token documents?
 train_size=500
 
 @app.route('/testDocs')
@@ -330,3 +325,29 @@ def get_random_topical_distributions(doc_count=50):
 
 if __name__ =="__main__":
     app.run(debug=False)
+
+################
+# ROUGH PROCESS
+################
+# Get initial stuff (labeled docs, labels, initial anchor words and topics)
+
+# Get unlabeled documents (Maybe 20 to start and then a few more every time
+# after that)
+
+# Recalculate updates to document labels
+# -quick Q
+#   - Needed for changing from unlabeled to labeled
+#   - Will need to change labeled to other labeled? or labeled to unlabeled?
+
+# Recalculate everything for anchor changes (TBUIE)
+
+# Label the rest and see accuracy for whole set
+
+# OUTSIDE - Let Dream return probabilities
+# OUTSIDE - Something with number of documents Q construction normalizes for # (D)
+#  (needed for quick Q)
+# OUTSIDE - Single token documents?
+################
+################
+
+
