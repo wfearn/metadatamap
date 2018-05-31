@@ -134,6 +134,7 @@ def api_vocab():
 # POST
 @app.route('/api/update/unlabeled', methods=['POST'])
 def api_update_unlabeled():
+    req_data = request.get_json()
     # Need all the formerly unlabeled documents
     #  - If labeled, label and update Q (QUICK-Q)
     #  - Else, reclassify and return probabilities for left/right sides
@@ -145,6 +146,37 @@ def api_update_anchors():
     # Need all the changes to the anchors (TBUIE FUNCTIONALITY)
     #  - Need to reevaluate topics for ALL sent documents
     pass
+    req_data = request.get_json()
+
+    #COPIED FROM TBUIE - Still need to change and add
+    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=1e-5, get_c=True)
+
+    print('***Time - recover_topics:', time.time()-start)
+
+    start=time.time()
+    topic_summary = ankura.topic.topic_summary(topics[:len(train_dev_corpus.vocabulary)], train_dev_corpus)
+    print('***Time - topic_summary:', time.time()-start)
+
+    start=time.time()
+
+    classifier = ankura.topic.free_classifier_dream(train_dev_corpus, attr_name,
+                                                    labeled_docs=set(train_ids), topics=topics,
+                                                    C=C, labels=labels,
+                                                    prior_attr_name=prior_attr_name)
+
+    print('***Time - Get Classifier:', time.time()-start)
+
+    contingency = ankura.validate.Contingency()
+
+    start=time.time()
+    for doc in dev_corpus.documents:
+        gold = doc.metadata[attr_name]
+        pred = classifier(doc)
+        contingency[gold, pred] += 1
+    print('***Time - Classify:', time.time()-start)
+    print('***Accuracy:', contingency.accuracy())
+
+
 
 # POST - FINISHED
 # @app.route('', methods=['POST'])
