@@ -71,6 +71,8 @@ elif dataset_name == 'amazon':
     corpus = ankura.corpus.amazon()
 
 # Set seed and shuffle corpus documents if SHUFFLE_SEED
+# Was implemented in case we were doing fully semi-supervised; if there is a
+#   train/test split, that will shuffle the corpus.
 if SHUFFLE_SEED:
     random.seed(SHUFFLE_SEED)
     random.shuffle(corpus.documents)
@@ -87,7 +89,6 @@ full_filename = os.path.join(folder, filename)
 
 # Checks to see if on second stage initializaiton for Flask
 if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove file and remake
-    clean=False
     with contextlib.suppress(FileNotFoundError):
         os.remove(full_filename)
 
@@ -100,8 +101,8 @@ def load_initial_data():
     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
-    # labeled_ids = set(range(prelabeled_size))
-    # unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
+    labeled_ids = set(range(prelabeled_size))
+    unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
 
     print('Constructing Q...')
     Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, labeled_ids,
@@ -125,10 +126,31 @@ def load_initial_data():
 def index():
     return send_from_directory('.','index.html')
 
-#Send the vocabulary to the client
+# GET - Send the vocabulary to the client
 @app.route('/api/vocab')
 def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
+
+# POST
+@app.route('/api/update/unlabeled', methods=['POST'])
+def api_update_unlabeled():
+    # Need all the formerly unlabeled documents
+    #  - If labeled, label and update Q (QUICK-Q)
+    #  - Else, reclassify and return probabilities for left/right sides
+    pass
+
+# POST
+@app.route('/api/update/anchors', methods=['POST'])
+def api_update_anchors():
+    # Need all the changes to the anchors (TBUIE FUNCTIONALITY)
+    #  - Need to reevaluate topics for ALL sent documents
+    pass
+
+# POST - Something to do with getting more documents?
+#@app.route('', methods=['POST'])
+
+# POST - Something about reshuffling unlabelable documents?
+#@app.route('', methods=['POST'])
 
 # Get initial stuff (labeled docs, labels, initial anchor words and topics)
 
@@ -145,8 +167,10 @@ def api_vocab():
 # Label the rest and see accuracy for whole set
 
 # OUTSIDE - Let Dream return probabilities
-# OUTSIDE - Something with number of documents Q construction normalizes for
+# OUTSIDE - Something with number of documents Q construction normalizes for # (D)
 #  (needed for quick Q)
+# OUTSIDE - Single token documents?
+train_size=500
 
 @app.route('/testDocs')
 def testDocs():
@@ -303,21 +327,6 @@ def get_random_topical_distributions(doc_count=50):
         print(tmp_dict)
 
     return docs, labels, topics
-
-
-@app.route('/columnChange')
-def change_in_columns():
-    print('Successfully routed to columnChange')
-
-    #Print out doc and position in sorted order
-    #lambda function sorts by the integer at the end of 'doc###'
-    for key in sorted(request.args.keys(),key=lambda x : int(x[3:])):
-        print("Doc: {:<10}   pos: {:<10}".format(key, request.args[key]))
-    return ('',204)
-
-@app.route('/dots')
-def dots():
-    return render_template('dots.html')
 
 if __name__ =="__main__":
     app.run(debug=False)
