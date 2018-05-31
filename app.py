@@ -138,6 +138,12 @@ def api_update_unlabeled():
     # Need all the formerly unlabeled documents
     #  - If labeled, label and update Q (QUICK-Q)
     #  - Else, reclassify and return probabilities for left/right sides
+    # SENT:
+    #  - Recently labeled documents
+    # RETURNS:
+    #  - Unlabeld documents (new topics, new probabilities)
+    #  - Labeled documents (new topics)
+    #  - Anchor's topic words (Because Q changed)
     pass
 
 # POST
@@ -145,11 +151,19 @@ def api_update_unlabeled():
 def api_update_anchors():
     # Need all the changes to the anchors (TBUIE FUNCTIONALITY)
     #  - Need to reevaluate topics for ALL sent documents
+    #  - Redo "classification", returning probabilities for each side for each
+    #       unlabled doc
+    # SENT:
+    #  - Anchors (list of lists of strings)
+    # RETURNS:
+    #  - Unlabeld documents (new topics, new probabilities)
+    #  - Labeled documents (new topics)
+    #  - Anchor's topic words
     pass
     req_data = request.get_json()
 
     #COPIED FROM TBUIE - Still need to change and add
-    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=1e-5, get_c=True)
+    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
 
     print('***Time - recover_topics:', time.time()-start)
 

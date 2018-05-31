@@ -15,13 +15,13 @@ var app = new Vue({
     docs: {},
     labels: [],
     topics: [],
-    vocab: [],
+    vocab: [], // Corpus vocabulary (for determining which words can be anchors)
     colors: {},
     drag: {},
     selectedDoc: {},
     selectedTopic: {},
     loading: false,
-    maxTopic: 1.0,
+    maxTopic: 100.0,
     },
   mounted: function () {
     this.loading = true;
