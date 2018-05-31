@@ -22,13 +22,13 @@ Z_ATTR = 'z'
 THETA_ATTR = 'theta'
 
 # Seed used in the shuffle
-SHUFFLE_SEED = 8448
+SHUFFLE_SEED = None #8448
 
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 num_topics = 20
-train_size = 100
+prelabeled_size = 100
 label_weight = 1
 
 # Does NOT change pickle name. Changing these params requires making a clean version (run program
@@ -81,7 +81,7 @@ with contextlib.suppress(FileExistsError):
     os.mkdir(folder)
 
 # Naming of this pickle file
-filename = (f'SemiSup{dataset_name}_K{num_topics}_train{train_size}_' +
+filename = (f'SemiSup{dataset_name}_K{num_topics}_prelabeled{prelabeled_size}_' +
             f'lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
 full_filename = os.path.join(folder, filename)
 
@@ -95,15 +95,13 @@ if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove f
 def load_initial_data():
     print('Loading initial data...')
 
-    # I think these are unneeded after shuffling corpus
-    # print('Splitting train/dev and test...')
+    print('Splitting labeled/unlabeled and test...')
     # Split to labeled and unlabeled
-    # split = ankura.pipeline.train_test_split(corpus, num_train=train_size,
-    #                                          return_ids=True, remove_testonly_words=False)
-    # (labeled_ids, labeled_corpus), (unlabeled_ids, unlabeled_corpus) = split
+    split = ankura.pipeline.train_test_split(corpus, return_ids=True)
+    (train_ids, train_corpus), (test_ids, test_corpus) = split
 
-    labeled_ids = set(range(train_size))
-    unlabeled_ids = set(range(train_size, len(corpus.documents)))
+    # labeled_ids = set(range(prelabeled_size))
+    # unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
 
     print('Constructing Q...')
     Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, labeled_ids,
@@ -114,14 +112,13 @@ def load_initial_data():
     gs_anchor_vectors = Q[gs_anchor_indices]
     gs_anchor_tokens = [[corpus.vocabulary[index]] for index in gs_anchor_indices]
 
-    return (Q, labels, labeled_ids, unlabeled_ids,
-            gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens)
+    return (Q, labels, train_ids, train_corpus,
+            test_ids, test_corpus, gs_anchor_vectors,
+            gs_anchor_indices, gs_anchor_tokens)
 
-(Q, labels, labeled_ids, unlabeled_ids,
- gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
-
-
-
+(Q, labels, train_ids, train_corpus,
+    test_ids, test_corpus, gs_anchor_vectors,
+    gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
 
 @app.route('/')
 @app.route('/index')
