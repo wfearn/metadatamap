@@ -86,14 +86,15 @@ with contextlib.suppress(FileExistsError):
     os.mkdir(folder)
 
 # Naming of this pickle file
-filename = (f'SemiSup{dataset_name}_K{num_topics}_prelabeled{prelabeled_size}_' +
-            f'lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
+filename = (f'SemiSup{dataset_name}_K{num_topics}_prelabeled{prelabeled_size}'
+            + f'_lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
 full_filename = os.path.join(folder, filename)
 
 # Checks to see if on second stage initializaiton for Flask
 if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove file and remake
     with contextlib.suppress(FileNotFoundError):
         os.remove(full_filename)
+
 
 @ankura.util.pickle_cache(full_filename)
 def load_initial_data():
@@ -117,14 +118,14 @@ def load_initial_data():
             test_ids, test_corpus, gs_anchor_vectors,
             gs_anchor_indices, gs_anchor_tokens)
 
+labeled_ids = set(range(prelabeled_size))
+
 (Q, labels, train_ids, train_corpus,
     test_ids, test_corpus, gs_anchor_vectors,
     gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
 
-labeled_ids = set(range(prelabeled_size))
 web_unlabeled_ids = set(range(prelabeled_size + STARTING_UNLABELED))
 unlabeled_ids = set(range((prelabeled_size + STARTING_UNLABELED), len(train_corpus.documents)))
-
 
 @app.route('/')
 @app.route('/index')
@@ -136,16 +137,23 @@ def index():
 def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
 
-@app.route('/api/update' methods=['POST'])
+@app.route('/api/update', methods=['POST'])
 def api_update():
     data = request.get_json()
     print(data)
-    anchor_tokens = data.anchors
-    newly_labeled_docs = data.labeled_docs #Doc ids and what label they are
-    remaining_unlabled_docs = data.unlabeled_docs #Doc ids
+
+    anchor_tokens = data.get('anchor_tokens')
+    if anchor_tokens is None:
+        anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_indices
+    else:
+        anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
+                                                      train_corpus, epsilon=epsilon)
+
+    newly_labeled_docs = data.get('labeled_docs') #Doc ids and what label they are
+    remaining_unlabled_docs = data.get('unlabeled_docs') #Doc ids
 
     # Label docs into corpus
-    for doc_id, label in labeled_docs.items()
+    for doc_id, label in labeled_docs.items():
         train_corpus.documents[doc_id].metadata['user_label'] = label
         labeled_ids.add(doc_id)
 
