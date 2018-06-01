@@ -21,6 +21,9 @@ Z_ATTR = 'z'
 # Token topics
 THETA_ATTR = 'theta'
 
+# Starting number of unlabled docs on the web
+STARTING_UNLABELED = 10
+
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
 
@@ -101,17 +104,14 @@ def load_initial_data():
     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
-    labeled_ids = set(range(prelabeled_size))
-    unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
-
     print('Constructing Q...')
-    Q, labels = ankura.anchor.build_labeled_cooccurrence(corpus, attr_name, labeled_ids,
+    Q, labels = ankura.anchor.build_labeled_cooccurrence(train_corpus, attr_name, labeled_ids,
                                                         label_weight=label_weight, smoothing=smoothing)
 
-    gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(corpus, Q,
+    gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(train_corpus, Q,
                                                            k=num_topics, return_indices=True)
     gs_anchor_vectors = Q[gs_anchor_indices]
-    gs_anchor_tokens = [[corpus.vocabulary[index]] for index in gs_anchor_indices]
+    gs_anchor_tokens = [[train_corpus.vocabulary[index]] for index in gs_anchor_indices]
 
     return (Q, labels, train_ids, train_corpus,
             test_ids, test_corpus, gs_anchor_vectors,
@@ -120,6 +120,11 @@ def load_initial_data():
 (Q, labels, train_ids, train_corpus,
     test_ids, test_corpus, gs_anchor_vectors,
     gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
+
+labeled_ids = set(range(prelabeled_size))
+web_unlabeled_ids = set(range(prelabeled_size + STARTING_UNLABELED))
+unlabeled_ids = set(range((prelabeled_size + STARTING_UNLABELED), len(train_corpus.documents)))
+
 
 @app.route('/')
 @app.route('/index')
@@ -130,6 +135,64 @@ def index():
 @app.route('/api/vocab')
 def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
+
+@app.route('/api/update' methods=['POST'])
+def api_update():
+    data = request.get_json()
+    print(data)
+    anchor_tokens = data.anchors
+    newly_labeled_docs = data.labeled_docs #Doc ids and what label they are
+    remaining_unlabled_docs = data.unlabeled_docs #Doc ids
+
+    # Label docs into corpus
+    for doc_id, label in labeled_docs.items()
+        train_corpus.documents[doc_id].metadata['user_label'] = label
+        labeled_ids.add(doc_id)
+
+    # QUICK Q update with newly_labeled_docs
+    start = time.time()
+    Q = quick_Q(Q, train_corpus, attr_name, labeled_ids, newly_labeled_docs,
+                label_weight=label_weight, smoothing=smoothing)
+    print('***Time - quick_Q:', time.time()-start)
+
+    # Get anchor vectors
+    start = time.time()
+    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
+                                                  train_corpus, epsilon=1e-15)
+    print('***Time - tandem_anchors:', time.time()-start)
+
+    #COPIED FROM TBUIE - Still need to change and add
+    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
+
+    print('***Time - recover_topics:', time.time()-start)
+
+    start = time.time()
+    topic_summary = ankura.topic.topic_summary(topics[:len(train_corpus.vocabulary)], train_corpus)
+    print('***Time - topic_summary:', time.time()-start)
+
+    start = time.time()
+    clf = ankura.topic.free_classifier_dream(train_corpus, attr_name,
+                                             labeled_docs=set(train_ids), topics=topics,
+                                             C=C, labels=labels,
+                                             prior_attr_name=prior_attr_name)
+
+    print('***Time - Get Classifier:', time.time()-start)
+
+
+    start=time.time()
+    # GET PROBABILITIES
+    unlabeled_probabilities = [(doc_id, clf(train_corpus.documents[doc_id], get_probability=True))
+                              for doc_id in unlabeled_docs]
+    print('***Time - Classify:', time.time()-start)
+    return jsonify(anchors=anchor_tokens,
+                   labeled_docs = labled_docs,
+                   unlabeled_docs = unlabeled_docs)
+
+
+
+
+
+
 
 # POST
 @app.route('/api/update/unlabeled', methods=['POST'])
@@ -368,6 +431,60 @@ def get_random_topical_distributions(doc_count=50):
         print(tmp_dict)
 
     return docs, labels, topics
+
+def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
+                               label_weight=1, smoothing=1e-7):
+    V = len(corpus.vocabulary)
+    '''This part feels a bit shady to me. I don't think sets and dictionaries
+     are gaurenteed to iterate in the same order. Perhaps we should cast the
+     set to an ordered list first? Will continue to fiddle with it to see how
+     it performs.
+     Also, could consider returning and holding onto something from the
+     construction of Q that would be the label dictionary or something'''
+    label_set = set()
+    for d, doc in enumerate(corpus.documents):
+        if d in labeled_docs:
+            label_set.add(doc.metadata[attr_name])
+    #label_set = sorted(list(label_set))
+    label_set = {l: V + i for i, l in enumerate(label_set)}
+    K = len(label_set)
+    Q = Q.copy()
+    D = len(corpus.documents)
+    H = np.zeros((V+K, V+K))
+    for d in newly_labeled_docs:
+        doc = corpus.documents[d]
+        n_d = len(doc.tokens)
+
+        # Subtract the unlabeled effect of this document
+        norm = 1 / (n_d * (n_d - 1) + 2 * n_d * K * smoothing + K * (K - 1) * smoothing**2)
+        for i, w_i in enumerate(doc.tokens):
+            for j, w_j in enumerate(doc.tokens):
+                if i == j:
+                    continue
+                H[w_i.token, w_j.token] -= norm
+            for j in label_set.values():
+                H[w_i.token, j] -= norm * smoothing
+                H[j, w_i.token] -= norm * smoothing
+        for i in label_set.values():
+            for j in label_set.values():
+                if i == j:
+                    continue
+                H[i, j] -= norm * smoothing**2
+
+        # Add the labeled effect of this document
+        norm = 1 / ((n_d + label_weight) * (n_d + label_weight - 1))
+        index = label_set[doc.metadata[attr_name]]
+        print(index, end=' ')
+        for i, w_i in enumerate(doc.tokens):
+            for j, w_j in enumerate(doc.tokens):
+                if i == j:
+                    continue
+                H[w_i.token, w_j.token] += norm
+            H[w_i.token, index] += label_weight * norm
+            H[index, w_i.token] += label_weight * norm
+        H[index, index] += label_weight * (label_weight - 1) * norm
+    Q += (H/D)
+    return Q
 
 if __name__ =="__main__":
     app.run(debug=False)
