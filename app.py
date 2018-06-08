@@ -170,9 +170,9 @@ def api_update():
         labeled_ids.add(doc['doc_id'])
 
     # Fill the unlabeled docs
-    remaining_unlabeled_docs = data.get('unlabeled_docs')
+    remaining_unlabeled_docs = set(data.get('unlabeled_docs'))
     for i in range(UNLABELED_COUNT - len(remaining_unlabeled_docs)):
-        remaining_unlabeled_docs.append(unlabeled_ids.pop())
+        remaining_unlabeled_docs.add(unlabeled_ids.pop())
 
     # QUICK Q update with newly_labeled_docs
     # TODO need to fix quickQ to take into account the number of documents...
@@ -191,12 +191,14 @@ def api_update():
     C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
     print('***Time - recover_topics:', time.time()-start)
 
-    start=time.time()
     # TODO learn about the different assign methods
     # TODO OPTIMIZE assign only for the labeled and visible unlabeled documents
     #   (depending on current speed)
     # TODO OPTIMIZE Test different assignments for time and see how assignments differ
-    ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR)
+
+    start=time.time()
+    ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR,
+                               needs_assign=(remaining_unlabeled_docs & labeled_ids))
     print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
 
     start = time.time()
@@ -223,6 +225,12 @@ def api_update():
     left_right = lambda arr: -1 if arr[0]>arr[1] else 1
     relative_dif = lambda arr: abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
     labeled_relative_dif = lambda arr: left_right(arr) * relative_dif
+
+    # FIXME Sometimes arr is [0,0]... dunno what it is.
+    def relative_dif(arr):
+        if arr[0]==0 and arr[1]==0:
+            return 0
+        return abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
 
     unlabeled_docs = []
     for doc_id in remaining_unlabeled_docs:
@@ -273,15 +281,11 @@ def api_update():
          'topicWords': topic_summary[i]}
         for i, anchors in enumerate(anchor_tokens)]
 
-    print(return_anchors)
-    print(return_labels)
-    print(unlabeled_docs)
-
-    return jsonify(
-                   anchors=return_anchors,
+    print(time.time()-start)
+    return jsonify(anchors=return_anchors,
                    labels=return_labels,
-                   unlabeledDocs=unlabeled_docs
-                   )
+                   unlabeledDocs=unlabeled_docs)
+
 # Maybe
 # POST - Something to do with getting more documents?
 # @app.route('', methods=['POST'])
@@ -508,7 +512,7 @@ def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
     return Q
 
 if __name__ =="__main__":
-    app.run(debug=False)
+    app.run(debug=True)
 
 ################
 # ROUGH PROCESS
