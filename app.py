@@ -15,14 +15,14 @@ app = Flask(__name__)
 # app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
 
 # Attribute names:
-# Document topics
+# Token topics
 Z_ATTR = 'z'
 
-# Token topics
+# Document topics
 THETA_ATTR = 'theta'
 
-# Starting number of unlabled docs on the web
-STARTING_UNLABELED = 10
+# Number of unlabled docs on the web
+UNLABELED_COUNT = 30
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
@@ -38,6 +38,7 @@ label_weight = 1
 #  and include the -c or --clean argument)
 smoothing = 1e-4
 epsilon = 1e-5
+user_label = 'user_label'
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
@@ -54,7 +55,6 @@ parser.add_argument('port', nargs='?', default=5000, type=int,
                     help='Port to be used in hosting the webpage')
 parser.add_argument('-c', '--clean', action='store_true')
 args=parser.parse_args()
-print(args)
 
 dataset_name = args.dataset
 port = args.port
@@ -95,7 +95,6 @@ if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove f
     with contextlib.suppress(FileNotFoundError):
         os.remove(full_filename)
 
-
 @ankura.util.pickle_cache(full_filename)
 def load_initial_data():
     print('Loading initial data...')
@@ -124,8 +123,13 @@ labeled_ids = set(range(prelabeled_size))
     test_ids, test_corpus, gs_anchor_vectors,
     gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
 
-web_unlabeled_ids = set(range(prelabeled_size + STARTING_UNLABELED))
-unlabeled_ids = set(range((prelabeled_size + STARTING_UNLABELED), len(train_corpus.documents)))
+for doc_id in labeled_ids:
+    doc = train_corpus.documents[doc_id]
+    # Assign "user_label" to be the correct label
+    doc.metadata[user_label] = doc.metadata[attr_name]
+
+#web_unlabeled_ids = set(range(prelabeled_size + STARTING_UNLABELED))
+unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
 
 @app.route('/')
 @app.route('/index')
@@ -142,6 +146,13 @@ def api_update():
     data = request.get_json()
     print(data)
 
+    # Data is expected to come back in this form:
+    # data = {anchor_tokens: [[token_str,..],...]
+    #         labeled_docs: [{doc_id: number
+    #                         user_label: label},...]
+    #         unlabeled_docs: [doc_id,...]
+    #        }
+
     anchor_tokens = data.get('anchor_tokens')
     if anchor_tokens is None:
         anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_indices
@@ -149,17 +160,21 @@ def api_update():
         anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
                                                       train_corpus, epsilon=epsilon)
 
-    newly_labeled_docs = data.get('labeled_docs') #Doc ids and what label they are
-    remaining_unlabled_docs = data.get('unlabeled_docs') #Doc ids
+    newly_labeled_docs = data.get('labeled_docs')
 
     # Label docs into corpus
-    for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata['user_label'] = label
-        labeled_ids.add(doc_id)
+    for doc in newly_labeled_docs:
+        train_corpus.documents[doc['doc_id'].metadata[user_label] = label
+        labeled_ids.add(doc['doc_id'])
+
+    # Fill the unlabeled docs
+    remaining_unlabeled_docs = data.get('unlabeled_docs')
+    for i in range(UNLABELED_COUNT - len(remaining_unlabeled_docs)):
+        remaining_unlabeled_docs.append(unlabeled_ids.pop())
 
     # QUICK Q update with newly_labeled_docs
     start = time.time()
-    Q = quick_Q(Q, train_corpus, attr_name, labeled_ids, newly_labeled_docs,
+    Q = quick_Q(Q, train_corpus, user_label, labeled_ids, newly_labeled_docs,
                 label_weight=label_weight, smoothing=smoothing)
     print('***Time - quick_Q:', time.time()-start)
 
@@ -169,29 +184,101 @@ def api_update():
                                                   train_corpus, epsilon=1e-15)
     print('***Time - tandem_anchors:', time.time()-start)
 
-    #COPIED FROM TBUIE - Still need to change and add
+    start = time.time()
     C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
-
     print('***Time - recover_topics:', time.time()-start)
+
+    start=time.time()
+    # TODO learn about the different assign methods
+    # TODO assign only for the labeled and visible unlabeled documents
+    #   (depending on current speed)
+    # TODO Test different assignments for time and see how assignments differ
+    ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR)
+    print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
 
     start = time.time()
     topic_summary = ankura.topic.topic_summary(topics[:len(train_corpus.vocabulary)], train_corpus)
     print('***Time - topic_summary:', time.time()-start)
 
     start = time.time()
-    clf = ankura.topic.free_classifier_dream(train_corpus, attr_name,
-                                             labeled_docs=set(train_ids), topics=topics,
-                                             C=C, labels=labels,
-                                             prior_attr_name=prior_attr_name)
+    # TODO This will be slower than necessary because we will be recounting all
+    # the documents that have a specific label every time. Look into changing
+    # how we use the prior_attr_name, or maybe manipulate the corpus outside of
+    # this function. More thought needs to be put into this first
+    clf = ankura.topic.free_classifier_dream(train_corpus, attr_name=user_label,
+                                             labeled_docs=labeled_ids, topics=topics,
+                                             C=C, labels=labels)
+                                             #prior_attr_name=prior_attr_name)
+    print('***Time - Get Classifier:', time.time()-start, '-Could be optimized')
 
-    print('***Time - Get Classifier:', time.time()-start)
+    # PREPARE TO SEND OBJECTS BACK
 
-
+    # TODO Consider redoing this somehow.... I don't like it.
     start=time.time()
-    # GET PROBABILITIES
-    unlabeled_probabilities = [(doc_id, clf(train_corpus.documents[doc_id], get_probability=True))
-                              for doc_id in unlabeled_docs]
+    # Classify, getting probabilities
+    left_right = lambda arr: -1 if arr[0]>arr[1] else 1
+    relative_dif = lambda arr: abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
+    labeled_relative_dif = lambda arr: left_right(arr) * relative_dif
+
+    unlabeled_probabilities = [(doc_id, labeled_relative_dif(clf(train_corpus.documents[doc_id], get_probability=True)))
+                              for doc_id in remaining_unlabeled_docs]
+    sorted_unlabeled_doc_ids = [doc_info[0] for doc_info in sorted(unlabeled_probabilities, key=lambda item: item[1])]
+    unlabeled_docs = [
+        {'docNum': doc_id,
+         'tokens': [train_corpus.vocabulary[tok.token] for tok in train_corpus.documents[doc_id].tokens],
+         'trueLabel': train_corpus.documents[doc_id].metadata[attr_name],
+         'anchors': {}, #TODO Figure out what to do with the anchors as they
+                        # can be Tandem anchors... These aren't hashable and
+                        # also needs to be taken into account when doing the
+                        # vue rendering.
+       # 'lean':
+       # 'prediction'
+       # 'prediction power'
+        } for doc_id in sorted_unlabeled_doc_ids]
+
+
     print('***Time - Classify:', time.time()-start)
+
+
+
+    # Calculate average for each label
+    labeled_topic_total = defaultdict(lambda: np.zeros(len(anchor_tokens)))
+    label_count = Counter()
+    for doc_id in labeled_ids:
+        doc = train_corpus.documents[doc_id]
+        label = doc.metadata[user_label]
+        labeled_topic_total[label] += doc.metadata[THETA_ATTR]
+        label_count[label] += 1
+
+    labeled_averages = {label: list(labeled_topic_total[label]/label_count[label]) for label in
+    labels}
+
+
+    #return unlabeled_documents =
+                               # [{docId: number
+                               #   text: text
+                               #   tokens: [list of tokens]
+                               #   userLabel: label
+                               #   topics: {topicId: number...}
+                               #  }...
+                               #  ]
+
+    # anchors=
+          #  [{anchorId: number,
+          #    anchorWords: [words]
+          #    topicWords:  [Words that build the anchor]
+          #  }...
+          #  ]
+
+    # labels: [labelnames]
+    # labels:
+         #   [{labelId
+         #   name
+         #   topics}
+         #   ]
+            
+
+
     return jsonify(anchors=anchor_tokens,
                    labeled_docs = labled_docs,
                    unlabeled_docs = unlabeled_docs)
@@ -241,6 +328,10 @@ def api_update_anchors():
     start=time.time()
     topic_summary = ankura.topic.topic_summary(topics[:len(train_dev_corpus.vocabulary)], train_dev_corpus)
     print('***Time - topic_summary:', time.time()-start)
+
+    start=time.time()
+    ankura.topic.variational_assign(train_corpus, topics, theta_attr=THETA_ATTR)
+    print('***Time - variational_assign:', time.time()-start)
 
     start=time.time()
 
@@ -373,7 +464,6 @@ def getDocsLabelsTopics():
     total_time_end = time.time()
     total_time = total_time_end - total_time_start
     print('****ACCURACY:', contingency.accuracy())
-    time.sleep(1)
 
     return train_corpus, anchor_tokens, labels, topic_summary
 
