@@ -214,32 +214,35 @@ def api_update():
     # PREPARE TO SEND OBJECTS BACK
 
     # TODO Consider redoing this somehow.... I don't like it.
+    # It's kind of a mess....
     start=time.time()
     # Classify, getting probabilities
     left_right = lambda arr: -1 if arr[0]>arr[1] else 1
     relative_dif = lambda arr: abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
     labeled_relative_dif = lambda arr: left_right(arr) * relative_dif
 
-    unlabeled_probabilities = [(doc_id, labeled_relative_dif(clf(train_corpus.documents[doc_id], get_probability=True)))
-                              for doc_id in remaining_unlabeled_docs]
-    sorted_unlabeled_doc_ids = [doc_info[0] for doc_info in sorted(unlabeled_probabilities, key=lambda item: item[1])]
     unlabeled_docs = [
-        {'docNum': doc_id,
-         'tokens': [train_corpus.vocabulary[tok.token] for tok in train_corpus.documents[doc_id].tokens],
-         'trueLabel': train_corpus.documents[doc_id].metadata[attr_name],
-         'anchors': {}, #TODO Figure out what to do with the anchors as they
-                        # can be Tandem anchors... These aren't hashable and
-                        # also needs to be taken into account when doing the
-                        # vue rendering.
-       # 'lean':
-       # 'prediction'
-       # 'prediction power'
-        } for doc_id in sorted_unlabeled_doc_ids]
-
-
+    for doc_id in remaining_unlabeled_docs:
+        doc = train_corpus.documents[doc_id]
+        predict_probs = clf(doc, get_probabilities=True)
+        predict_label = labels[np.argmax(predict_probs)]
+        unlabeled_docs.append(
+          {'docNum': doc_id,
+           'text': doc.text,
+           'tokens': [train_corpus.vocabulary[tok.token] for tok in doc.tokens],
+           'trueLabel': doc.metadata[attr_name], # FIXME Probably want to take this out
+           'prediction': {'label': predict_label,
+                          'relativeDif': relative_dif(predit_probs},
+           'anchorIdToValue': {i: val for i, val in enumerate(doc.metadata[THETA_ATTR]},
+          })
     print('***Time - Classify:', time.time()-start)
 
-
+    labels_dict = {label: i for i, label in enumerate(labels)}
+    # A bit of a complex sort, but gets the job done
+    doc_sort = lambda doc: (labels_dict[doc['prediction']['label']],
+                            (-1)**(labels_dict[doc['prediction']['relativeDif']] + 1)
+                                * doc['prediction']['relativeDif'])
+    unlabeled_docs.sort(key=doc_sort)
 
     # Calculate average for each label
     labeled_topic_total = defaultdict(lambda: np.zeros(len(anchor_tokens)))
@@ -250,38 +253,24 @@ def api_update():
         labeled_topic_total[label] += doc.metadata[THETA_ATTR]
         label_count[label] += 1
 
-    labeled_averages = {label: list(labeled_topic_total[label]/label_count[label]) for label in
-    labels}
+    labeled_averages = {label: list(labeled_topic_total[label]/label_count[label])
+        if label_count[label] else [.5]*len(anchor_tokens) for label in labels}
 
+    return_labels = [
+        {'labelId': i,
+         'label': label,
+         'anchorIdToValue': {i, val for i, val in enumerate(labeled_averages[label]}}
+        for i, label in enumerate(labels)]
 
-    #return unlabeled_documents =
-                               # [{docId: number
-                               #   text: text
-                               #   tokens: [list of tokens]
-                               #   userLabel: label
-                               #   topics: {topicId: number...}
-                               #  }...
-                               #  ]
+    return_anchors = [
+        {'anchorId': i,
+         'anchorWords': anchors,
+         'topicWords': topic_summary[i]}
+        for i, anchors in enumerate(anchor_tokens)]
 
-    # anchors=
-          #  [{anchorId: number,
-          #    anchorWords: [words]
-          #    topicWords:  [Words that build the anchor]
-          #  }...
-          #  ]
-
-    # labels: [labelnames]
-    # labels:
-         #   [{labelId
-         #   name
-         #   topics}
-         #   ]
-            
-
-
-    return jsonify(anchors=anchor_tokens,
-                   labeled_docs = labled_docs,
-                   unlabeled_docs = unlabeled_docs)
+    return jsonify(anchors=return_anchors,
+                   labels=return_labels,
+                   unlabeledDocs=unlabeled_docs)
 
 
 
