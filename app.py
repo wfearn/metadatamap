@@ -191,11 +191,6 @@ def api_update():
     C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
     print('***Time - recover_topics:', time.time()-start)
 
-    # TODO learn about the different assign methods
-    # TODO OPTIMIZE assign only for the labeled and visible unlabeled documents
-    #   (depending on current speed)
-    # TODO OPTIMIZE Test different assignments for time and see how assignments differ
-
     start=time.time()
     ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR,
                                needs_assign=(remaining_unlabeled_docs & labeled_ids))
