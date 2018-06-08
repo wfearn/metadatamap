@@ -129,7 +129,7 @@ for doc_id in labeled_ids:
     # Assign "user_label" to be the correct label
     doc.metadata[user_label] = doc.metadata[attr_name]
 
-#web_unlabeled_ids = set(range(prelabeled_size + STARTING_UNLABELED))
+web_unlabeled_ids = set()
 unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
 
 @app.route('/')
@@ -152,7 +152,6 @@ def api_update():
     # data = {anchor_tokens: [[token_str,..],...]
     #         labeled_docs: [{doc_id: number
     #                         user_label: label},...]
-    #         unlabeled_docs: [doc_id,...]
     #        }
 
     anchor_tokens = data.get('anchor_tokens')
@@ -168,11 +167,11 @@ def api_update():
     for doc in newly_labeled_docs:
         train_corpus.documents[doc['doc_id']].metadata[user_label] = label
         labeled_ids.add(doc['doc_id'])
+        web_unlabeled_ids.discard(doc['doc_id'])
 
     # Fill the unlabeled docs
-    remaining_unlabeled_docs = set(data.get('unlabeled_docs'))
-    for i in range(UNLABELED_COUNT - len(remaining_unlabeled_docs)):
-        remaining_unlabeled_docs.add(unlabeled_ids.pop())
+    for i in range(UNLABELED_COUNT - len(web_unlabeled_ids)):
+        web_unlabeled_ids.add(unlabeled_ids.pop())
 
     # QUICK Q update with newly_labeled_docs
     # TODO need to fix quickQ to take into account the number of documents...
@@ -193,7 +192,7 @@ def api_update():
 
     start=time.time()
     ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR,
-                               needs_assign=(remaining_unlabeled_docs | labeled_ids))
+                               needs_assign=(web_unlabeled_ids | labeled_ids))
     print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
 
     start = time.time()
@@ -228,7 +227,7 @@ def api_update():
         return abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
 
     unlabeled_docs = []
-    for doc_id in remaining_unlabeled_docs:
+    for doc_id in web_unlabeled_ids:
         doc = train_corpus.documents[doc_id]
         predict_probs = clf(doc, get_probabilities=True)
         predict_label = labels[np.argmax(predict_probs)]
