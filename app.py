@@ -193,7 +193,7 @@ def api_update():
 
     start=time.time()
     ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR,
-                               needs_assign=(remaining_unlabeled_docs & labeled_ids))
+                               needs_assign=(remaining_unlabeled_docs | labeled_ids))
     print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
 
     start = time.time()
