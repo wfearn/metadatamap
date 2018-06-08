@@ -10,13 +10,12 @@ function hexToRgb(hex) {
 var app = new Vue({
   el: '#app',
   data: {
-    //docList: [{number: 1, values: [1,1,1,1]}, {number: 2, values: [2,2,2,2]}, {number: 3, values: [3,3,3,3]}, {number: 4, values: [4,4,4,4]},],
-    //labels: [{name: "Label1", count:2},{name: "Label2", count:2},],
-    docs: {},
+    unlabeledDocs: [],
+    labeledDocs: [],
     labels: [],
-    topics: [],
+    anchors: [],
     vocab: [], // Corpus vocabulary (for determining which words can be anchors)
-    colors: {},
+    colors: {}, // TODO figure out what to do with this
     drag: {},
     selectedDoc: {},
     selectedTopic: {},
@@ -27,7 +26,7 @@ var app = new Vue({
     this.loading = true;
 
     this.getVocab();
-
+    this.sendUpdate();
     // axios.get('/testDocs').then(response => {
     //   this.docs = response.data.docs;
     //   this.labels = reponse.data.labels;
@@ -38,32 +37,32 @@ var app = new Vue({
 
     this.loading = false;
 
-    var self = this;
-    $.ajax({
-     // url: '/dist',
-      url: '/testDocs',
-      method: 'GET',
-      success: function (data){
-        console.log(data);
-        self.docs = data.docs;
-        self.labels = data.labels;
-        self.topics = data.topics;
+    // var self = this;
+    // $.ajax({
+    //  // url: '/dist',
+    //   url: '/testDocs',
+    //   method: 'GET',
+    //   success: function (data){
+    //     console.log(data);
+    //     self.docs = data.docs;
+    //     self.labels = data.labels;
+    //     self.topics = data.topics;
 
-        var colorsList = ['#0000FF', '#8B0000', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
-        var lenColors = colorsList.length;
-        for (var i=0; i<self.labels.length; i++){
-          Vue.set(self.colors, self.labels[i], colorsList[i%lenColors]);
-        }
-        self.maxTopic = self.findMaxTopic()
-        self.loading = false;
-      },
-      error: function(error){
-        console.log(error);
-        self.error = true;
-        self.loading = false;
-        alert('AJAX Error');
-      }
-    });
+    //     var colorsList = ['#0000FF', '#8B0000', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
+    //     var lenColors = colorsList.length;
+    //     for (var i=0; i<self.labels.length; i++){
+    //       Vue.set(self.colors, self.labels[i], colorsList[i%lenColors]);
+    //     }
+    //     self.maxTopic = self.findMaxTopic()
+    //     self.loading = false;
+    //   },
+    //   error: function(error){
+    //     console.log(error);
+    //     self.error = true;
+    //     self.loading = false;
+    //     alert('AJAX Error');
+    //   }
+    // });
   }, //End mounted
   computed: {
     docsByLabel: function(){
@@ -80,7 +79,30 @@ var app = new Vue({
       axios.get('/api/vocab').then(response => {
         this.vocab = response.data.vocab;
       }).catch(error => {
-        console.log('error in api/vocab')
+        console.log('error in /api/vocab')
+      });
+    },
+    sendUpdate: function(){
+    // Data is expected to be sent in this form:
+    // data = {anchor_tokens: [[token_str,..],...]
+    //         labeled_docs: [{doc_id: number
+    //                         user_label: label},...]
+    //         unlabeled_docs: [doc_id,...]
+    //        }
+      axios.post('/api/update', {
+        anchor_tokens: [],
+        labeled_docs: this.labeledDocs.map(doc => {doc_id: doc.docId}),
+                                         //          user_label: doc.userLabel}),
+        unlabeled_docs: this.unlabeledDocs.map(doc => doc.docId),
+      }).then(response => {
+        console.log(response);
+        this.data = response.data;
+        this.anchors = response.data.anchors;
+        this.unlabeledDocs = response.data.unlabeledDocs;
+        this.labeledDocs = response.data.labeledDocs;
+      }).catch(error => {
+        console.log('Error in /api/update');
+        console.log(error);
       });
     },
     colSize: function(label){

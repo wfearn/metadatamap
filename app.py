@@ -237,7 +237,7 @@ def api_update():
                                                  #       before user study
            'prediction': {'label': predict_label,
                           'relativeDif': relative_dif(predict_probs)},
-           'anchorIdToValue': {i: val for i, val in enumerate(doc.metadata[THETA_ATTR])}
+           'anchorIdToValue': {i: float(val) for i, val in enumerate(doc.metadata[THETA_ATTR])}
            })
     print('***Time - Classify:', time.time()-start)
 
@@ -277,9 +277,11 @@ def api_update():
     print(return_labels)
     print(unlabeled_docs)
 
-    return jsonify(anchors=return_anchors,
+    return jsonify(
+                   anchors=return_anchors,
                    labels=return_labels,
-                   unlabeledDocs=unlabeled_docs)
+                   unlabeledDocs=unlabeled_docs
+                   )
 # Maybe
 # POST - Something to do with getting more documents?
 # @app.route('', methods=['POST'])
