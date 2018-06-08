@@ -3,6 +3,7 @@ from flask import Flask, render_template, jsonify, request, send_from_directory
 import numpy as np
 import json
 import time
+from collections import defaultdict, Counter
 import argparse
 import os
 import contextlib
@@ -143,6 +144,7 @@ def api_vocab():
 
 @app.route('/api/update', methods=['POST'])
 def api_update():
+    global Q
     data = request.get_json()
     print(data)
 
@@ -154,7 +156,7 @@ def api_update():
     #        }
 
     anchor_tokens = data.get('anchor_tokens')
-    if anchor_tokens is None:
+    if not anchor_tokens:
         anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_indices
     else:
         anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
@@ -164,7 +166,7 @@ def api_update():
 
     # Label docs into corpus
     for doc in newly_labeled_docs:
-        train_corpus.documents[doc['doc_id'].metadata[user_label] = label
+        train_corpus.documents[doc['doc_id']].metadata[user_label] = label
         labeled_ids.add(doc['doc_id'])
 
     # Fill the unlabeled docs
@@ -191,9 +193,9 @@ def api_update():
 
     start=time.time()
     # TODO learn about the different assign methods
-    # TODO assign only for the labeled and visible unlabeled documents
+    # TODO OPTIMIZE assign only for the labeled and visible unlabeled documents
     #   (depending on current speed)
-    # TODO Test different assignments for time and see how assignments differ
+    # TODO OPTIMIZE Test different assignments for time and see how assignments differ
     ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR)
     print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
 
@@ -202,7 +204,7 @@ def api_update():
     print('***Time - topic_summary:', time.time()-start)
 
     start = time.time()
-    # TODO This will be slower than necessary because we will be recounting all
+    # OPTIMIZE This will be slower than necessary because we will be recounting all
     # the documents that have a specific label every time. Look into changing
     # how we use the prior_attr_name, or maybe manipulate the corpus outside of
     # this function. More thought needs to be put into this first
@@ -222,30 +224,32 @@ def api_update():
     relative_dif = lambda arr: abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
     labeled_relative_dif = lambda arr: left_right(arr) * relative_dif
 
-    unlabeled_docs = [
+    unlabeled_docs = []
     for doc_id in remaining_unlabeled_docs:
         doc = train_corpus.documents[doc_id]
         predict_probs = clf(doc, get_probabilities=True)
         predict_label = labels[np.argmax(predict_probs)]
         unlabeled_docs.append(
-          {'docNum': doc_id,
+          {'docId': doc_id,
            'text': doc.text,
            'tokens': [train_corpus.vocabulary[tok.token] for tok in doc.tokens],
-           'trueLabel': doc.metadata[attr_name], # FIXME Probably want to take this out
+           'trueLabel': doc.metadata[attr_name], # FIXME Needs to be taken out
+                                                 #       before user study
            'prediction': {'label': predict_label,
-                          'relativeDif': relative_dif(predit_probs},
-           'anchorIdToValue': {i: val for i, val in enumerate(doc.metadata[THETA_ATTR]},
-          })
+                          'relativeDif': relative_dif(predict_probs)},
+           'anchorIdToValue': {i: val for i, val in enumerate(doc.metadata[THETA_ATTR])}
+           })
     print('***Time - Classify:', time.time()-start)
 
     labels_dict = {label: i for i, label in enumerate(labels)}
     # A bit of a complex sort, but gets the job done
     doc_sort = lambda doc: (labels_dict[doc['prediction']['label']],
-                            (-1)**(labels_dict[doc['prediction']['relativeDif']] + 1)
+                            (-1)**(labels_dict[doc['prediction']['label']] + 1)
                                 * doc['prediction']['relativeDif'])
     unlabeled_docs.sort(key=doc_sort)
 
     # Calculate average for each label
+    # TODO Find a better way of doing this?
     labeled_topic_total = defaultdict(lambda: np.zeros(len(anchor_tokens)))
     label_count = Counter()
     for doc_id in labeled_ids:
@@ -260,7 +264,7 @@ def api_update():
     return_labels = [
         {'labelId': i,
          'label': label,
-         'anchorIdToValue': {i, val for i, val in enumerate(labeled_averages[label]}}
+         'anchorIdToValue': {i: val for i, val in enumerate(labeled_averages[label])}}
         for i, label in enumerate(labels)]
 
     return_anchors = [
@@ -269,11 +273,13 @@ def api_update():
          'topicWords': topic_summary[i]}
         for i, anchors in enumerate(anchor_tokens)]
 
+    print(return_anchors)
+    print(return_labels)
+    print(unlabeled_docs)
+
     return jsonify(anchors=return_anchors,
                    labels=return_labels,
                    unlabeledDocs=unlabeled_docs)
-
-
 # Maybe
 # POST - Something to do with getting more documents?
 # @app.route('', methods=['POST'])
@@ -442,9 +448,9 @@ def get_random_topical_distributions(doc_count=50):
     return docs, labels, topics
 
 # FIXME Needs to be fixed to take into account the number of documents that were used
-# to build the original Q. Currently, this will be close but not exact to what
-# quickQ *should* do.
-# TODO After fixing the above, move this into Ankura2
+#   to build the original Q. Currently, this will be close but not exact to what
+#   quickQ *should* do.
+# TODO Move this into Ankura2
 def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
                                label_weight=1, smoothing=1e-7):
     V = len(corpus.vocabulary)
