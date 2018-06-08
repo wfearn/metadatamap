@@ -173,6 +173,7 @@ def api_update():
         remaining_unlabeled_docs.append(unlabeled_ids.pop())
 
     # QUICK Q update with newly_labeled_docs
+    # TODO need to fix quickQ to take into account the number of documents...
     start = time.time()
     Q = quick_Q(Q, train_corpus, user_label, labeled_ids, newly_labeled_docs,
                 label_weight=label_weight, smoothing=smoothing)
@@ -271,85 +272,6 @@ def api_update():
     return jsonify(anchors=return_anchors,
                    labels=return_labels,
                    unlabeledDocs=unlabeled_docs)
-
-
-
-
-
-
-
-# POST
-@app.route('/api/update/unlabeled', methods=['POST'])
-def api_update_unlabeled():
-    req_data = request.get_json()
-    # Need all the formerly unlabeled documents
-    #  - If labeled, label and update Q (QUICK-Q)
-    #  - Else, reclassify and return probabilities for left/right sides
-    # SENT:
-    #  - Recently labeled documents
-    # RETURNS:
-    #  - Unlabeld documents (new topics, new probabilities)
-    #  - Labeled documents (new topics)
-    #  - Anchor's topic words (Because Q changed)
-    pass
-
-# POST
-@app.route('/api/update/anchors', methods=['POST'])
-def api_update_anchors():
-    # Need all the changes to the anchors (TBUIE FUNCTIONALITY)
-    #  - Need to reevaluate topics for ALL sent documents
-    #  - Redo "classification", returning probabilities for each side for each
-    #       unlabled doc
-    # SENT:
-    #  - Anchors (list of lists of strings)
-    # RETURNS:
-    #  - Unlabeld documents (new topics, new probabilities)
-    #  - Labeled documents (new topics)
-    #  - Anchor's topic words
-    pass
-    req_data = request.get_json()
-
-    #COPIED FROM TBUIE - Still need to change and add
-    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
-
-    print('***Time - recover_topics:', time.time()-start)
-
-    start=time.time()
-    topic_summary = ankura.topic.topic_summary(topics[:len(train_dev_corpus.vocabulary)], train_dev_corpus)
-    print('***Time - topic_summary:', time.time()-start)
-
-    start=time.time()
-    ankura.topic.variational_assign(train_corpus, topics, theta_attr=THETA_ATTR)
-    print('***Time - variational_assign:', time.time()-start)
-
-    start=time.time()
-
-    classifier = ankura.topic.free_classifier_dream(train_dev_corpus, attr_name,
-                                                    labeled_docs=set(train_ids), topics=topics,
-                                                    C=C, labels=labels,
-                                                    prior_attr_name=prior_attr_name)
-
-    print('***Time - Get Classifier:', time.time()-start)
-
-    contingency = ankura.validate.Contingency()
-
-    start=time.time()
-    for doc in dev_corpus.documents:
-        gold = doc.metadata[attr_name]
-        pred = classifier(doc)
-        contingency[gold, pred] += 1
-    print('***Time - Classify:', time.time()-start)
-    print('***Accuracy:', contingency.accuracy())
-
-
-
-# POST - FINISHED
-# @app.route('', methods=['POST'])
-# def finished():
-#  - Check the labeled documents for correctness of user classification
-#  - Classify the rest of the documents and get accuracy
-#  - Classify the test set and get accuracy
-#  - Save the results, probably similar to TBUIE's saving method
 
 
 # Maybe
@@ -519,6 +441,10 @@ def get_random_topical_distributions(doc_count=50):
 
     return docs, labels, topics
 
+# FIXME Needs to be fixed to take into account the number of documents that were used
+# to build the original Q. Currently, this will be close but not exact to what
+# quickQ *should* do.
+# TODO After fixing the above, move this into Ankura2
 def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
                                label_weight=1, smoothing=1e-7):
     V = len(corpus.vocabulary)
@@ -536,7 +462,7 @@ def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
     label_set = {l: V + i for i, l in enumerate(label_set)}
     K = len(label_set)
     Q = Q.copy()
-    D = len(corpus.documents)
+    D = len(corpus.documents) # FIXME this line
     H = np.zeros((V+K, V+K))
     for d in newly_labeled_docs:
         doc = corpus.documents[d]
