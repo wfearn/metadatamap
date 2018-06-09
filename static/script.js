@@ -83,23 +83,21 @@ var app = new Vue({
       });
     },
     sendUpdate: function(){
-    // Data is expected to be sent in this form:
+    // Data is expected to be sent to sevrver in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
     //                         user_label: label},...]
-    //         unlabeled_docs: [doc_id,...]
     //        }
       axios.post('/api/update', {
         anchor_tokens: [],
-        labeled_docs: this.labeledDocs.map(doc => {doc_id: doc.docId}),
-                                         //          user_label: doc.userLabel}),
-        unlabeled_docs: this.unlabeledDocs.map(doc => doc.docId),
+        labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
+                                                    user_label: doc.userLabel})),
       }).then(response => {
         console.log(response);
-        this.data = response.data;
+        this.updateData = response.data;
         this.anchors = response.data.anchors;
         this.unlabeledDocs = response.data.unlabeledDocs;
-        this.labeledDocs = response.data.labeledDocs;
+        this.labels = response.data.labels;
       }).catch(error => {
         console.log('Error in /api/update');
         console.log(error);
