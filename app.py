@@ -186,6 +186,8 @@ def api_update():
                                                   train_corpus, epsilon=1e-15)
     print('***Time - tandem_anchors:', time.time()-start)
 
+    # TODO OPTIMIZE Look into using the parallelism keyword or some other way
+    #   to make this faster, as it is currently the longest thing by a long shot.
     start = time.time()
     C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
     print('***Time - recover_topics:', time.time()-start)
