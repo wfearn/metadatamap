@@ -61,17 +61,16 @@ dataset_name = args.dataset
 port = args.port
 clean = args.clean
 
-if dataset_name == 'newsgroups':
-    attr_name = 'coarse_newsgroup'
-    corpus = ankura.corpus.newsgroups()
-elif dataset_name == 'yelp':
-    attr_name = 'binary_rating'
+
+# Set the attr_name for the true label
+# 'binary_string' contains 'negative' and 'positive' for yelp, amz, and TA
+attr_name = 'binary_string'
+
+if dataset_name == 'yelp':
     corpus = ankura.corpus.yelp()
 elif dataset_name == 'tripadvisor':
-    attr_name = 'label'
     corpus = ankura.corpus.tripadvisor()
 elif dataset_name == 'amazon':
-    attr_name = 'binary_rating'
     corpus = ankura.corpus.amazon()
 
 # Set seed and shuffle corpus documents if SHUFFLE_SEED
