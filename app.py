@@ -17,10 +17,13 @@ app = Flask(__name__)
 
 # Attribute names:
 # Token topics
-Z_ATTR = 'z'
+Z_ATTR = 'z' # UNUSED
 
 # Document topics
 THETA_ATTR = 'theta'
+
+# Prior attr
+PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs on the web
 UNLABELED_COUNT = 30
@@ -63,8 +66,8 @@ clean = args.clean
 
 
 # Set the attr_name for the true label
-# 'binary_string' contains 'negative' and 'positive' for yelp, amz, and TA
-attr_name = 'binary_string'
+# 'binary_rating' contains 'negative' and 'positive' for yelp, amz, and TA
+attr_name = 'binary_rating'
 
 if dataset_name == 'yelp':
     corpus = ankura.corpus.yelp()
@@ -97,14 +100,14 @@ if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove f
 
 @ankura.util.pickle_cache(full_filename)
 def load_initial_data():
-    print('Loading initial data...')
+    print('***Loading initial data...')
 
-    print('Splitting labeled/unlabeled and test...')
+    print('***Splitting labeled/unlabeled and test...')
     # Split to labeled and unlabeled
     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
-    print('Constructing Q...')
+    print('***Constructing Q...')
     Q, labels = ankura.anchor.build_labeled_cooccurrence(train_corpus, attr_name, labeled_ids,
                                                         label_weight=label_weight, smoothing=smoothing)
 
@@ -164,7 +167,7 @@ def api_update():
 
     # Label docs into corpus
     for doc in newly_labeled_docs:
-        train_corpus.documents[doc['doc_id']].metadata[user_label] = label
+        train_corpus.documents[doc['doc_id']].metadata[user_label] = doc['user_label']
         labeled_ids.add(doc['doc_id'])
         web_unlabeled_ids.discard(doc['doc_id'])
 
@@ -208,7 +211,7 @@ def api_update():
     clf = ankura.topic.free_classifier_dream(train_corpus, attr_name=user_label,
                                              labeled_docs=labeled_ids, topics=topics,
                                              C=C, labels=labels)
-                                             #prior_attr_name=prior_attr_name)
+                                             #prior_attr_name=PRIOR_ATTR)
     print('***Time - Get Classifier:', time.time()-start, '-Could be optimized')
 
     # PREPARE TO SEND OBJECTS BACK
@@ -267,7 +270,8 @@ def api_update():
     return_labels = [
         {'labelId': i,
          'label': label,
-         'anchorIdToValue': {i: val for i, val in enumerate(labeled_averages[label])}}
+         'anchorIdToValue': {i: val for i, val in enumerate(labeled_averages[label])},
+         'count': label_count[label]}
         for i, label in enumerate(labels)]
 
     return_anchors = [
@@ -276,7 +280,6 @@ def api_update():
          'topicWords': topic_summary[i]}
         for i, anchors in enumerate(anchor_tokens)]
 
-    print(time.time()-start)
     return jsonify(anchors=return_anchors,
                    labels=return_labels,
                    unlabeledDocs=unlabeled_docs)
