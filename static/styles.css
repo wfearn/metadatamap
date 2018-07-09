@@ -10,31 +10,38 @@ table {
   width: 100%;
 }
 
-td, th {
+td, th{
   border: 1px solid #dddddd;
-  text-align: left;
+}
+
+.metadata-map td, th {
   padding: 3px;
   padding-top: 8px;
   padding-bottom: 8px;
   max-width: 5px;
+  max-width: 60px;
+  min-width: 18px;
   font-size: 12px;
 }
 
 
-tr:nth-child(even) {
+.metadata-map tr:nth-child(even) {
   background-color: #dddddd;
 }
-tr:hover:nth-child(n){
+
+tr:hover:nth-child(n) {
 
 }
+
 .outlined {
   border: 1px solid yellow;
 }
 
-.label {
-  background-color: purple;
+.label-title {
+  /*background-color: purple;*/
   text-align: center;
   min-width: None;
+  max-width: None;
 }
 .doc-title {
   height: 50px;
@@ -53,6 +60,14 @@ tr:hover:nth-child(n){
 .topic{
   max-width: None;
   font-size: 16px;
+}
+.anchor-container{
+  min-width: 100px;
+  max-width: 250px;
+  font-size: 14px;
+}
+.very-small{
+  font-size: 9px;
 }
 
 .dragging {
@@ -136,5 +151,13 @@ button {
 /* Controls */
 
 .controls {
-    margin-top: 20px;
+  margin-top: 20px;
+}
+
+.anchor-word{
+  border: 1px solid #999;
+  padding: 2px;
+  margin: 1px;
+  border-radius: 3px;
+  display: inline-block;
 }

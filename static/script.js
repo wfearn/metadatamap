@@ -1,3 +1,4 @@
+
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
@@ -18,51 +19,31 @@ var app = new Vue({
     colors: {}, // TODO figure out what to do with this
     drag: {},
     selectedDoc: {},
-    selectedTopic: {},
+    selectedAnchor: {},
     loading: false,
-    maxTopic: 100.0,
+    maxTopic: 1.000,
+    isMounted: false,
+    colorsChosen: false,
+    showModal: false,
     },
+  components: {
+  //  'modal': Modal,
+  },
   mounted: function () {
     this.loading = true;
-
     this.getVocab();
     this.sendUpdate();
-    // axios.get('/testDocs').then(response => {
-    //   this.docs = response.data.docs;
-    //   this.labels = reponse.data.labels;
-    //   this.topics = reponse.data.topics;
-    // }).catch(error => {
-    //     console.log('error in /testDocs');
-    // });
 
-    this.loading = false;
+    // Event listener to close the modal on Esc
+    document.addEventListener("keydown", (e) => {
+      if (this.showModal && e.keyCode == 27) {
+        this.closeModal()
+      }
+    });
 
-    // var self = this;
-    // $.ajax({
-    //  // url: '/dist',
-    //   url: '/testDocs',
-    //   method: 'GET',
-    //   success: function (data){
-    //     console.log(data);
-    //     self.docs = data.docs;
-    //     self.labels = data.labels;
-    //     self.topics = data.topics;
+    console.log('HELLO')
+    //this.maxTopic = this.findMaxTopic()
 
-    //     var colorsList = ['#0000FF', '#8B0000', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
-    //     var lenColors = colorsList.length;
-    //     for (var i=0; i<self.labels.length; i++){
-    //       Vue.set(self.colors, self.labels[i], colorsList[i%lenColors]);
-    //     }
-    //     self.maxTopic = self.findMaxTopic()
-    //     self.loading = false;
-    //   },
-    //   error: function(error){
-    //     console.log(error);
-    //     self.error = true;
-    //     self.loading = false;
-    //     alert('AJAX Error');
-    //   }
-    // });
   }, //End mounted
   computed: {
     docsByLabel: function(){
@@ -83,13 +64,14 @@ var app = new Vue({
       });
     },
     sendUpdate: function(){
-    // Data is expected to be sent to sevrver in this form:
+    // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
     //                         user_label: label},...]
     //        }
+      this.loading = true;
       axios.post('/api/update', {
-        anchor_tokens: [],
+        anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
         labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
                                                     user_label: doc.userLabel})),
       }).then(response => {
@@ -98,10 +80,33 @@ var app = new Vue({
         this.anchors = response.data.anchors;
         this.unlabeledDocs = response.data.unlabeledDocs;
         this.labels = response.data.labels;
+        this.loading = false;
+        this.isMounted = true;
+        if (!this.colorsChosen){
+          this.chooseColors();
+          this.colorsChosen = true;
+        }
+
       }).catch(error => {
         console.log('Error in /api/update');
         console.log(error);
       });
+    },//end sendUpdate function
+    chooseColors: function(){
+      var colorsList = ['#191919', '#FE8000','#191919', , '#FE8000','#8B0000', '#4C4CFF','#0000FF', '#228B22', '#4B0082',
+                        '#FFA500', '#008080', '#FF4500'];
+      //Christmas
+      colorsList = ['#bb2528', '#146b3a']
+      //Halloween
+      //colorsList = ['#191919', '#FE8000']
+
+      // var lenColors = colorsList.length;
+      // for (var i=0; i<this.labels.length; i++){
+      //   console.log(this.labels[i].label, colorsList[i%lenColors]);
+      //   Vue.set(this.colors, this.labels[i].label, colorsList[i%lenColors]);
+      // }
+      Vue.set(this.colors, 'positive', colorsList[0]);
+      Vue.set(this.colors, 'negative', colorsList[1]);
     },
     colSize: function(label){
       var count = 0;
@@ -109,6 +114,12 @@ var app = new Vue({
         count += docs[i].label === label ? 1 : 0;
       }
       return count;
+    },
+    closeModal: function(){
+      this.showModal=false;
+    },
+    openModal: function(){
+      this.showModal=true;
     },
     filterDocs: function(label){
       return this.docs.filter(function(doc){
@@ -118,9 +129,8 @@ var app = new Vue({
     findMaxTopic: function(){
       console.log('MAXTOPIC');
       var max = 0;
-      var self = this
-      for (var i=0; i<this.topics.length; i++){
-        var arr = this.docs.map(obj => obj[this.topics[i].topic]);
+      for (var i=0; i<this.anchors.length; i++){
+        var arr = this.docs.map(obj => obj[this.anchors[i].topic]);
         var newMax = Math.max.apply(Math, arr);
         max = (newMax>max) ? newMax : max;
       }
@@ -177,45 +187,54 @@ var app = new Vue({
       Vue.set(this.drag, 'dragging', false);
     },
     selectDocument: function(doc){
-      this.unselectTopic(this.selectedTopic);
-      if (this.selectedDoc.docNum === doc.docNum){
+      this.unselectAnchor(this.selectedAnchor);
+      if (this.selectedDoc.docId === doc.docId){
         this.unselectDocument(doc);
       }
       else{
         this.unselectDocument(this.selectedDoc)
         this.selectedDoc = doc;
         doc.selected = true;
-        $('#doc'+doc.docNum).addClass('selected');
+        $('#doc'+doc.docId).addClass('selected');
       }
     },
     unselectDocument(doc){
-      $('#doc'+doc.docNum).removeClass('selected');
+      $('#doc'+doc.docId).removeClass('selected');
       this.selectedDoc = {};
       doc.selected = false;
     },
-    selectTopic: function(topic){
+    selectAnchor: function(anchor){
       this.unselectDocument(this.selectedDoc);
-      if (this.selectedTopic.topicNum === topic.topicNum){
-      this.unselectTopic(topic);
+      if (this.selectedAnchor.anchorId === anchor.anchorId){
+      this.unselectAnchor(anchor);
       }
       else {
-      this.selectedTopic = topic;
+      this.selectedAnchor = anchor;
       }
     },
-    unselectTopic: function(topic){
-      this.selectedTopic = {};
+    unselectAnchor: function(anchor){
+      this.selectedAnchor = {};
     },
-    getDocByNumber: function(number){
-      for (var i=0; i<this.docs.length; i++){
-        if (this.docs[i].docNum === number)
-          return this.docs[i];
+    getDocById: function(number){
+      for (var i=0; i<this.unlabeledDocs.length; i++){
+        if (this.unlabeledDocs[i].docId === number)
+          return this.unlabeledDocs[i];
       }
+    },
+    sortAnchors: function(label){
+      this.anchors.sort((a,b) => {
+        return label.anchorIdToValue[a.anchorId] - label.anchorIdToValue[b.anchorId]
+      });
     },
     heatmap: function(value, color){
       //if (!Array.isArray(rgb))
       //  var rgb = [rgb.r, rgb.g, rgb.b];
       //rgb=[52,119,220]
-      if (typeof(color) === "string"){
+      //return 'blue'
+      //return   '#FE8000'
+      //return '#191919'
+
+      if (typeof(color) === 'string'){
         var rgb = hexToRgb(color);
         rgb = [rgb.r, rgb.g, rgb.b];
       }
@@ -232,7 +251,9 @@ var app = new Vue({
       return clr;
     },
     labelColor(label, fraction=3){
-      return this.heatmap(this.maxTopic/fraction, this.colors[label]);
+      return 'blue';
+      //return this.heatmap(this.maxTopic/fraction, this.colors[label]);
     },
   }, //End methods
 });
+

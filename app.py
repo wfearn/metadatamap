@@ -26,7 +26,7 @@ THETA_ATTR = 'theta'
 PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs on the web
-UNLABELED_COUNT = 30
+UNLABELED_COUNT = 25
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
@@ -35,7 +35,7 @@ SHUFFLE_SEED = None #8448
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 num_topics = 20
-prelabeled_size = 100
+prelabeled_size = 5000
 label_weight = 1
 
 # Does NOT change pickle name. Changing these params requires making a clean version (run program
@@ -89,8 +89,10 @@ with contextlib.suppress(FileExistsError):
     os.mkdir(folder)
 
 # Naming of this pickle file
-filename = (f'SemiSup{dataset_name}_K{num_topics}_prelabeled{prelabeled_size}'
+filename = (f'SemiSup_{dataset_name}_K{num_topics}_prelabeled{prelabeled_size}'
             + f'_lw{label_weight}_ss{SHUFFLE_SEED}.pickle')
+filename = (f'SemiSup_{dataset_name}_K{num_topics}_prelabeled{prelabeled_size}'
+            + f'_lw{label_weight}.pickle')
 full_filename = os.path.join(folder, filename)
 
 # Checks to see if on second stage initializaiton for Flask
