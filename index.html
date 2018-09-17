@@ -2,8 +2,9 @@
 <html>
   <head>
     <link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet">
-    <link rel="stylesheet" href="static/styles.css"/>
-    <link rel="stylesheet" href="static/modal.css"/>
+    <link rel="stylesheet" href="static/styles/style.css"/>
+    <link rel="stylesheet" href="static/styles/modal.css"/>
+    <link rel="stylesheet" href="static/styles/autocomplete.css"/>
     <title>Vue DragTable</title>
   </head>
   <body>
@@ -42,7 +43,13 @@
               <button v-on:click="openModal()">Edit Anchors</button>
               <!-- &rarr; -->
             </th>
-            <th>{{ labels[0].count }} documents labeled "{{ labels[0].label }}"</th>
+            <th v-for="label in [labels[0]]"
+                class=""
+                v-on:dragover.prevent
+                v-on:drop="assignDocLabel(label)"
+                v-on:dragend="assignDocLabel(label)">
+              {{ label.count }} documents labeled "{{ label.label }}"
+            </th>
             <th v-for="doc in unlabeledDocs"
                 class="doc-title"
                 v-bind:style="{'background-color': 'grey'}"
@@ -62,7 +69,16 @@
                     </div>
                   </th>
 
-            <th>{{ labels[1].count }} documents labeled "{{ labels[1].label }}"</th>
+            <th v-if="unlabeledDocs.length === 0"
+                v-bind:style="{'background-color': 'grey'}" >
+              No unlabeled documents remaining
+            </th>
+            <th v-for="label in [labels[1]]"
+                class=""
+                v-on:dragover.prevent
+                v-on:drop="assignDocLabel(label)"
+                v-on:dragend="assignDocLabel(label)">
+              {{ label.count }} documents labeled "{{ label.label }}"
           </tr>
           <tr v-for="anchor in anchors">
             <td
@@ -77,18 +93,20 @@
                 v-on:dragleave="dragLeave(anchor, 'anchor'+anchor.anchorId, anchors)"
                 v-on:drop="dropItem(anchor, 'anchor'+anchor.anchorId, anchors)" >
                 <span v-for="word in anchor.anchorWords"
-                      class="anchor-word">
+                      class="anchor-word word-box">
                   {{ word }}
                 </span>
               </td>
 
             <!--<td v-bind:style="{'background-color':
                 colors[labels[0].label]}" ></td>-->
-            <td v-bind:style="{'background-color':
-            heatmap(labels[0].anchorIdToValue[anchor.anchorId],
-            colors[labels[0].label])}" >
+            <td v-for="label in [labels[0]]"
+                v-bind:style="{'background-color':
+                heatmap(label.anchorIdToValue[anchor.anchorId],
+                colors[label.label],
+                Math.max(...Object.values(label.anchorIdToValue)))}" >
               <span>
-                {{ parseFloat(labels[0].anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+                {{ parseFloat(label.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
               </span>
             </td>
             <td v-for="doc in unlabeledDocs"
@@ -103,16 +121,24 @@
                 </span>
               </span>
             </td>
-            <td v-bind:style="{'background-color':
-            heatmap(labels[1].anchorIdToValue[anchor.anchorId],
-            colors[labels[1].label])}" >
+            <td v-if="unlabeledDocs.length === 0"
+                v-bind:style="{'background-color': 'white'}" ></td>
+            <td v-for="label in [labels[1]]"
+                v-bind:style="{'background-color':
+                heatmap(label.anchorIdToValue[anchor.anchorId],
+                colors[label.label],
+                Math.max(...Object.values(label.anchorIdToValue)))}" >
               <span>
-                {{ parseFloat(labels[1].anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+                {{ parseFloat(label.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
               </span>
             </td>
           </tr>
         </tbody>
       </table>
+      <div>
+        <button v-on:click="sendUpdate">Update</button>
+        <button v-on:click="getAccuracy">Get Accuracy</button>
+      </div>
       <div v-if="selectedDoc.docId" class="document-info">
         <h2>Doc Number: {{ selectedDoc.docId }}</h2>
         <div>
@@ -149,38 +175,69 @@
           </div>
         </template>
       </div> <!-- End Topic Info -->
-    <transition name="fade">
-    <div class="modal-shell"
-         v-if="showModal"
-         v-on:click="closeModal()">
-      <div class="modal-content" v-on:click.stop>
-        <div class="modal-header">
-          This is modal Header
-          <button class="btn-close"
-                  v-on:click="closeModal()">
-            &times;
-          </button>
-        </div>
-        <div class="modal-body">
-          <table>
-            <tbody>
-              <tr>
-                <th>Anchors</th>
-                <th>Topic Words</th>
-              </tr>
-              <tr v-for="anchor in anchors">
-                <td>{{ anchor.anchorWords }}</td>
-                <td>{{ anchor.topicWords }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="modal-footer">
-          This is modal footer
+    <transition name="fade"> <!-- MODAL -->
+      <div class="modal-shell"
+           v-show="showModal"
+           v-on:click="closeModal()">
+        <div class="modal-content" v-on:click.stop>
+          <div class="modal-header">
+            This is modal Header
+            <button class="btn-close"
+                    v-on:click="closeModal()">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <table>
+              <tbody>
+                <tr>
+                  <th>Anchors</th>
+                  <th>Topic Words</th>
+                </tr>
+                <tr v-for="anchor in anchors">
+                  <td>
+                    <span v-for="anchorWord in anchor.anchorWords"
+                          class="word-box">
+                      {{ anchorWord }}
+                    </span>
+                    <span>
+                      <input class="autocomplete-input"
+                             type="text"
+                             v-model="anchor.autocompleteInput"
+                             v-on:input="onAutocompleteChange(anchor.autocompleteInput)"/>
+                      <ul v-show="autocompleteResults.length > 0"
+                          class="autocomplete-results">
+                        <li v-for="(result, i) in autocompleteResults"
+                            v-bind:key="i"
+                            class="autocomplete-result">
+                          {{ result }}
+                        </li>
+                      </ul>
+                    </span>
+                  </td>
+                  <td>
+                    <span v-for="topicWord in anchor.topicWords"
+                          class="word-box">
+                      {{ topicWord }}
+                    <span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            This is modal footer
+          </div>
         </div>
       </div>
-    </div>
     </transition>
+    <transition name="fade">
+      <div v-if="loading"
+           class="modal-shell">
+        <img v-bind:src="'static/images/spinner.gif'"></img>
+      </div>
+    </transition>
+
 
 
 

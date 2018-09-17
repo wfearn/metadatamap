@@ -61,10 +61,13 @@ tr:hover:nth-child(n) {
   max-width: None;
   font-size: 16px;
 }
-.anchor-container{
-  min-width: 100px;
+td.anchor-container{
+  height: 45px; /* Perfect for 2 anchors tall */
+  height: 20px;
+  min-width: 175px;
   max-width: 250px;
   font-size: 14px;
+  padding: 3px 2px;
 }
 .very-small{
   font-size: 9px;
@@ -155,8 +158,12 @@ button {
 }
 
 .anchor-word{
+
+}
+
+.word-box{
   border: 1px solid #999;
-  padding: 2px;
+  padding: 1px;
   margin: 1px;
   border-radius: 3px;
   display: inline-block;

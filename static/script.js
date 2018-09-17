@@ -25,6 +25,8 @@ var app = new Vue({
     isMounted: false,
     colorsChosen: false,
     showModal: false,
+    autocompleteInput: '',
+    autocompleteResults: [],
     },
   components: {
   //  'modal': Modal,
@@ -80,23 +82,37 @@ var app = new Vue({
         this.anchors = response.data.anchors;
         this.unlabeledDocs = response.data.unlabeledDocs;
         this.labels = response.data.labels;
+        this.labeled_docs = [];
         this.loading = false;
         this.isMounted = true;
         if (!this.colorsChosen){
           this.chooseColors();
           this.colorsChosen = true;
         }
-
       }).catch(error => {
         console.log('Error in /api/update');
         console.log(error);
       });
     },//end sendUpdate function
+    getAccuracy: function(){
+      console.log('getAccuracy');
+      this.loading = true;
+      axios.post('/api/accuracy', {
+        anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords))
+      }).then(response => {
+        this.accuracy = response.data.accuracy;
+        this.loading = false;
+      }).catch(error => {
+        console.log('Error in /api/accuracy');
+        console.log(error);
+        this.loading = false;
+      });
+    },
     chooseColors: function(){
-      var colorsList = ['#191919', '#FE8000','#191919', , '#FE8000','#8B0000', '#4C4CFF','#0000FF', '#228B22', '#4B0082',
-                        '#FFA500', '#008080', '#FF4500'];
+      console.log('chooseColors');
+      //var colorsList = ['#191919', '#FE8000','#191919', , '#FE8000','#8B0000', '#4C4CFF','#0000FF', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
       //Christmas
-      colorsList = ['#bb2528', '#146b3a']
+      var colorsList = ['#bb2528', '#146b3a']
       //Halloween
       //colorsList = ['#191919', '#FE8000']
 
@@ -105,8 +121,11 @@ var app = new Vue({
       //   console.log(this.labels[i].label, colorsList[i%lenColors]);
       //   Vue.set(this.colors, this.labels[i].label, colorsList[i%lenColors]);
       // }
-      Vue.set(this.colors, 'positive', colorsList[0]);
-      Vue.set(this.colors, 'negative', colorsList[1]);
+      Vue.set(this.colors, 'negative', colorsList[0]);
+      console.log(this.colors)
+      Vue.set(this.colors, 'positive', colorsList[1]);
+      console.log(this.colors)
+      console.log(colorsList)
     },
     colSize: function(label){
       var count = 0;
@@ -154,6 +173,13 @@ var app = new Vue({
    //   el.removeClass('dragover');
    // },
     dropItem: function(item, id, arr){
+      if (!((item.hasOwnProperty('docId') &&
+             this.drag.hasOwnProperty('docId'))
+            ||
+            (item.hasOwnProperty('anchorId') &&
+             this.drag.hasOwnProperty('anchorId'))
+         )){ return; }
+
       console.log('dropItem');
       var indexItem = arr.indexOf(this.drag);
       var indexTarget = arr.indexOf(item);
@@ -163,6 +189,12 @@ var app = new Vue({
       Vue.set(this.drag, 'dragging', false);
     },
     dragOver: function(item, id, arr){
+      if (!((item.hasOwnProperty('docId') &&
+             this.drag.hasOwnProperty('docId'))
+            ||
+            (item.hasOwnProperty('anchorId') &&
+             this.drag.hasOwnProperty('anchorId'))
+         )){ return; }
       console.log('dragOver');
       $('#'+id).addClass('dragover');
       console.log(id);
@@ -226,7 +258,30 @@ var app = new Vue({
         return label.anchorIdToValue[a.anchorId] - label.anchorIdToValue[b.anchorId]
       });
     },
-    heatmap: function(value, color){
+    getLabelCount: function(labelId){
+      var label = this.labels[labelId].label
+      return this.labels[labelId].count + this.labeledDocs.filter(doc => doc.userLabel === label).length;
+    },
+    assignDocLabel: function(label){
+      if (!(this.drag.hasOwnProperty('docId'))){
+        return;
+      }
+      var doc = this.drag;
+      Vue.set(doc, 'userLabel', label.label);
+      this.labeledDocs.push(doc);
+      var index = this.unlabeledDocs.indexOf(doc);
+      this.unlabeledDocs.splice(index, 1)
+
+      for (var key in label.anchorIdToValue){
+        if (label.anchorIdToValue.hasOwnProperty(key)){
+          let newVal = (label.anchorIdToValue[key]*label.count + doc.anchorIdToValue[key])/(label.count+1);
+          Vue.set(label.anchorIdToValue, key, newVal);
+        }
+      }
+      Vue.set(label, 'count', label.count+1);
+
+    },
+    heatmap: function(value, color, max=this.maxTopic){
       //if (!Array.isArray(rgb))
       //  var rgb = [rgb.r, rgb.g, rgb.b];
       //rgb=[52,119,220]
@@ -241,7 +296,6 @@ var app = new Vue({
 
       var nGroups = 100;
       var rgbEnd = [255, 255, 255];
-      var max = this.maxTopic;
       pos = Math.round((value/max)*nGroups).toFixed(0);
 
       getColor = function(cIndex){
@@ -253,6 +307,13 @@ var app = new Vue({
     labelColor(label, fraction=3){
       return 'blue';
       //return this.heatmap(this.maxTopic/fraction, this.colors[label]);
+    },
+    onAutocompleteChange: function(input){
+      if (input.length<4){
+        return;
+      }
+      this.autocompleteResults = this.vocab.filter(word => {
+        return word.toLowerCase().indexOf(input.toLowerCase()) > -1});
     },
   }, //End methods
 });
