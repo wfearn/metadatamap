@@ -26,23 +26,37 @@ THETA_ATTR = 'theta'
 PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs on the web
-UNLABELED_COUNT = 25
+UNLABELED_COUNT = 10
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
+
+# Number of labels in our data
+LABELS_COUNT = 2
+
+# Param for harmonic mean (In tandem_anchors)
+ta_epsilon = 1e-15
+
+# Epsilon for recover topics
+rt_epsilon = 1e-5
+
+# Name of the user_label (for metadata on each document)
+user_label = 'user_label'
 
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 num_topics = 20
-prelabeled_size = 5000
+prelabeled_size = 30000
 label_weight = 1
 
 # Does NOT change pickle name. Changing these params requires making a clean version (run program
 #  and include the -c or --clean argument)
 smoothing = 1e-4
-epsilon = 1e-5
-user_label = 'user_label'
+
+
+if prelabeled_size < LABELS_COUNT:
+    raise ValueError("prelabled_size cannot be less than LABELS_COUNT")
 
 class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
     pass
@@ -67,7 +81,7 @@ clean = args.clean
 
 # Set the attr_name for the true label
 # 'binary_rating' contains 'negative' and 'positive' for yelp, amz, and TA
-attr_name = 'binary_rating'
+GOLD_ATTR_NAME = 'binary_rating'
 
 if dataset_name == 'yelp':
     corpus = ankura.corpus.yelp()
@@ -105,33 +119,47 @@ def load_initial_data():
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
-    # Split to labeled and unlabeled
+    # Split to labeled and unlabeled (80-20)
     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
+    # Must have at least one labeled for each label
+    while (len({doc.metadata[GOLD_ATTR_NAME] for doc in train_corpus.documents}) < LABELS_COUNT):
+        split = ankura.pipeline.train_test_split(corpus, return_ids=True)
+        (train_ids, train_corpus), (test_ids, test_corpus) = split
+
+
     print('***Constructing Q...')
-    Q, labels = ankura.anchor.build_labeled_cooccurrence(train_corpus, attr_name, labeled_ids,
-                                                        label_weight=label_weight, smoothing=smoothing)
+    Q, labels, D = ankura.anchor.build_labeled_cooccurrence(train_corpus,
+                                                        GOLD_ATTR_NAME, labeled_ids,
+                                                        label_weight=label_weight,
+                                                        smoothing=smoothing,
+                                                        get_d=True)
 
     gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(train_corpus, Q,
                                                            k=num_topics, return_indices=True)
     gs_anchor_vectors = Q[gs_anchor_indices]
     gs_anchor_tokens = [[train_corpus.vocabulary[index]] for index in gs_anchor_indices]
 
-    return (Q, labels, train_ids, train_corpus,
+    return (Q, D, labels, train_ids, train_corpus,
             test_ids, test_corpus, gs_anchor_vectors,
             gs_anchor_indices, gs_anchor_tokens)
 
 labeled_ids = set(range(prelabeled_size))
 
-(Q, labels, train_ids, train_corpus,
+(Q, D, labels, train_ids, train_corpus,
     test_ids, test_corpus, gs_anchor_vectors,
     gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
 
 for doc_id in labeled_ids:
-    doc = train_corpus.documents[doc_id]
+    try:
+        doc = train_corpus.documents[doc_id]
+    except:
+        print(doc_id)
+        print(len(train_corpus.documents))
+        count+=1
     # Assign "user_label" to be the correct label
-    doc.metadata[user_label] = doc.metadata[attr_name]
+    doc.metadata[user_label] = doc.metadata[GOLD_ATTR_NAME]
 
 web_unlabeled_ids = set()
 unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
@@ -146,9 +174,61 @@ def index():
 def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
 
+
+
+@app.route('/api/accuracy', methods=['POST'])
+def api_accuracy():
+    data = request.get_json()
+    anchor_tokens = data.get('anchor_tokens')
+    if not anchor_tokens:
+        anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_vectors
+    else:
+        anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
+                                                     train_corpus, epsilon=ta_epsilon)
+
+    start = time.time()
+    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=rt_epsilon, get_c=True)
+    print('***Time - recover_topics:', time.time()-start)
+
+    # Gensim assignment
+    start=time.time()
+    ankura.topic.gensim_assign(test_corpus, topics, theta_attr=THETA_ATTR)
+    print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
+
+    start = time.time()
+    topic_summary = ankura.topic.topic_summary(topics[:len(train_corpus.vocabulary)], train_corpus)
+    print('***Time - topic_summary:', time.time()-start)
+
+    start = time.time()
+    # OPTIMIZE This will be slower than necessary because we will be recounting all
+    # the documents that have a specific label every time. Look into changing
+    # how we use the prior_attr_name, or maybe manipulate the corpus outside of
+    # this function. More thought needs to be put into this first
+    clf = ankura.topic.free_classifier_dream(train_corpus, attr_name=user_label,
+                                             labeled_docs=labeled_ids, topics=topics,
+                                             C=C, labels=labels)
+                                             #prior_attr_name=PRIOR_ATTR)
+    print('***Time - Get Classifier:', time.time()-start, '-Could be optimized')
+
+
+    contingency = ankura.validate.Contingency()
+
+    start=time.time()
+    for doc in test_corpus.documents:
+        gold = doc.metadata[GOLD_ATTR_NAME]
+        pred = clf(doc)
+        contingency[gold, pred] += 1
+    print('***Time - Classify:', time.time()-start)
+    print('***Accuracy:', contingency.accuracy(),
+          f'on {len(test_corpus.documents)} test documents')
+    return jsonify(accuracy=contingency.accuracy())
+
+# with open('BESTAMZ.txt', 'r') as infile:
+#     AMZ_BEST = [line.strip().split(' ') for line in infile.readlines()]
+
 @app.route('/api/update', methods=['POST'])
 def api_update():
-    global Q
+    global Q, D
     data = request.get_json()
     print(data)
 
@@ -160,10 +240,15 @@ def api_update():
 
     anchor_tokens = data.get('anchor_tokens')
     if not anchor_tokens:
-        anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_indices
+        # anchor_tokens = AMZ_BEST
+        # anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
+        #                                              train_corpus,
+        #                                              epsilon=ta_epsilon)
+        anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_vectors
     else:
+        print('Sent tokens')
         anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                      train_corpus, epsilon=epsilon)
+                                                      train_corpus, epsilon=ta_epsilon)
 
     newly_labeled_docs = data.get('labeled_docs')
 
@@ -177,23 +262,31 @@ def api_update():
     for i in range(UNLABELED_COUNT - len(web_unlabeled_ids)):
         web_unlabeled_ids.add(unlabeled_ids.pop())
 
+    newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
+
     # QUICK Q update with newly_labeled_docs
     # TODO need to fix quickQ to take into account the number of documents...
-    start = time.time()
-    Q = quick_Q(Q, train_corpus, user_label, labeled_ids, newly_labeled_docs,
-                label_weight=label_weight, smoothing=smoothing)
-    print('***Time - quick_Q:', time.time()-start)
+    if newly_labeled_doc_ids:
+        start = time.time()
+        Q, D = ankura.anchor.quick_Q(Q, train_corpus, user_label, labeled_ids,
+                    newly_labeled_doc_ids, labels,
+                    D, label_weight=label_weight, smoothing=smoothing)
+        print('***Time - quick_Q:', time.time()-start)
 
     # Get anchor vectors
+    print('*'*50)
     start = time.time()
+    print(anchor_vectors[1])
     anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                  train_corpus, epsilon=1e-15)
+                                                  train_corpus, epsilon=ta_epsilon)
+    print(anchor_vectors[1])
+    print('*'*50)
     print('***Time - tandem_anchors:', time.time()-start)
 
     # TODO OPTIMIZE Look into using the parallelism keyword or some other way
     #   to make this faster, as it is currently the longest thing by a long shot.
     start = time.time()
-    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=epsilon, get_c=True)
+    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=rt_epsilon, get_c=True)
     print('***Time - recover_topics:', time.time()-start)
 
     start=time.time()
@@ -241,7 +334,7 @@ def api_update():
           {'docId': doc_id,
            'text': doc.text,
            'tokens': [train_corpus.vocabulary[tok.token] for tok in doc.tokens],
-           'trueLabel': doc.metadata[attr_name], # FIXME Needs to be taken out
+           'trueLabel': doc.metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out
                                                  #       before user study
            'prediction': {'label': predict_label,
                           'relativeDif': relative_dif(predict_probs)},
@@ -293,6 +386,8 @@ def api_update():
 # Maybe
 # POST - Something about reshuffling unlabelable documents?
 # @app.route('', methods=['POST'])
+
+
 
 
 
@@ -457,8 +552,9 @@ def get_random_topical_distributions(doc_count=50):
 #   to build the original Q. Currently, this will be close but not exact to what
 #   quickQ *should* do.
 # TODO Move this into Ankura2
-def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
+def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs, labels, D,
                                label_weight=1, smoothing=1e-7):
+
     V = len(corpus.vocabulary)
     '''This part feels a bit shady to me. I don't think sets and dictionaries
      are gaurenteed to iterate in the same order. Perhaps we should cast the
@@ -466,19 +562,19 @@ def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
      it performs.
      Also, could consider returning and holding onto something from the
      construction of Q that would be the label dictionary or something'''
-    label_set = set()
-    for d, doc in enumerate(corpus.documents):
-        if d in labeled_docs:
-            label_set.add(doc.metadata[attr_name])
-    #label_set = sorted(list(label_set))
-    label_set = {l: V + i for i, l in enumerate(label_set)}
+    label_set = {l: V + i for i, l in enumerate(labels)}
     K = len(label_set)
-    Q = Q.copy()
-    D = len(corpus.documents) # FIXME this line
+
+    # Undo the normalization of Q (before we change D)
+    Q = Q.copy() * D
+
     H = np.zeros((V+K, V+K))
     for d in newly_labeled_docs:
         doc = corpus.documents[d]
         n_d = len(doc.tokens)
+        if n_d <= 1:
+            continue
+        D+=1
 
         # Subtract the unlabeled effect of this document
         norm = 1 / (n_d * (n_d - 1) + 2 * n_d * K * smoothing + K * (K - 1) * smoothing**2)
@@ -499,7 +595,6 @@ def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
         # Add the labeled effect of this document
         norm = 1 / ((n_d + label_weight) * (n_d + label_weight - 1))
         index = label_set[doc.metadata[attr_name]]
-        print(index, end=' ')
         for i, w_i in enumerate(doc.tokens):
             for j, w_j in enumerate(doc.tokens):
                 if i == j:
@@ -508,8 +603,8 @@ def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs,
             H[w_i.token, index] += label_weight * norm
             H[index, w_i.token] += label_weight * norm
         H[index, index] += label_weight * (label_weight - 1) * norm
-    Q += (H/D)
-    return Q
+    Q += H
+    return Q/D, D
 
 if __name__ =="__main__":
     app.run(debug=True)
