@@ -316,11 +316,14 @@ var app = new Vue({
         return word.toLowerCase().indexOf(input.toLowerCase()) > -1});
     },
     addWord: function(e, anchor){
-      var word = anchor.autocompleteInput.toLowerCase();
+      var word = anchor.autocompleteInput.toLowerCase().trim();
       console.log('attempt to add', word);
       if (this.vocab.includes(word)){
         anchor.anchorWords.push(word);
         anchor.autocompleteInput = "";
+      }
+      else{
+        alert(word + ' is not in the vocabulary');
       }
     },
     deleteWord: function(anchor, index){
