@@ -6,11 +6,14 @@ import time
 from collections import defaultdict, Counter
 import argparse
 import os
+import sys
 import contextlib
 import random
 
 # Init flask app
 app = Flask(__name__)
+
+DEBUG = True
 
 # I think this is unnecessary for what we are doing as there are no cookies
 # app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
@@ -47,7 +50,7 @@ user_label = 'user_label'
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 num_topics = 20
-prelabeled_size = 30000
+prelabeled_size = 2
 label_weight = 1
 
 # Does NOT change pickle name. Changing these params requires making a clean version (run program
@@ -134,7 +137,9 @@ def load_initial_data():
                                                         GOLD_ATTR_NAME, labeled_ids,
                                                         label_weight=label_weight,
                                                         smoothing=smoothing,
-                                                        get_d=True)
+                                                        get_d=True,)
+                                                        #labels=['negative',
+                                                        #        'positive'])
 
     gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(train_corpus, Q,
                                                            k=num_topics, return_indices=True)
@@ -151,6 +156,8 @@ labeled_ids = set(range(prelabeled_size))
     test_ids, test_corpus, gs_anchor_vectors,
     gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
 
+print(labels)
+
 for doc_id in labeled_ids:
     try:
         doc = train_corpus.documents[doc_id]
@@ -160,6 +167,7 @@ for doc_id in labeled_ids:
         count+=1
     # Assign "user_label" to be the correct label
     doc.metadata[user_label] = doc.metadata[GOLD_ATTR_NAME]
+    # print(doc_id)
 
 web_unlabeled_ids = set()
 unlabeled_ids = set(range(prelabeled_size, len(train_corpus.documents)))
@@ -175,10 +183,34 @@ def api_vocab():
     return jsonify(vocab=corpus.vocabulary)
 
 
+@app.route('/api/addcorrect', methods=['POST'])
+def api_add_correct():
+    global Q, D
+
+    data = request.form
+    n = int(data.get('n'))
+    newly_labeled_doc_ids = set()
+
+    for i in range(n):
+        doc_id = unlabeled_ids.pop()
+        newly_labeled_doc_ids.add(doc_id)
+        labeled_ids.add(doc_id)
+        train_corpus.documents[doc_id].metadata[user_label] = (
+            train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME])
+
+    start = time.time()
+    Q = ankura.anchor.quick_Q(Q, train_corpus, GOLD_ATTR_NAME, labeled_ids,
+                newly_labeled_doc_ids, labels,
+                D, label_weight=label_weight, smoothing=smoothing)
+    print('***Time - quick_Q:', time.time()-start)
+
+    print(len(labeled_ids))
+
+    return jsonify(labeled_count=len(labeled_ids))
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
-    data = request.get_json()
+    data = request.get_json(force=True)
     anchor_tokens = data.get('anchor_tokens')
     if not anchor_tokens:
         anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_vectors
@@ -238,7 +270,7 @@ def api_update():
     #                         user_label: label},...]
     #        }
 
-    anchor_tokens = data.get('anchor_tokens')
+    anchor_tokens = [t for t in data.get('anchor_tokens') if t]
     if not anchor_tokens:
         # anchor_tokens = AMZ_BEST
         # anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
@@ -249,6 +281,7 @@ def api_update():
         print('Sent tokens')
         anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
                                                       train_corpus, epsilon=ta_epsilon)
+    print(anchor_tokens)
 
     newly_labeled_docs = data.get('labeled_docs')
 
@@ -268,7 +301,7 @@ def api_update():
     # TODO need to fix quickQ to take into account the number of documents...
     if newly_labeled_doc_ids:
         start = time.time()
-        Q, D = ankura.anchor.quick_Q(Q, train_corpus, user_label, labeled_ids,
+        Q = ankura.anchor.quick_Q(Q, train_corpus, user_label, labeled_ids,
                     newly_labeled_doc_ids, labels,
                     D, label_weight=label_weight, smoothing=smoothing)
         print('***Time - quick_Q:', time.time()-start)
@@ -607,7 +640,7 @@ def quick_Q(Q, corpus, attr_name, labeled_docs, newly_labeled_docs, labels, D,
     return Q/D, D
 
 if __name__ =="__main__":
-    app.run(debug=True)
+    app.run(debug=DEBUG, host='0.0.0.0')
 
 ################
 # ROUGH PROCESS

@@ -117,7 +117,7 @@ li {
     display: flex;
     align-items: center;
 }
-
+/*
 .delete {
     display: none;
     margin-left: auto;
@@ -126,6 +126,7 @@ li {
 li:hover .delete {
     display: block;
 }
+*/
 
 label {
     width: 400px;
@@ -136,6 +137,10 @@ label {
 }
 
 /* Form */
+
+.add-anchor-form {
+  display: inline;
+}
 
 input[type=checkbox] {
     transform: scale(1.5);
@@ -168,3 +173,17 @@ button {
   border-radius: 3px;
   display: inline-block;
 }
+
+.delete{
+  visibility: hidden;
+  padding: 1px;
+  border: 1px dotted black;
+}
+.delete:hover {
+  cursor: pointer;
+}
+.word-box:hover .delete{
+  visibility: visible;
+}
+
+

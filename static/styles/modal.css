@@ -11,6 +11,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: auto;
 }
 
 .modal-content {

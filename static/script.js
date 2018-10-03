@@ -315,6 +315,27 @@ var app = new Vue({
       this.autocompleteResults = this.vocab.filter(word => {
         return word.toLowerCase().indexOf(input.toLowerCase()) > -1});
     },
+    addWord: function(e, anchor){
+      var word = anchor.autocompleteInput.toLowerCase();
+      console.log('attempt to add', word);
+      if (this.vocab.includes(word)){
+        anchor.anchorWords.push(word);
+        anchor.autocompleteInput = "";
+      }
+    },
+    deleteWord: function(anchor, index){
+      console.log(index);
+      anchor.anchorWords.splice(index, 1);
+    },
+    addAnchor: function(){
+      var anchor = {anchorId: 'x',
+                    anchorWords: [],
+                    topicWords: []};
+      this.anchors.push(anchor);
+    },
+    deleteAnchor: function(anchorIndex){
+      this.anchors.splice(anchorIndex, 1);
+    },
   }, //End methods
 });
 

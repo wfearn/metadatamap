@@ -1,5 +1,6 @@
 .autocomplete-input {
-  width: 100%;
+  width: 90%;
+  margin: 0px 5px;
 }
 .autocomplete-input:active {
   visibility: visible;

@@ -52,7 +52,7 @@
             </th>
             <th v-for="doc in unlabeledDocs"
                 class="doc-title"
-                v-bind:style="{'background-color': 'grey'}"
+                v-bind:style="{'background-color': colors[doc.prediction.label]}"
                 v-bind:id="'doc'+doc.docId"
                 v-on:click="selectDocument(doc)"
                 draggable="true"
@@ -62,7 +62,7 @@
                 v-on:dragover.prevent
                 v-on:dragleave="dragLeave(doc, 'doc'+doc.docId, unlabeledDocs)"
                 v-on:drop="dropItem(doc, 'doc'+doc.docId, unlabeledDocs)">
-                    <div class="vertical-text">{{ doc.docId }}
+                    <div class="">{{ doc.docId }}
                       <span v-if="doc.trueLabel !== doc.prediction.label">
                         &#10006;
                       </span>
@@ -112,7 +112,7 @@
             <td v-for="doc in unlabeledDocs"
                 v-bind:style="{'background-color':
                 heatmap(doc.anchorIdToValue[anchor.anchorId],
-                colors[doc.prediction.label])}" >
+                        '#333333')}" >
               <span v-show="doc.dragging || doc.selected || true"
                     class="very-small">
                 {{ parseFloat(doc.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
@@ -181,7 +181,7 @@
            v-on:click="closeModal()">
         <div class="modal-content" v-on:click.stop>
           <div class="modal-header">
-            This is modal Header
+            This is the modal Header
             <button class="btn-close"
                     v-on:click="closeModal()">
               &times;
@@ -191,20 +191,32 @@
             <table>
               <tbody>
                 <tr>
+                  <th></th>
                   <th>Anchors</th>
                   <th>Topic Words</th>
                 </tr>
-                <tr v-for="anchor in anchors">
+                <tr v-for="(anchor, anchorIndex) in anchors">
                   <td>
-                    <span v-for="anchorWord in anchor.anchorWords"
+                    <button v-on:click="deleteAnchor(anchorIndex)">X</button>
+                  </td>
+                  <td>
+                    <span v-for="(anchorWord, index) in anchor.anchorWords"
                           class="word-box">
                       {{ anchorWord }}
+                      <span class="delete"
+                            v-on:click="deleteWord(anchor, index)">
+                      X
+                      </span>
                     </span>
                     <span>
-                      <input class="autocomplete-input"
-                             type="text"
-                             v-model="anchor.autocompleteInput"
-                             v-on:input="onAutocompleteChange(anchor.autocompleteInput)"/>
+                      <form v-on:submit.prevent
+                            class="add-anchor-form">
+                        <input class="autocomplete-input"
+                               type="text"
+                               v-model="anchor.autocompleteInput"
+                               v-on:input="onAutocompleteChange(anchor.autocompleteInput)"
+                               v-on:keyup.enter="addWord($event, anchor)"/>
+                      </form>
                       <ul v-show="autocompleteResults.length > 0"
                           class="autocomplete-results">
                         <li v-for="(result, i) in autocompleteResults"
@@ -224,9 +236,10 @@
                 </tr>
               </tbody>
             </table>
-          </div>
+            <button v-on:click="addAnchor">Add anchor </button>
+          </div> <!-- Modal body -->
           <div class="modal-footer">
-            This is modal footer
+            This is the modal footer
           </div>
         </div>
       </div>
