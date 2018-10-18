@@ -84,7 +84,7 @@ def parse_args():
 
 args = parse_args()
 DATASET_NAME = args.dataset
-port = args.port
+PORT = args.port
 clean = args.clean
 
 
@@ -624,4 +624,4 @@ def api_add_correct():
 
 
 if __name__ =="__main__":
-    app.run(debug=DEBUG, host='0.0.0.0')
+    app.run(debug=DEBUG, host='0.0.0.0', port=PORT)
