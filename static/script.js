@@ -27,6 +27,9 @@ var app = new Vue({
     showModal: false,
     autocompleteInput: '',
     autocompleteResults: [],
+    userId: '',
+    inputId: '',
+    showAnswers: false,
     },
   components: {
   //  'modal': Modal,
@@ -34,7 +37,7 @@ var app = new Vue({
   mounted: function () {
     this.loading = true;
     this.getVocab();
-    this.sendUpdate();
+    //this.sendUpdate();
 
     // Event listener to close the modal on Esc
     document.addEventListener("keydown", (e) => {
@@ -65,6 +68,33 @@ var app = new Vue({
         console.log('error in /api/vocab')
       });
     },
+    getIdData: function(id){
+      if (id === ''){
+        alert('That user id was not found');
+        return;
+      }
+      axios.get('/api/checkuserid/'+id).then(response => {
+        this.checked = response.data.hasId;
+        if (response.data.hasId){
+          this.userId = id;
+          this.sendUpdate();
+        }
+        else{
+          alert('That user id was not found');
+        }
+      }).catch(error => {
+        console.log('error in /api/checkuserid')
+      });
+    },
+    getNewUser: function(){
+      axios.post('/api/adduser').then(response => {
+        this.userId = response.data.userId;
+        this.sendUpdate();
+      }).catch(error => {
+        console.log('error in /api/vocab');
+        console.log(error);
+      });
+    },
     sendUpdate: function(){
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
@@ -76,6 +106,7 @@ var app = new Vue({
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
         labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
                                                     user_label: doc.userLabel})),
+        user_id: this.userId,
       }).then(response => {
         console.log(response);
         this.updateData = response.data;
@@ -185,6 +216,13 @@ var app = new Vue({
       var indexTarget = arr.indexOf(item);
       arr.splice(indexItem,1);
       arr.splice(indexTarget,0,this.drag);
+
+      if (this.drag.hasOwnProperty('docId')){
+        this.unselectAllDocs();
+        this.selectDocument(this.drag);
+      }
+
+
       $('#' + id).removeClass('dragover');
       Vue.set(this.drag, 'dragging', false);
     },
@@ -224,6 +262,7 @@ var app = new Vue({
         this.unselectDocument(doc);
       }
       else{
+        this.unselectAllDocs();
         this.unselectDocument(this.selectedDoc)
         this.selectedDoc = doc;
         doc.selected = true;
@@ -234,6 +273,11 @@ var app = new Vue({
       $('#doc'+doc.docId).removeClass('selected');
       this.selectedDoc = {};
       doc.selected = false;
+    },
+    unselectAllDocs: function(){
+      for (var i=0; i<this.unlabeledDocs.length; i++){
+        this.unselectDocument(this.unlabeledDocs[i]);
+      }
     },
     selectAnchor: function(anchor){
       this.unselectDocument(this.selectedDoc);
@@ -266,6 +310,9 @@ var app = new Vue({
       if (!(this.drag.hasOwnProperty('docId'))){
         return;
       }
+
+      this.unselectAllDocs();
+
       var doc = this.drag;
       Vue.set(doc, 'userLabel', label.label);
       this.labeledDocs.push(doc);
