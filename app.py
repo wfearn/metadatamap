@@ -320,6 +320,8 @@ STARTING_LABELED_IDS = set(range(PRELABELED_SIZE))
 (Q, D), (labels, train_ids, train_corpus, test_ids, test_corpus,
          gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
 
+del corpus
+
 
 
 for doc_id in STARTING_LABELED_IDS:

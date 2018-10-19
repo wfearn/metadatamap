@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="static/styles/style.css"/>
     <link rel="stylesheet" href="static/styles/modal.css"/>
     <link rel="stylesheet" href="static/styles/autocomplete.css"/>
-    <title>Vue DragTable</title>
+    <title>MetadataMap</title>
   </head>
   <body>
     <div id="app">
@@ -41,7 +41,10 @@
           </tr>
           <tr>
             <th>
-              <button v-on:click="openModal()">Edit Anchors</button>
+              <button v-if="canEditAnchors"
+                      v-on:click="openModal()">
+                Edit Anchors
+              </button>
               <!-- &rarr; -->
             </th>
             <th v-for="label in [labels[0]]"
@@ -81,7 +84,7 @@
                 v-on:dragend="assignDocLabel(label)">
               {{ label.count }} documents labeled "{{ label.label }}"
           </tr>
-          <tr v-for="anchor in anchors">
+          <tr v-for="anchor in anchors" v-if="showAnchorInfo">
             <td
                 v-bind:id="'anchor' + anchor.anchorId"
                 class="anchor-container"
@@ -154,13 +157,17 @@
           True Label : {{ selectedDoc.trueLabel }}
           <hr/>
         </div>
-        <template v-for="anchor in anchors">
-          <div>
-            <span v-for="word in anchor.anchorWords"> {{ word }} </span>
-            {{ parseFloat(selectedDoc.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
-          </div>
-        </template>
-        <hr/>
+        <div v-if="showAnchorInfo">
+          <template v-for="anchor in anchors">
+            <div>
+              <span v-for="word in anchor.anchorWords">
+                {{ word }}
+              </span>
+              {{ parseFloat(selectedDoc.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+            </div>
+          </template>
+          <hr/>
+        </div>
         <div>
           Tokens : {{ selectedDoc.tokens }}
         </div>

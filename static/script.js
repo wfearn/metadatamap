@@ -30,6 +30,8 @@ var app = new Vue({
     userId: '',
     inputId: '',
     showAnswers: false,
+    showAnchorInfo: false,
+    canEditAnchors: false,
     },
   components: {
   //  'modal': Modal,
