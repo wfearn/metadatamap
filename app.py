@@ -1,5 +1,5 @@
 import ankura
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request, send_from_directory, redirect
 import numpy as np
 import json
 import time
@@ -15,7 +15,7 @@ import pickle
 # Init flask app
 app = Flask(__name__)
 
-DEBUG = True
+DEBUG = False
 
 # I think this is unnecessary for what we are doing as there are no cookies
 # app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
@@ -624,6 +624,16 @@ def api_add_correct():
 
     return jsonify(labeled_count=len(labeled_ids))
 
+@app.errorhandler(404)
+def page_not_found(e):
+    # Rickrolled
+    rollers = [
+               'https://en.wikipedia.org/wiki/Rick_Astley',
+               'https://youtu.be/dQw4w9WgXcQ?t=43',
+               'https://youtu.be/lXMskKTw3Bc?t=24'
+              ]
+    roll = random.choice(rollers)
+    return redirect(roll)
 
 if __name__ =="__main__":
     app.run(debug=DEBUG, host='0.0.0.0', port=PORT)
