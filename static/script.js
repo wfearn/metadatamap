@@ -145,7 +145,6 @@ var app = new Vue({
       console.log('chooseColors');
       //var colorsList = ['#191919', '#FE8000','#191919', , '#FE8000','#8B0000', '#4C4CFF','#0000FF', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
       //Christmas
-      var colorsList = ['#bb2528', '#146b3a']
       //Halloween
       //colorsList = ['#191919', '#FE8000']
 
@@ -154,11 +153,22 @@ var app = new Vue({
       //   console.log(this.labels[i].label, colorsList[i%lenColors]);
       //   Vue.set(this.colors, this.labels[i].label, colorsList[i%lenColors]);
       // }
-      Vue.set(this.colors, 'negative', colorsList[0]);
-      console.log(this.colors)
-      Vue.set(this.colors, 'positive', colorsList[1]);
-      console.log(this.colors)
-      console.log(colorsList)
+      if (this.labels[0].label === 'negative' ||
+          this.labels[0].label === 'positive'){
+        var colorsList = ['#bb2528', '#146b3a']
+        Vue.set(this.colors, 'negative', colorsList[0]);
+        console.log(this.colors)
+        Vue.set(this.colors, 'positive', colorsList[1]);
+        console.log(this.colors)
+        console.log(colorsList)
+      } else {
+        var colorsList = ['#0015bc', '#e9141d']
+        Vue.set(this.colors, 'D', colorsList[0]);
+        console.log(this.colors)
+        Vue.set(this.colors, 'R', colorsList[1]);
+        console.log(this.colors)
+        console.log(colorsList)
+      }
     },
     colSize: function(label){
       var count = 0;

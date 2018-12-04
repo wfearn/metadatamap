@@ -74,7 +74,7 @@ def parse_args():
                 '  for source and dependencies\n \n'),
         formatter_class=CustomFormatter)
     parser.add_argument('dataset', metavar='dataset',
-                        choices=['yelp', 'tripadvisor', 'amazon'],
+                        choices=['yelp', 'tripadvisor', 'amazon', 'congress'],
                         help='The name of a dataset to use in this instance of tbuie')
     parser.add_argument('port', nargs='?', default=5000, type=int,
                         help='Port to be used in hosting the webpage')
@@ -101,6 +101,10 @@ elif DATASET_NAME == 'tripadvisor':
 elif DATASET_NAME == 'amazon':
     corpus = ankura.corpus.amazon()
     LABELS = ['negative', 'positive']
+elif DATASET_NAME == 'congress':
+    corpus = ankura.corpus.congress()
+    LABELS = ['D', 'R']
+    GOLD_ATTR_NAME = 'party'
 
 # Set seed and shuffle corpus documents if SHUFFLE_SEED
 # Was implemented in case we were doing fully semi-supervised; if there is a
