@@ -168,10 +168,10 @@
           </template>
           <hr/>
         </div>
-        <div>
+        <div v-if="showTokens">
           Tokens : {{ selectedDoc.tokens }}
+          <hr/>
         </div>
-        <hr/>
       </div> <!-- End Document Info -->
       <div v-if="selectedAnchor.anchorWords" class="topic-info">
         <h2>Topic : {{ selectedAnchor.anchorWords }}</h2>
