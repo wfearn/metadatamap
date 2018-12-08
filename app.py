@@ -402,7 +402,8 @@ def api_getuserdata(user_id):
         d = {}
         d['text'] = doc.text
         d['metadata'] = {k:v
-                      for k, v in doc.metadata.items()}
+                         for k, v in doc.metadata.items()
+                         if type(v) != np.ndarray}
         d['metadata']['correct'] = (d['metadata'][USER_LABEL_ATTR] == d['metadata'][GOLD_ATTR_NAME])
         try:
             d.pop(THETA_ATTR)
