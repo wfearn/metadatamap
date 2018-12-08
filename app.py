@@ -1,6 +1,7 @@
 import ankura
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect
 import numpy as np
+import random
 import json
 import time
 from collections import defaultdict, Counter
@@ -56,13 +57,14 @@ PRELABELED_SIZE = 2
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
-# Does NOT change pickle name. Changing these params requires making a clean version (run program
-#  and include the -c or --clean argument)
+# Does NOT change pickle name.
+# Changing these params requires making a clean version
+# (run program and include the -c or --clean argument)
 smoothing = 1e-4
 
 
-if PRELABELED_SIZE < LABELS_COUNT:
-    raise ValueError("prelabled_size cannot be less than LABELS_COUNT")
+# if PRELABELED_SIZE < LABELS_COUNT:
+#     raise ValueError("prelabled_size cannot be less than LABELS_COUNT")
 
 def parse_args():
     class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
@@ -136,6 +138,10 @@ if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove f
     with contextlib.suppress(FileNotFoundError):
         os.remove(corpus_filename)
         os.remove(QD_filename)
+if clean: # If clean, remove file and remake
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(corpus_filename)
+        os.remove(QD_filename)
 
 @ankura.util.multi_pickle_cache(QD_filename, corpus_filename)
 def load_initial_data():
@@ -151,11 +157,16 @@ def load_initial_data():
         split = ankura.pipeline.train_test_split(corpus, return_ids=True)
         (train_ids, train_corpus), (test_ids, test_corpus) = split
 
+    starting_labeled_labels = set()
+    all_label_set = set(LABELS)
+    while starting_labeled_labels != all_label_set:
+        starting_labeled_ids = set(random.sample(range(len(train_corpus.documents)), PRELABELED_SIZE))
+        starting_labeled_labels = set(train_corpus.documents[i].metadata[GOLD_ATTR_NAME] for i in starting_labeled_ids)
 
     print('***Constructing Q...')
     Q, labels, D = ankura.anchor.build_labeled_cooccurrence(train_corpus,
                                                         GOLD_ATTR_NAME,
-                                                        STARTING_LABELED_IDS,
+                                                        starting_labeled_ids,
                                                         label_weight=LABEL_WEIGHT,
                                                         smoothing=smoothing,
                                                         get_d=True,
@@ -167,7 +178,8 @@ def load_initial_data():
     gs_anchor_tokens = [[train_corpus.vocabulary[index]] for index in gs_anchor_indices]
 
     return (Q, D), (labels, train_ids, train_corpus, test_ids, test_corpus,
-                    gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens)
+                    gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens,
+                    starting_labeled_ids)
 
 
 class UserList:
@@ -214,7 +226,8 @@ class UserList:
 
         # Set up labeling
         web_unlabeled_ids = set()
-        unlabeled_ids = set(range(PRELABELED_SIZE, len(train_corpus.documents)))
+        unlabeled_ids = set(range(len(train_corpus.documents)))
+        unlabeled_ids.difference_update(STARTING_LABELED_IDS)
         labeled_docs = {i: train_corpus.documents[i].metadata[GOLD_ATTR_NAME]
                         for i in STARTING_LABELED_IDS}
 
@@ -320,9 +333,10 @@ class UserList:
 
 
 
-STARTING_LABELED_IDS = set(range(PRELABELED_SIZE))
+
 (Q, D), (labels, train_ids, train_corpus, test_ids, test_corpus,
-         gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens) = load_initial_data()
+         gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens,
+         STARTING_LABELED_IDS) = load_initial_data()
 
 del corpus
 
@@ -337,6 +351,11 @@ for doc_id in STARTING_LABELED_IDS:
 @app.route('/index')
 def index():
     return send_from_directory('.','index.html')
+
+@app.route('/index2')
+def index2():
+    return send_from_directory('.','index2.html')
+
 
 # GET - Send the vocabulary to the client
 @app.route('/api/vocab')
@@ -412,7 +431,7 @@ def api_update():
     # Label docs onto user
     for doc in newly_labeled_docs:
         labeled_docs[doc['doc_id']] = doc[USER_LABEL_ATTR]
-        web_unlabeled_ids.discard(doc['doc_id'])
+        unlabeled_ids.discard(doc['doc_id'])
 
     # Label docs into corpus
     # FIXME Really probably shouldn't relabel the corpus like this.
@@ -421,9 +440,12 @@ def api_update():
     for doc_id, label in labeled_docs.items():
         train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
 
-    # Fill the unlabeled docs
-    for i in range(UNLABELED_COUNT - len(web_unlabeled_ids)):
-        web_unlabeled_ids.add(unlabeled_ids.pop())
+    # Replace the unlabeled docs
+
+    # Remove elements without creating new object
+    web_unlabeled_ids.clear()
+
+    web_unlabeled_ids.update(random.sample(unlabeled_ids, UNLABELED_COUNT))
 
     newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
 
@@ -439,13 +461,9 @@ def api_update():
     user['Q'] = Q
 
     # Get anchor vectors
-    print('*'*50)
     start = time.time()
-    print(anchor_vectors[1])
     anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
                                                   train_corpus, epsilon=ta_epsilon)
-    print(anchor_vectors[1])
-    print('*'*50)
     print('***Time - tandem_anchors:', time.time()-start)
 
     # TODO OPTIMIZE Look into using the parallelism keyword or some other way
