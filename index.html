@@ -11,6 +11,7 @@
     <div id="app">
       <h1>MetadataMap</h1>
       <h2>User Id - {{ userId }} </h2>
+      <button v-on:click="showAnswers = !showAnswers">ToggleAnswers</button>
       <table v-if="isMounted"
              class="metadata-map">
         <colgroup>
