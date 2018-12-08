@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles/style.css"/>
+    <link rel="stylesheet" href="static/styles/modal.css"/>
+    <link rel="stylesheet" href="static/styles/autocomplete.css"/>
+    <title>Answers</title>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Answers</h1>
+      <h2>User Id - {{ userId }} </h2>
+      <input v-model="userId" placeholder="Enter your id">
+      <button v-on:click="getUserData()">Get Data</button>
+
+      <div v-if="isMounted">
+        {{ getCorrect() }} / {{ userDocs.length }} correct
+        <hr/>
+      </div>
+      <div v-for="doc in userDocs">
+        {{ doc.text }}
+        <br/>
+        <br/>
+        <div v-bind:style="{'background-color': (doc.metadata.correct) ? 'green' : 'red'}">
+          {{ doc.metadata}}
+        </div>
+        <br/>
+        <br/>
+        <hr/>
+
+      </div>
+    </div> <!-- End Vue App -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+    <script src="https://unpkg.com/vue"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="static/answers.js"></script>
+  </body>
+</html>

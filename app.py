@@ -346,6 +346,7 @@ for doc_id in STARTING_LABELED_IDS:
     doc = train_corpus.documents[doc_id]
     # Assign "user_label" to be the correct label
     doc.metadata[USER_LABEL_ATTR] = doc.metadata[GOLD_ATTR_NAME]
+    doc.metadata['Prelabeled'] = True
 
 @app.route('/')
 @app.route('/index')
@@ -354,7 +355,11 @@ def index():
 
 @app.route('/index2')
 def index2():
-    return send_from_directory('.','index2.html')
+    return send_from_directory('.', 'index2.html')
+
+@app.route('/answers')
+def answers():
+    return send_from_directory('.', 'answers.html')
 
 
 # GET - Send the vocabulary to the client
@@ -387,8 +392,27 @@ def api_getuserdata(user_id):
     anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
                                                   train_corpus, epsilon=ta_epsilon)
 
+
     for doc_id, label in labeled_docs.items():
         train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
+
+    ret_docs = []
+    for i in labeled_docs:
+        doc = train_corpus.documents[i]
+        d = {}
+        d['text'] = doc.text
+        d['metadata'] = {k:v
+                      for k, v in doc.metadata.items()}
+        d['metadata']['correct'] = (d['metadata'][USER_LABEL_ATTR] == d['metadata'][GOLD_ATTR_NAME])
+        try:
+            d.pop(THETA_ATTR)
+        except KeyError:
+            pass
+        d['metadata']['docNum'] = i
+        ret_docs.append(d)
+        # print(d['metadata'])
+
+    return jsonify(documents=ret_docs)
 
 @app.route('/api/update', methods=['POST'])
 def api_update():
@@ -646,16 +670,16 @@ def api_add_correct():
 
     return jsonify(labeled_count=len(labeled_ids))
 
-@app.errorhandler(404)
-def page_not_found(e):
-    # Rickrolled
-    rollers = [
-               'https://en.wikipedia.org/wiki/Rick_Astley',
-               'https://youtu.be/dQw4w9WgXcQ?t=43',
-               'https://youtu.be/lXMskKTw3Bc?t=24'
-              ]
-    roll = random.choice(rollers)
-    return redirect(roll)
+# @app.errorhandler(404)
+# def page_not_found(e):
+#     # Rickrolled
+#     rollers = [
+#                'https://en.wikipedia.org/wiki/Rick_Astley',
+#                'https://youtu.be/dQw4w9WgXcQ?t=43',
+#                'https://youtu.be/lXMskKTw3Bc?t=24'
+#               ]
+#     roll = random.choice(rollers)
+#     return redirect(roll)
 
 if __name__ =="__main__":
     app.run(debug=DEBUG, host='0.0.0.0', port=PORT)

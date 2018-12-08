@@ -12,6 +12,8 @@
       <h1>MetadataMap</h1>
       <h2>User Id - {{ userId }} </h2>
       <button v-on:click="showAnswers = !showAnswers">ToggleAnswers</button>
+      <button v-on:click="showAnchorInfo = !showAnchorInfo">ToggleTopics</button>
+      <button v-on:click="canEditAnchors = !canEditAnchors">ToggleTopicEditting</button>
       <table v-if="isMounted"
              class="metadata-map">
         <colgroup>
