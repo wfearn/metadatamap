@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href="https://fonts.googleapis.com/css?family=Arvo" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"/>
+    <link rel="stylesheet" href="static/styles/second_style.css"/>
+    <link rel="stylesheet" href="static/styles/modal.css"/>
+    <title>Round 2</title>
+  </head>
+  <body>
+
+    <div id="app">
+      <h1></h1>
+      <h2>User Id - {{ userId }} </h2>
+
+      <div>
+        Documents Labeled: {{ labeledCount }}
+      </div>
+
+      <button v-on:click='labelAllCorrect'>Cheat</button>
+
+      <div id="doc-list"
+           v-if="isMounted">
+        <div class="doc-container-collapsed doc-container doc-header">
+          <div class="expand-button-area"></div>
+          <div class="title">Doc Identifier</div>
+          <div class="rating">Model Prediction</div>
+          <div class="radio">
+            {{ perceivedControl ? "Assign Label" : "Suggest Label" }}
+          </div>
+        </div>
+        <div v-for="doc in unlabeledDocs"
+             class="doc-container"
+             v-bind:class="doc.open ? 'doc-container-expanded' : 'doc-container-collapsed'">
+          <div class="expand-button-area">
+            <button class="expand-button"
+                    v-on:click="doc.open=!doc.open">
+              <span v-if="doc.open">
+              -
+              </span>
+              <span v-else>
+              +
+              </span>
+            </button>
+          </div>
+          <div class="title">
+            <div class="vertical-align">
+              Doc #{{ pad(doc.docId, 6) }}
+            </div>
+          </div>
+          <div class="rating">
+            <div class="vertical-align">
+              Most likely {{ expandLabel(doc.prediction.label) }}
+            </div>
+          </div>
+
+          <div class="radio">
+            <span v-if="showAnswers">
+              {{ labels[0].label === doc.trueLabel ? '&#10004;' : '&#10005;' }}
+            </span>
+            <div class="radio-container">
+              <div class="radio-selection"
+                   v-bind:style="{'background-color': colors[labels[0].label]}">
+                <label for="one">
+                  Definitely {{ expandLabel(labels[0].label) }}</br>
+                </label>
+                <input type="radio"
+                       id="one"
+                       v-bind:value="labels[0].label+'1'"
+                       v-model="doc.userLabel"/>
+              </div>
+
+              <div class="radio-selection"
+                   v-if="inputUncertainty"
+                   v-bind:style="{'background-color': colors[labels[0].label]}">
+                <label for="one">
+                  Maybe {{ expandLabel(labels[0].label) }}
+                </label></br>
+                <input type="radio"
+                       id="one"
+                       v-bind:value="labels[0].label+'2'"
+                       v-model="doc.userLabel"/>
+              </div>
+
+              <div class="radio-selection"
+                   v-if="inputUncertainty"
+                   v-bind:style="{'background-color': colors[labels[1].label]}">
+                <label for="two">
+                  Maybe {{ expandLabel(labels[1].label) }}
+                </label></br>
+                <input type="radio"
+                       id="two"
+                       v-bind:value="labels[1].label+'2'"
+                       v-model="doc.userLabel"/>
+              </div>
+
+              <div class="radio-selection"
+                   v-bind:style="{'background-color': colors[labels[1].label]}">
+                <label for="two">
+                  Definitely {{ expandLabel(labels[1].label) }}
+                </label></br>
+                <input type="radio"
+                       id="two"
+                       v-bind:value="labels[1].label+'1'"
+                       v-model="doc.userLabel"/>
+              </div>
+
+            </div>
+          </div>
+            <!--
+            <label>My label
+              <input style="display:block;"
+                     type="radio"
+                     id="something"
+                     value="hello"
+              \>
+            </label>
+            <label>
+              Label1
+              <input style="display:block;"
+                     type="radio"
+                     id="val1"
+                     name="val"
+                     value="hello"
+                     />
+            </label>
+            <label>
+              Label2
+              <input style="display:block;"
+                     type="radio"
+                     id="val2"
+                     name="val"
+                     value="hello"
+                     />
+            </label>
+            <label for="one">{{ expandLabel(labels[0].label) }}</label>
+            <input type="radio"
+                   id="one"
+                   v-bind:value="labels[0].label+'O'"
+                   v-model="doc.userLabel"/>
+            <input type="radio"
+                   id="one"
+                   v-if="inputUncertainty"
+                   v-bind:value="labels[0].label+'I'"
+                   v-model="doc.userLabel"/>
+            <input type="radio"
+                   id="two"
+                   v-if="inputUncertainty"
+                   v-bind:value="labels[1].label+'I'"
+                   v-model="doc.userLabel"/>
+            <input type="radio"
+                   id="two"
+                   v-bind:value="labels[1].label+'O'"
+                   v-model="doc.userLabel"/>
+            <label for="two">{{ expandLabel(labels[1].label) }}</label>
+            <span v-if="showAnswers">
+              {{ labels[1].label === doc.trueLabel ? '&#10004;' : '&#10005;' }}
+            </span>
+            -->
+          <div class="doc-text" v-if="doc.open">
+            <!-- {{ doc.text }} -->
+            <div v-html="getDocHtml(doc)"></div>
+          </div>
+
+
+
+
+        </div>
+      </div> <!--end doc-list-->
+
+      <table v-if="isMounted & false"
+             class="metadata-map">
+        <colgroup>
+          <col> <!-- anchors Column -->
+          <col> <!-- First Label Column -->
+          <col>
+          <col v-for="doc in unlabeledDocs"
+                 class="">
+          <col>
+        </colgroup>
+        <tbody>
+          <tr>
+            <th></th>
+            <th class="label-title"
+                v-for="label in [labels[0]]"
+                v-bind:style="{'background-color': colors[label.label]}"
+                v-bind:colspan="1"> {{ label.label }}
+            </th>
+            <th class="label-title"
+                v-bind:colspan="unlabeledDocs.length">
+              Unlabeled Documents
+            </th>
+            <th class="label-title"
+                v-for="label in [labels[1]]"
+                v-bind:style="{'background-color': colors[label.label]}"
+                v-bind:colspan="1"> {{ label.label }}
+            </th>
+          </tr>
+          <tr>
+            <th>
+              <button v-if="canEditAnchors"
+                      v-on:click="openModal()">
+                Edit Anchors
+              </button>
+              <!-- &rarr; -->
+            </th>
+            <th v-for="label in [labels[0]]"
+                class=""
+                v-on:dragover.prevent
+                v-on:drop="assignDocLabel(label)"
+                v-on:dragend="assignDocLabel(label)">
+              {{ label.count }} documents labeled "{{ label.label }}"
+            </th>
+            <th v-for="doc in unlabeledDocs"
+                class="doc-title"
+                v-bind:style="{'background-color': colors[doc.prediction.label]}"
+                v-bind:id="'doc'+doc.docId"
+                v-on:click="selectDocument(doc)"
+                draggable="true"
+                v-on:dragstart="dragItem(doc, 'doc'+doc.docId, unlabeledDocs)"
+                v-on:dragend="dragEnd(doc, 'doc'+doc.docId, unlabeledDocs)"
+                v-on:dragenter="dragOver(doc, 'doc'+doc.docId, unlabeledDocs)"
+                v-on:dragover.prevent
+                v-on:dragleave="dragLeave(doc, 'doc'+doc.docId, unlabeledDocs)"
+                v-on:drop="dropItem(doc, 'doc'+doc.docId, unlabeledDocs)">
+                    <div class="">{{ doc.docId }}
+                      <span v-if="(doc.trueLabel !== doc.prediction.label) && showAnswers">
+                        &#10006;
+                      </span>
+                    </div>
+                  </th>
+
+            <th v-if="unlabeledDocs.length === 0"
+                v-bind:style="{'background-color': 'grey'}" >
+              No unlabeled documents remaining
+            </th>
+            <th v-for="label in [labels[1]]"
+                class=""
+                v-on:dragover.prevent
+                v-on:drop="assignDocLabel(label)"
+                v-on:dragend="assignDocLabel(label)">
+              {{ label.count }} documents labeled "{{ label.label }}"
+          </tr>
+          <tr v-for="anchor in anchors" v-if="showAnchorInfo">
+            <td
+                v-bind:id="'anchor' + anchor.anchorId"
+                class="anchor-container"
+                v-on:click="selectAnchor(anchor)"
+                draggable="true"
+                v-on:dragstart="dragItem(anchor, 'anchor'+anchor.anchorId, anchors)"
+                v-on:dragend="dragEnd(anchor, 'anchor'+anchor.anchorId, anchors)"
+                v-on:dragenter="dragOver(anchor, 'anchor'+anchor.anchorId, anchors)"
+                v-on:dragover.prevent
+                v-on:dragleave="dragLeave(anchor, 'anchor'+anchor.anchorId, anchors)"
+                v-on:drop="dropItem(anchor, 'anchor'+anchor.anchorId, anchors)" >
+                <span v-for="word in anchor.anchorWords"
+                      class="anchor-word word-box">
+                  {{ word }}
+                </span>
+              </td>
+
+            <!--<td v-bind:style="{'background-color':
+                colors[labels[0].label]}" ></td>-->
+            <td v-for="label in [labels[0]]"
+                v-bind:style="{'background-color':
+                heatmap(label.anchorIdToValue[anchor.anchorId],
+                colors[label.label],
+                Math.max(...Object.values(label.anchorIdToValue)))}" >
+              <span>
+                {{ parseFloat(label.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+              </span>
+            </td>
+            <td v-for="doc in unlabeledDocs"
+                v-bind:style="{'background-color':
+                heatmap(doc.anchorIdToValue[anchor.anchorId],
+                        '#333333')}" >
+              <span v-show="doc.dragging || doc.selected || true"
+                    class="very-small">
+                {{ parseFloat(doc.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+                <span v-if="(doc.trueLabel !== doc.prediction.label) && showAnswers">
+                  &#10006;
+                </span>
+              </span>
+            </td>
+            <td v-if="unlabeledDocs.length === 0"
+                v-bind:style="{'background-color': 'white'}" ></td>
+            <td v-for="label in [labels[1]]"
+                v-bind:style="{'background-color':
+                heatmap(label.anchorIdToValue[anchor.anchorId],
+                colors[label.label],
+                Math.max(...Object.values(label.anchorIdToValue)))}" >
+              <span>
+                {{ parseFloat(label.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div>
+        <button v-on:click="sendUpdate">Update and Get New Documents</button>
+        <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
+      </div>
+      <div v-if="selectedDoc.docId" class="document-info">
+        <h2>Doc Number: {{ selectedDoc.docId }}</h2>
+        <div>
+          {{ selectedDoc.text }}
+        </div>
+        <hr/>
+        <div>
+          Predicted Label : {{ selectedDoc.prediction.label }}
+        </div>
+        <hr/>
+        <div v-if="showAnswers">
+          True Label : {{ selectedDoc.trueLabel }}
+          <hr/>
+        </div>
+        <div v-if="showAnchorInfo">
+          <template v-for="anchor in anchors">
+            <div>
+              <span v-for="word in anchor.anchorWords">
+                {{ word }}
+              </span>
+              {{ parseFloat(selectedDoc.anchorIdToValue[anchor.anchorId]).toFixed(2) }}
+            </div>
+          </template>
+          <hr/>
+        </div>
+        <div v-if="showTokens">
+          Tokens : {{ selectedDoc.tokens }}
+          <hr/>
+        </div>
+      </div> <!-- End Document Info -->
+      <div v-if="selectedAnchor.anchorWords" class="topic-info">
+        <h2>Topic : {{ selectedAnchor.anchorWords }}</h2>
+        <hr/>
+        <h3> Related words </h3>
+        <template v-for="topicWord in selectedAnchor.topicWords">
+          <div>
+            {{ topicWord }}
+          </div>
+        </template>
+      </div> <!-- End Topic Info -->
+    <transition name="fade"> <!-- MODAL -->
+      <div class="modal-shell"
+           v-show="showModal"
+           v-on:click="closeModal()">
+        <div class="modal-content" v-on:click.stop>
+          <div class="modal-header">
+            This is the modal Header
+            <button class="btn-close"
+                    v-on:click="closeModal()">
+              &times;
+            </button>
+          </div>
+          <div class="modal-body">
+            <table>
+              <tbody>
+                <tr>
+                  <th></th>
+                  <th>Anchors</th>
+                  <th>Topic Words</th>
+                </tr>
+                <tr v-for="(anchor, anchorIndex) in anchors">
+                  <td>
+                    <button v-on:click="deleteAnchor(anchorIndex)">X</button>
+                  </td>
+                  <td>
+                    <span v-for="(anchorWord, index) in anchor.anchorWords"
+                          class="word-box">
+                      {{ anchorWord }}
+                      <span class="delete"
+                            v-on:click="deleteWord(anchor, index)">
+                      X
+                      </span>
+                    </span>
+                    <span>
+                      <form v-on:submit.prevent
+                            class="add-anchor-form">
+                        <input class="autocomplete-input"
+                               type="text"
+                               v-model="anchor.autocompleteInput"
+                               v-on:input="onAutocompleteChange(anchor.autocompleteInput)"
+                               v-on:keyup.enter="addWord($event, anchor)"/>
+                      </form>
+                      <ul v-show="autocompleteResults.length > 0"
+                          class="autocomplete-results">
+                        <li v-for="(result, i) in autocompleteResults"
+                            v-bind:key="i"
+                            class="autocomplete-result">
+                          {{ result }}
+                        </li>
+                      </ul>
+                    </span>
+                  </td>
+                  <td>
+                    <span v-for="topicWord in anchor.topicWords"
+                          class="word-box">
+                      {{ topicWord }}
+                    <span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <button v-on:click="addAnchor">Add anchor </button>
+          </div> <!-- Modal body -->
+          <div class="modal-footer">
+            This is the modal footer
+          </div>
+        </div> <!-- Modal content -->
+      </div> <!-- Modal shell -->
+    </transition>
+    <transition name="fade">
+      <div v-if="loading"
+           class="modal-shell">
+        <img v-bind:src="'static/images/spinner.gif'"></img>
+      </div>
+    </transition>
+    <transition name="fade">
+      <div v-if="userId==''"
+           class="modal-shell">
+        <div class="modal-content" v-on:click.stop>
+          <div class="modal-header">
+            New Task or Existing Task?
+          </div>
+          <div class="modal-body">
+            <div>
+              <button v-on:click="getNewUser()">
+                New Task
+              </button>
+            </div>
+            <div>
+              <input type="text" v-model="inputId"/>
+              <button v-on:click="getIdData(inputId)">
+                Submit User ID
+              </button>
+            </div>
+          </div> <!-- Modal body -->
+          <div class="modal-footer">
+          </div>
+        </div> <!-- Modal content -->
+      </div>
+    </transition>
+
+
+
+
+
+
+<!--
+
+          <template v-for="label in labels">
+            <th v-bind:id="'leftLabelDivider_'+label"
+                v-bind:style="{'background-color': labelColor(label)}"
+                v-on:dragover.prevent
+                v-on:dragenter="dragIntoDivider(label)"></th>
+            <template v-for="doc in docsByLabel[label]">
+              <th class="doc-title"
+                  v-bind:style="{'background-color': labelColor(label, 1.5)}"
+                  v-bind:id="'doc'+doc.docNum"
+                  v-on:click="selectDocument(doc)"
+                  draggable="true"
+                  v-on:dragstart="dragItem(doc, 'doc'+doc.docNum, docs)"
+                  v-on:dragend="dragEnd(doc, 'doc'+doc.docNum, docs)"
+                  v-on:dragenter="dragOver(doc, 'doc'+doc.docNum, docs)"
+                  v-on:dragover.prevent
+                  v-on:dragleave="dragLeave(doc, 'doc'+doc.docNum, docs)"
+                  v-on:drop="dropItem(doc, 'doc'+doc.docNum, docs)">
+                    <div class="vertical-text">{{ doc.docNum }}</div>
+                  </th>
+            </template>
+            <th v-bind:id="'rightLabelDivider_'+label"
+                v-bind:style="{'background-color': labelColor(label)}"
+                v-on:dragover.prevent
+                v-on:dragenter="dragIntoDivider(label)"></th>
+
+          </template>
+          </tr>
+          <tr v-for="topic in topics">
+            <td
+                v-bind:id="'topic' + topic.topicNum"
+                class="topic"
+                v-on:click="selectTopic(topic)"
+                draggable="true"
+                v-on:dragstart="dragItem(topic, 'topic'+topic.topicNum, topics)"
+                v-on:dragend="dragEnd(topic, 'topic'+topic.topicNum, topics)"
+                v-on:dragenter="dragOver(topic, 'topic'+topic.topicNum, topics)"
+                v-on:dragover.prevent
+                v-on:dragleave="dragLeave(topic, 'topic'+topic.topicNum, topics)"
+                v-on:drop="dropItem(topic, 'topic'+topic.topicNum, topics)" >{{
+                topic.topic }}</td>
+
+            <template v-for="label in labels">
+              <td v-bind:style="{'background-color': labelColor(label)}" ></td>
+              <td v-for="doc in docsByLabel[label]"
+                  v-bind:style="{'background-color':
+                  heatmap(doc[topic.topic], colors[doc.label])}" >
+                <span v-show="doc.dragging || doc.selected"> {{ doc[topic['topic']] }} </span>
+              </td>
+              <td v-bind:style="{'background-color': labelColor(label)}"></td>
+            </template>
+          </tr>
+        </tbody>
+      </table>
+      <div v-if="selectedDoc.docNum" class="document-info">
+        <h2>Doc Number: {{ selectedDoc.docNum }}</h2>
+        <div>
+          {{ selectedDoc.text }}
+        </div>
+        <hr/>
+        <div>
+          Current Label : {{ selectedDoc.label }}
+        </div>
+        <hr/>
+        <div>
+          True Label : {{ selectedDoc.trueLabel }}
+        </div>
+        <hr/>
+        <template v-for="topic in topics">
+          <div>
+            {{topic.topic}} : {{ selectedDoc[topic.topic] }}
+          </div>
+        </template>
+        <hr/>
+        <div>
+          Tokens : {{ selectedDoc.tokens }}
+        </div>
+        <hr/>
+      </div>
+      <div v-if="selectedTopic.topic" class="topic-info">
+        <h2>Topic : {{ selectedTopic.topic }}</h2>
+        <hr/>
+        <h3> Related words </h3>
+        <template v-for="relatedWord in selectedTopic.relatedWords">
+          <div>
+            {{ relatedWord }}
+          </div>
+        </template>
+      </div>
+
+      -->
+    </div> <!-- End Vue App -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+    <script src="https://unpkg.com/vue"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="static/script.js"></script>
+  </body>
+</html>

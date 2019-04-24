@@ -53,7 +53,7 @@ USER_LABEL_ATTR = 'user_label'
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 NUM_TOPICS = 20
-PRELABELED_SIZE = 2
+PRELABELED_SIZE = 200
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
@@ -105,7 +105,7 @@ elif DATASET_NAME == 'amazon':
     LABELS = ['negative', 'positive']
 elif DATASET_NAME == 'congress':
     corpus = ankura.corpus.congress()
-    LABELS = ['D', 'R']
+    LABELS = ['D', 'R', 'U'] + list('abcdefghijk')
     GOLD_ATTR_NAME = 'party'
 
 # Set seed and shuffle corpus documents if SHUFFLE_SEED
@@ -153,15 +153,18 @@ def load_initial_data():
     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
     # Must have at least one labeled for each label
-    while (len({doc.metadata[GOLD_ATTR_NAME] for doc in train_corpus.documents}) < LABELS_COUNT):
-        split = ankura.pipeline.train_test_split(corpus, return_ids=True)
-        (train_ids, train_corpus), (test_ids, test_corpus) = split
+    # TODO
+    # while (len({doc.metadata[GOLD_ATTR_NAME] for doc in train_corpus.documents}) < LABELS_COUNT):
+    #     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
+    #     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
     starting_labeled_labels = set()
     all_label_set = set(LABELS)
     while starting_labeled_labels != all_label_set:
         starting_labeled_ids = set(random.sample(range(len(train_corpus.documents)), PRELABELED_SIZE))
         starting_labeled_labels = set(train_corpus.documents[i].metadata[GOLD_ATTR_NAME] for i in starting_labeled_ids)
+        # TODO
+        break
 
     print('***Constructing Q...')
     Q, labels, D = ankura.anchor.build_labeled_cooccurrence(train_corpus,
@@ -280,8 +283,6 @@ class UserList:
 
             sys.exit(1)
 
-
-
     def load_update(self, user_id, update_num):
         print(f'Loading {user_id} update number {update_num}')
         full_filename = self.get_filename(user_id, update_num)
@@ -356,6 +357,10 @@ def index():
 @app.route('/index2')
 def index2():
     return send_from_directory('.', 'index2.html')
+
+@app.route('/index3')
+def index3():
+    return send_from_directory('.', 'index3.html')
 
 @app.route('/answers')
 def answers():
@@ -455,6 +460,7 @@ def api_update():
 
     # Label docs onto user
     for doc in newly_labeled_docs:
+        print(doc['doc_id'])
         labeled_docs[doc['doc_id']] = doc[USER_LABEL_ATTR]
         unlabeled_ids.discard(doc['doc_id'])
 
@@ -527,26 +533,105 @@ def api_update():
     relative_dif = lambda arr: abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
     labeled_relative_dif = lambda arr: left_right(arr) * relative_dif
 
-    # FIXME Sometimes arr is [0,0]... dunno what it is.
-    def relative_dif(arr):
+    # FIXME Sometimes arr is [0,0]... This is because the log probabilities are
+    # just too small to convert back to regular prob space in the free
+    # classifier. I haven't nailed down exactly what leads to this thing, but
+    # we may imagine anything could do this as you are just multiplying a bunch
+    # of numbers in [0,1], with most of them tending toward 0 anyway.
+    def relative_dif(arr, i):
         if arr[0]==0 and arr[1]==0:
             return 0
-        return abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
+        #return abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
+        return abs((arr[i])/(arr.sum()))
+
+    # probs = 0
+    # fine = 0
+    # for doc in train_corpus.documents:
+    #     arr = clf(doc, get_probabilities=True)
+    #     if arr[0]==0 and arr[1]==0:
+    #         probs += 1
+    #     else:
+    #         fine += 1
+    # print(probs)
+    # print(fine)
+    # sys.exit()
+
+    def get_highlights(doc):
+        base = clf(doc, get_log_probabilities=True)
+        label = base.argmax()
+        ranking = []
+        highlights = []
+        for i in range(len(doc.tokens)):
+            loc = doc.tokens[i].loc
+            new_doc = ankura.pipeline.Document('',
+                        doc.tokens[:i]+doc.tokens[i+1:], {})
+            probs = clf(new_doc, get_log_probabilities=True)
+            new_label = probs.argmax()
+            if new_label != label:
+                highlights.append((loc, labels[new_label]))
+            else:
+                ratio = probs/base
+                l = ratio.argmin()
+                lab = labels[l]
+                x = ratio[l]
+                ranking.append((x, loc, lab))
+        highlights += [(loc, lab) for x, loc, lab in
+                    sorted(ranking)[:int(len(doc.tokens)*.5)]]
+        return highlights
+
+    web_tokens = {tok.token for doc in
+                  (train_corpus.documents[doc_id] for doc_id in web_unlabeled_ids)
+                  for tok in doc.tokens}
+
+    tok_docs  = (ankura.pipeline.Document('', [ankura.pipeline.TokenLoc(t, ())], {})
+                 for t in web_tokens)
+
+    tok_data = [{'token': d.tokens[0].token,
+                 'probs': clf(d, get_probabilities=True)} for d in tok_docs]
+
+    for data in tok_data:
+        p = data['probs']
+        data['weight'] = p.max()/p.sum()
+
+    tok_data.sort(key=lambda d: d['weight'], reverse=True)
+
+    highlight_dict = {d['token']: d['probs'].argmax()
+                      for d in tok_data[:int(len(tok_data)*.2)]}
+
+    print()
+    print(len(highlight_dict))
+    print()
+
+    def get_highlights2(doc):
+        highlights = []
+        for tok_loc in doc.tokens:
+            if tok_loc.token in highlight_dict:
+                highlights.append((tok_loc.loc,
+                                   labels[highlight_dict[tok_loc.token]]))
+        return highlights
 
     unlabeled_docs = []
+
     for doc_id in web_unlabeled_ids:
         doc = train_corpus.documents[doc_id]
-        predict_probs = clf(doc, get_probabilities=True)
-        predict_label = labels[np.argmax(predict_probs)]
+        predict_logprobs = clf(doc, get_log_probabilities=True)
+        i_label = np.argmax(predict_logprobs)
+        predict_label = labels[i_label]
+
+        predict_probs = np.exp(predict_logprobs)
+        #print(predict_probs/predict_probs.sum())
         unlabeled_docs.append(
           {'docId': doc_id,
            'text': doc.text,
            'tokens': [train_corpus.vocabulary[tok.token] for tok in doc.tokens],
            'trueLabel': doc.metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out
-                                                 #       before user study
+                                                      # before user study
            'prediction': {'label': predict_label,
-                          'relativeDif': relative_dif(predict_probs)},
-           'anchorIdToValue': {i: float(val) for i, val in enumerate(doc.metadata[THETA_ATTR])}
+                          'relativeDif': relative_dif(predict_probs, i_label)}, # THIS IS WRONG
+           'anchorIdToValue': {i: float(val)
+                               for i, val in enumerate(doc.metadata[THETA_ATTR])},
+           #'highlight': [list(tok.loc) for tok in doc.tokens],
+           'highlights': get_highlights2(doc)
            })
     print('***Time - Classify:', time.time()-start)
 
@@ -582,6 +667,9 @@ def api_update():
          'anchorWords': anchors,
          'topicWords': topic_summary[i]}
         for i, anchors in enumerate(anchor_tokens)]
+
+    for d in unlabeled_docs:
+        print(d['prediction'])
 
     return jsonify(anchors=return_anchors,
                    labels=return_labels,

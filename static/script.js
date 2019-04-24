@@ -32,7 +32,10 @@ var app = new Vue({
     showAnswers: false,
     showAnchorInfo: false,
     canEditAnchors: false,
-    showTokens: false
+    showTokens: false,
+    inputUncertainty: true,
+    perceivedControl: true,
+    labeledCount: 0,
     },
   components: {
   //  'modal': Modal,
@@ -105,10 +108,16 @@ var app = new Vue({
     //                         user_label: label},...]
     //        }
       this.loading = true;
+      var curLabeledDocs = this.unlabeledDocs.filter(
+                  doc => doc.hasOwnProperty('userLabel'))
+                         .map(doc => ({doc_id: doc.docId,
+                                       user_label: doc.userLabel.slice(0, -1)}));
+      this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
-        labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
-                                                    user_label: doc.userLabel})),
+        //labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
+        //                                            user_label: doc.userLabel})),
+        labeled_docs: curLabeledDocs,
         user_id: this.userId,
       }).then(response => {
         console.log(response);
@@ -122,6 +131,9 @@ var app = new Vue({
         if (!this.colorsChosen){
           this.chooseColors();
           this.colorsChosen = true;
+        }
+        for (var i=0; i<this.unlabeledDocs.length; i++){
+          Vue.set(this.unlabeledDocs[i], 'open', false);
         }
       }).catch(error => {
         console.log('Error in /api/update');
@@ -156,14 +168,22 @@ var app = new Vue({
       // }
       if (this.labels[0].label === 'negative' ||
           this.labels[0].label === 'positive'){
-        var colorsList = ['#bb2528', '#146b3a']
+        var colorsList = ['#bb2528', '#146b3a'];
         Vue.set(this.colors, 'negative', colorsList[0]);
         console.log(this.colors)
         Vue.set(this.colors, 'positive', colorsList[1]);
         console.log(this.colors)
         console.log(colorsList)
       } else {
-        var colorsList = ['#0015bc', '#e9141d']
+        // original
+       // var colorsList = ['#0015bc', '#e9141d'];
+
+        // lighter shade
+        //var colorsList = ['#6673D6', '#F17278'];
+
+        // lighterer shade
+        var colorsList = ['#848FDE', '#F38E93'];
+
         Vue.set(this.colors, 'D', colorsList[0]);
         console.log(this.colors)
         Vue.set(this.colors, 'R', colorsList[1]);
@@ -399,6 +419,39 @@ var app = new Vue({
     deleteAnchor: function(anchorIndex){
       this.anchors.splice(anchorIndex, 1);
     },
+    pad: function(num, size){
+      return ('000000' + num).substr(-size);
+    },
+    expandLabel: function(label){
+      if (label === 'D') return 'Dem';
+      if (label === 'R') return 'Rep';
+    },
+    labelAllCorrect: function(){
+      for(var i=0; i<this.unlabeledDocs.length; i++){
+        Vue.set(this.unlabeledDocs[i], 'userLabel', this.unlabeledDocs[i].trueLabel+'1');
+      }
+    },
+    getDocHtml: function(doc){
+      console.log('Getting HTML');
+      var html = '';
+      var prev = 0
+      var loc;
+      var label;
+      var a;
+      var b;
+      for (var i=0; i<doc.highlights.length; i++){
+        loc = doc.highlights[i][0];
+        label = doc.highlights[i][1];
+        a = loc[0];
+        b = loc[1];
+        html += doc.text.substr(prev, a-prev);
+        html += ('<span style="background-color: ' + this.colors[label] +
+                      '">' + doc.text.substr(a, b-a) + '</span> ');
+        prev = b;
+      }
+      html += doc.text.substr(prev, doc.text.length);
+      return html;
+    }
   }, //End methods
 });
 
