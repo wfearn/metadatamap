@@ -105,7 +105,7 @@ elif DATASET_NAME == 'amazon':
     LABELS = ['negative', 'positive']
 elif DATASET_NAME == 'congress':
     corpus = ankura.corpus.congress()
-    LABELS = ['D', 'R', 'U'] + list('abcdefghijk')
+    LABELS = ['D', 'R']
     GOLD_ATTR_NAME = 'party'
 
 # Set seed and shuffle corpus documents if SHUFFLE_SEED
