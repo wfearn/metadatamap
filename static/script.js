@@ -33,8 +33,8 @@ var app = new Vue({
     showAnchorInfo: false,
     canEditAnchors: false,
     showTokens: false,
-    inputUncertainty: true,
-    perceivedControl: true,
+    inputUncertainty: Math.random() >= 0.5,
+    perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
     },
   components: {
