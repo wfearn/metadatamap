@@ -66,6 +66,8 @@ var app = new Vue({
       return docsByLabelObj;
     },
   }, //End computed
+  watch: {
+  }, //End watch
   methods: {
     getVocab: function(){
       axios.get('/api/vocab').then(response => {
@@ -451,7 +453,10 @@ var app = new Vue({
       }
       html += doc.text.substr(prev, doc.text.length);
       return html;
-    }
+    },
+    deleteLabel: function(doc){
+      Vue.delete(doc, 'userLabel');
+    },
   }, //End methods
 });
 

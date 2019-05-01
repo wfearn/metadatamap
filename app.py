@@ -598,9 +598,6 @@ def api_update():
     highlight_dict = {d['token']: d['probs'].argmax()
                       for d in tok_data[:int(len(tok_data)*.2)]}
 
-    print()
-    print(len(highlight_dict))
-    print()
 
     def get_highlights2(doc):
         highlights = []
@@ -618,8 +615,9 @@ def api_update():
         i_label = np.argmax(predict_logprobs)
         predict_label = labels[i_label]
 
-        predict_probs = np.exp(predict_logprobs)
-        #print(predict_probs/predict_probs.sum())
+        predict_probs = normalize_logprobs(predict_logprobs)
+        # predict_probs = np.exp(predict_logprobs)
+        # print(predict_probs/predict_probs.sum())
         unlabeled_docs.append(
           {'docId': doc_id,
            'text': doc.text,
@@ -641,6 +639,15 @@ def api_update():
                             (-1)**(labels_dict[doc['prediction']['label']] + 1)
                                 * doc['prediction']['relativeDif'])
     unlabeled_docs.sort(key=doc_sort)
+    # with open('vals.txt', 'a') as outfile:
+    #     outfile.writelines(f'{p[0]} {p[1]}\n' for p in ps)
+
+    # for p in ps:
+    #     print(p)
+    #     print(np.exp(p) / np.exp(p).sum())
+    #     print(normalize_logprobs(p))
+    #     print()
+
 
     # Calculate average for each label
     # TODO Find a better way of doing this?
@@ -682,6 +689,11 @@ def api_update():
 # Maybe
 # POST - Something about reshuffling unlabelable documents?
 # @app.route('', methods=['POST'])
+
+def normalize_logprobs(probs):
+    a = max(probs)
+    probs = np.exp(probs - a)
+    return probs/probs.sum()
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():

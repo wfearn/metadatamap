@@ -12,6 +12,16 @@
     <div id="app">
       <h1></h1>
       <h2>User Id - {{ userId }} </h2>
+      <div>The system has predicted the political party affiliation for the
+      speaker of each of the ten debates speeches shown here. For each debate,
+      the system provides its prediction and how sure it is. You can correct or
+      confirm the system’s prediction by assigning whether the speaker is a
+      republican or democrat. You can click on any debate to expand it to view
+      the text and to see the highlighted words which were most important for
+      the systems prediction. You can press the “update and get new documents”
+      button at any point to save your assignments to the system and get an
+      updated set of debate predictions to review.
+      </div>
 
       <div>
         Documents Labeled: {{ labeledCount }}
@@ -49,7 +59,8 @@
             </div>
           </div>
           <div class="rating">
-            <div class="vertical-align">
+            <div class="vertical-align"
+                 v-bind:style="{'background-color': colors[doc.prediction.label]}">
               Most likely {{ expandLabel(doc.prediction.label) }}
             </div>
           </div>
@@ -65,7 +76,6 @@
                   Definitely {{ expandLabel(labels[0].label) }}</br>
                 </label>
                 <input type="radio"
-                       id="one"
                        v-bind:value="labels[0].label+'1'"
                        v-model="doc.userLabel"/>
               </div>
@@ -77,7 +87,6 @@
                   Maybe {{ expandLabel(labels[0].label) }}
                 </label></br>
                 <input type="radio"
-                       id="one"
                        v-bind:value="labels[0].label+'2'"
                        v-model="doc.userLabel"/>
               </div>
@@ -89,7 +98,6 @@
                   Maybe {{ expandLabel(labels[1].label) }}
                 </label></br>
                 <input type="radio"
-                       id="two"
                        v-bind:value="labels[1].label+'2'"
                        v-model="doc.userLabel"/>
               </div>
@@ -100,9 +108,11 @@
                   Definitely {{ expandLabel(labels[1].label) }}
                 </label></br>
                 <input type="radio"
-                       id="two"
                        v-bind:value="labels[1].label+'1'"
                        v-model="doc.userLabel"/>
+              </div>
+              <div class="radio-selection">
+                <button v-on:click="deleteLabel(doc)">Delete label</button>
               </div>
 
             </div>
