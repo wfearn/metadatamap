@@ -10,24 +10,37 @@
   <body>
 
     <div id="app">
-      <h1></h1>
+      <h1>Label Debates</h1>
       <h2>User Id - {{ userId }} </h2>
       <div>The system has predicted the political party affiliation for the
       speaker of each of the ten debates speeches shown here. For each debate,
       the system provides its prediction and how sure it is. You can correct or
       confirm the system’s prediction by assigning whether the speaker is a
-      republican or democrat. You can click on any debate to expand it to view
+      republican or democrat.
+      </br>
+
+
+      You can click on any debate to expand it to view
       the text and to see the highlighted words which were most important for
-      the systems prediction. You can press the “update and get new documents”
-      button at any point to save your assignments to the system and get an
-      updated set of debate predictions to review.
+      the systems prediction.
+      </br>
+
+      You can press the “update and get new documents”
+      button at any point to save your assignments to the system and get an new
+      set of debates to review.
       </div>
 
+      </br>
+      </br>
       <div>
-        Documents Labeled: {{ labeledCount }}
+        <strong> Labeled so far: {{ labeledCount }} </strong>
       </div>
 
       <button v-on:click='labelAllCorrect'>Cheat</button>
+      <div>
+        <button v-on:click="sendUpdate">Get new debates to review</button>
+        <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
+      </div>
 
       <div id="doc-list"
            v-if="isMounted">
@@ -70,51 +83,48 @@
               {{ labels[0].label === doc.trueLabel ? '&#10004;' : '&#10005;' }}
             </span>
             <div class="radio-container">
-              <div class="radio-selection"
-                   v-bind:style="{'background-color': colors[labels[0].label]}">
-                <label for="one">
-                  Definitely {{ expandLabel(labels[0].label) }}</br>
-                </label>
+              <button class="radio-selection"
+                      v-on:click="labelDoc(doc, labels[0].label+'1')"
+                      v-bind:style="{'background-color': colors[labels[0].label]}">
+                Definitely {{ expandLabel(labels[0].label) }}</br>
                 <input type="radio"
                        v-bind:value="labels[0].label+'1'"
                        v-model="doc.userLabel"/>
-              </div>
+              </button>
 
-              <div class="radio-selection"
-                   v-if="inputUncertainty"
-                   v-bind:style="{'background-color': colors[labels[0].label]}">
-                <label for="one">
-                  Maybe {{ expandLabel(labels[0].label) }}
-                </label></br>
+              <button class="radio-selection"
+                      v-if="inputUncertainty"
+                      v-on:click="labelDoc(doc, labels[0].label+'2')"
+                      v-bind:style="{'background-color':
+                      lightenDarkenColor(colors[labels[0].label], -40)}">
+                Maybe {{ expandLabel(labels[0].label) }}
+                </br>
                 <input type="radio"
                        v-bind:value="labels[0].label+'2'"
                        v-model="doc.userLabel"/>
-              </div>
+              </button>
 
-              <div class="radio-selection"
-                   v-if="inputUncertainty"
-                   v-bind:style="{'background-color': colors[labels[1].label]}">
-                <label for="two">
-                  Maybe {{ expandLabel(labels[1].label) }}
-                </label></br>
+              <button class="radio-selection"
+                      v-if="inputUncertainty"
+                      v-on:click="labelDoc(doc, labels[1].label+'2')"
+                      v-bind:style="{'background-color':
+                      lightenDarkenColor(colors[labels[1].label], -40)}">
+                Maybe {{ expandLabel(labels[1].label) }}
+                </br>
                 <input type="radio"
                        v-bind:value="labels[1].label+'2'"
                        v-model="doc.userLabel"/>
-              </div>
+              </button>
 
-              <div class="radio-selection"
-                   v-bind:style="{'background-color': colors[labels[1].label]}">
-                <label for="two">
-                  Definitely {{ expandLabel(labels[1].label) }}
-                </label></br>
+              <button class="radio-selection"
+                      v-on:click="labelDoc(doc, labels[1].label+'1')"
+                      v-bind:style="{'background-color': colors[labels[1].label]}">
+                Definitely {{ expandLabel(labels[1].label) }}
+                </br>
                 <input type="radio"
                        v-bind:value="labels[1].label+'1'"
                        v-model="doc.userLabel"/>
-              </div>
-              <div class="radio-selection">
-                <button v-on:click="deleteLabel(doc)">Delete label</button>
-              </div>
-
+              </button>
             </div>
           </div>
             <!--
@@ -306,10 +316,6 @@
           </tr>
         </tbody>
       </table>
-      <div>
-        <button v-on:click="sendUpdate">Update and Get New Documents</button>
-        <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
-      </div>
       <div v-if="selectedDoc.docId" class="document-info">
         <h2>Doc Number: {{ selectedDoc.docId }}</h2>
         <div>

@@ -386,6 +386,17 @@ var app = new Vue({
       var clr = 'rgb('+getColor(0)+','+getColor(1)+','+getColor(2)+')';
       return clr;
     },
+    lightenDarkenColor: function(color, val){
+      if (typeof(color) === 'string'){
+        var rgb = hexToRgb(color);
+        rgb = [rgb.r, rgb.g, rgb.b];
+      }
+      for (var i=0; i<3; i++){
+        rgb[i] -= val;
+        rgb[i] = Math.min(255, Math.max(0, rgb[i]));
+      }
+      return '#' + (rgb[2] | rgb[1]<<8 | rgb[0]<<16).toString(16);
+    },
     labelColor(label, fraction=3){
       return 'blue';
       //return this.heatmap(this.maxTopic/fraction, this.colors[label]);
@@ -456,6 +467,15 @@ var app = new Vue({
     },
     deleteLabel: function(doc){
       Vue.delete(doc, 'userLabel');
+    },
+    labelDoc: function(doc, label){
+      if (doc.hasOwnProperty('userLabel')){
+        if (doc.userLabel === label){
+          this.deleteLabel(doc);
+          return;
+        }
+      }
+      Vue.set(doc, 'userLabel', label);
     },
   }, //End methods
 });
