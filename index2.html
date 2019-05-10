@@ -78,7 +78,7 @@
             <div class="vertical-align rounded"
                  v-bind:style="{'background-color': colors[doc.prediction.label]}">
               Model Prediction: </br>
-              Most likely {{ expandLabel(doc.prediction.label) }}
+              {{ getConfidenceWord(doc) }} {{ expandLabel(doc.prediction.label) }}
             </div>
           </div>
 

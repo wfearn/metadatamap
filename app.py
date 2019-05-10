@@ -625,7 +625,9 @@ def api_update():
            'trueLabel': doc.metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out
                                                       # before user study
            'prediction': {'label': predict_label,
-                          'relativeDif': relative_dif(predict_probs, i_label)}, # THIS IS WRONG
+                          'relativeDif': relative_dif(predict_probs, i_label),
+                          'confidence': predict_probs[i_label]
+                          }, # THIS IS WRONG
            'anchorIdToValue': {i: float(val)
                                for i, val in enumerate(doc.metadata[THETA_ATTR])},
            #'highlight': [list(tok.loc) for tok in doc.tokens],

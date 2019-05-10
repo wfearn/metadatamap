@@ -480,6 +480,9 @@ var app = new Vue({
       }
       Vue.set(doc, 'userLabel', label);
     },
+    getConfidenceWord: function(doc){
+      return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
+    },
   }, //End methods
 });
 
