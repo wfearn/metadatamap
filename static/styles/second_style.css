@@ -105,6 +105,9 @@ input[type="radio"] {
   height: 25px;
   width: 25px;
 }
+.rounded{
+  border-radius: 5px;
+}
 /*
 .rating {
   background: hotpink;

@@ -178,13 +178,16 @@ var app = new Vue({
         console.log(colorsList)
       } else {
         // original
-       // var colorsList = ['#0015bc', '#e9141d'];
+        //var colorsList = ['#0015bc', '#e9141d'];
 
         // lighter shade
         //var colorsList = ['#6673D6', '#F17278'];
 
         // lighterer shade
-        var colorsList = ['#848FDE', '#F38E93'];
+        //var colorsList = ['#848FDE', '#F38E93'];
+
+        // lightererer shade
+        var colorsList = ['#A8A8FD', '#F38E93'];
 
         Vue.set(this.colors, 'D', colorsList[0]);
         console.log(this.colors)
@@ -458,7 +461,7 @@ var app = new Vue({
         a = loc[0];
         b = loc[1];
         html += doc.text.substr(prev, a-prev);
-        html += ('<span style="background-color: ' + this.colors[label] +
+        html += ('<span class="rounded" style="background-color: ' + this.colors[label] +
                       '">' + doc.text.substr(a, b-a) + '</span> ');
         prev = b;
       }
