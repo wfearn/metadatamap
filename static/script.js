@@ -33,9 +33,11 @@ var app = new Vue({
     showAnchorInfo: false,
     canEditAnchors: false,
     showTokens: false,
+    displayInstructions: false,
     inputUncertainty: Math.random() >= 0.5,
     perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
+    logText: '',
     },
   components: {
   //  'modal': Modal,
@@ -99,7 +101,7 @@ var app = new Vue({
         this.userId = response.data.userId;
         this.sendUpdate();
       }).catch(error => {
-        console.log('error in /api/vocab');
+        console.log('error in /api/adduser');
         console.log(error);
       });
     },
@@ -483,6 +485,9 @@ var app = new Vue({
     getConfidenceWord: function(doc){
       return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
     },
+    toggleDocOpen: function(doc){
+      doc.open = !doc.open;
+    }
   }, //End methods
 });
 

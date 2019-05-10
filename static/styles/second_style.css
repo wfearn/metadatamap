@@ -2,7 +2,7 @@ body {
     font-family: 'Arvo';
     font-family: 'Roboto';
     font-size: 14px;
-    padding: 20px 100px 0px 100px;
+    padding: 20px 100px 50px 100px;
     background: #f3f3f3;
 }
 
@@ -19,6 +19,9 @@ button {
   transform: translateY(-50%);
 }
 
+.instructions{
+  width: 75%;
+}
 .doc-container {
   border: 1px solid black;
   padding: 5px;
