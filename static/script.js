@@ -43,6 +43,7 @@ var app = new Vue({
     totalTime: 20*60*1000,
     time: 0,
     started: false,
+    finished: false,
     },
   components: {
   //  'modal': Modal,
@@ -112,6 +113,9 @@ var app = new Vue({
       });
     },
     sendUpdate: function(){
+      if (this.finished){
+        return;
+      }
       console.log('sendUpdate');
       this.logText += 'SEND UPDATE TIME - ' + this.getExactTime() + '\n';
     // Data is expected to be sent to server in this form:
@@ -520,12 +524,15 @@ var app = new Vue({
     },
     startTask: function(){
       this.getNewUser();
+      this.finished = false;
       this.time = this.totalTime;
       this.timer = setInterval( () => {
         if (this.time > 0){
           this.time -= 1000;
         } else {
+          clearInterval(this.timer);
           this.sendUpdate();
+          this.finished = true;
         }
       }, 1000);
       this.showModal = false;
