@@ -24,7 +24,7 @@ var app = new Vue({
     maxTopic: 1.000,
     isMounted: false,
     colorsChosen: false,
-    showModal: false,
+    showModal: true,
     autocompleteInput: '',
     autocompleteResults: [],
     userId: '',
@@ -38,24 +38,24 @@ var app = new Vue({
     perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
     logText: '',
+    startDate: null,
+    timer: null,
+    totalTime: 20*60*1000,
+    time: 0,
+    started: false,
     },
   components: {
   //  'modal': Modal,
   },
   mounted: function () {
-    this.loading = true;
-    this.getVocab();
+    console.log('mounted')
+
+    // We dont need vocab for this study
+    //this.loading = true;
+    //this.getVocab();
     //this.sendUpdate();
 
-    // Event listener to close the modal on Esc
-    document.addEventListener("keydown", (e) => {
-      if (this.showModal && e.keyCode == 27) {
-        this.closeModal()
-      }
-    });
 
-    console.log('HELLO')
-    //this.maxTopic = this.findMaxTopic()
 
   }, //End mounted
   computed: {
@@ -66,6 +66,11 @@ var app = new Vue({
         Vue.set(docsByLabelObj, this.labels[i], this.filterDocs(this.labels[i]));
       }
       return docsByLabelObj;
+    },
+    prettyTime: function(){
+      let seconds = parseInt(this.time / 1000);
+      let remaining = ('0' + (seconds % 60)).slice(-2);
+      return parseInt(seconds/60) + ':' + remaining;
     },
   }, //End computed
   watch: {
@@ -97,6 +102,7 @@ var app = new Vue({
       });
     },
     getNewUser: function(){
+      console.log('getNewUser');
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
         this.sendUpdate();
@@ -106,6 +112,7 @@ var app = new Vue({
       });
     },
     sendUpdate: function(){
+      console.log('sendUpdate');
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -206,7 +213,9 @@ var app = new Vue({
       return count;
     },
     closeModal: function(){
-      this.showModal=false;
+      if (this.started){
+        this.showModal=false;
+      }
     },
     openModal: function(){
       this.showModal=true;
@@ -486,8 +495,41 @@ var app = new Vue({
       return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
     },
     toggleDocOpen: function(doc){
+      if(doc.open){
+        this.logText += ('CLOSE DOC - ' + doc.docId + ' TIME - ' + this.getTime() + '\n');
+      } else {
+        this.logText += ('OPEN DOC - ' + doc.docId + ' TIME - ' + this.getTime() + '\n');
+
+      }
       doc.open = !doc.open;
+    },
+    getExactTime: function(){
+      return new Date() - this.startDate;
+    },
+    startTask: function(){
+      this.getNewUser();
+      this.time = this.totalTime;
+      this.timer = setInterval( () => {
+        if (this.time > 0){
+          this.time -= 1000;
+        } else {
+          this.sendUpdate();
+        }
+      }, 1000);
+      this.showModal = false;
+      this.started = true;
+      // Event listener to close the modal on Esc
+      document.addEventListener("keydown", (e) => {
+        if (this.showModal && e.keyCode == 27) {
+          this.closeModal()
+        }
+      });
+
+      //this.maxTopic = this.findMaxTopic()
+      this.startDate = new Date();
+
     }
+
   }, //End methods
 });
 

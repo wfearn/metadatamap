@@ -111,6 +111,17 @@ input[type="radio"] {
 .rounded{
   border-radius: 5px;
 }
+#timer-box{
+}
+.right{
+  float: right;
+}
+.inline{
+  display: inline;
+}
+.large{
+  font-size: 20px;
+}
 /*
 .rating {
   background: hotpink;

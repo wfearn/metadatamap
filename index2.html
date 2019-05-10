@@ -10,20 +10,29 @@
   <body>
 
     <div id="app">
-      <h1>Label Debates</h1>
-      <h2>User Id - {{ userId }} </h2>
+      <div>
+        <strong class="inline large">Label Debates</strong>
+        <strong class="right inline large">User Id - {{ userId }} </strong>
+      </div>
 
-      </br>
       </br>
       <div>
         <strong> Labeled so far: {{ labeledCount }} </strong>
+        <strong id="timer-box"
+             class="right">
+          {{ prettyTime }}
+        </strong>
       </div>
-      <button v-on:click='showModal=!showModal'>Display Instructions</button>
-
-      <button v-on:click='labelAllCorrect'>Cheat</button>
       <div>
-        <button v-on:click="sendUpdate">Get new debates to review</button>
-        <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
+        <button v-on:click='showModal=!showModal'>Display Instructions</button>
+
+        <button v-on:click='labelAllCorrect'>Cheat</button>
+        <button class="right"
+                v-on:click="sendUpdate">
+          Get new debates to review
+        </button>
+          <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
+        </br>
       </div>
 
       <div id="doc-list"
@@ -190,7 +199,8 @@
               Instructions for the debate labeling task
             </h2>
             <button class="btn-close"
-                    v-on:click="closeModal()">
+                    v-on:click="closeModal()"
+                    v-if="started">
               &times;
             </button>
           </div>
@@ -214,7 +224,11 @@
             </div>
           </div> <!-- Modal body -->
           <div class="modal-footer">
-            This is the modal footer
+            <button v-if="!started"
+                    v-on:click="startTask">
+              Start
+
+            </button>
           </div>
         </div> <!-- Modal content -->
       </div> <!-- Modal shell -->
@@ -225,6 +239,7 @@
         <img v-bind:src="'static/images/spinner.gif'"></img>
       </div>
     </transition>
+    <!--
     <transition name="fade">
     <div v-if="displayInstructions"
            class="modal-shell">
@@ -264,6 +279,7 @@
         </div> <!-- Modal content -->
       </div>
     </transition>
+    -->
 
     </div> <!-- End Vue App -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
