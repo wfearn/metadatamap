@@ -113,6 +113,7 @@ var app = new Vue({
     },
     sendUpdate: function(){
       console.log('sendUpdate');
+      this.logText += 'SEND UPDATE TIME - ' + this.getExactTime() + '\n';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -215,10 +216,19 @@ var app = new Vue({
     closeModal: function(){
       if (this.started){
         this.showModal=false;
+        this.logText += ('CLOSE INSTRUCITONS TIME - ' + this.getExactTime() + '\n');
       }
     },
     openModal: function(){
       this.showModal=true;
+      this.logText += ('OPEN INSTRUCITONS TIME - ' + this.getExactTime() + '\n');
+    },
+    toggleModal: function(){
+      if(this.showModal){
+        this.closeModal()
+      } else {
+        this.openModal()
+      }
     },
     filterDocs: function(label){
       return this.docs.filter(function(doc){
@@ -486,19 +496,21 @@ var app = new Vue({
       if (doc.hasOwnProperty('userLabel')){
         if (doc.userLabel === label){
           this.deleteLabel(doc);
+          this.logText += ('UNLABEL DOC - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
           return;
         }
       }
       Vue.set(doc, 'userLabel', label);
+      this.logText += ('LABEL DOC '+label+' - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
     },
     getConfidenceWord: function(doc){
       return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
     },
     toggleDocOpen: function(doc){
       if(doc.open){
-        this.logText += ('CLOSE DOC - ' + doc.docId + ' TIME - ' + this.getTime() + '\n');
+        this.logText += ('CLOSE DOC - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
       } else {
-        this.logText += ('OPEN DOC - ' + doc.docId + ' TIME - ' + this.getTime() + '\n');
+        this.logText += ('OPEN DOC - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
 
       }
       doc.open = !doc.open;
