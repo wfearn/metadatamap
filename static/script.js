@@ -130,6 +130,19 @@ var app = new Vue({
                   doc => doc.hasOwnProperty('userLabel'))
                          .map(doc => ({doc_id: doc.docId,
                                        user_label: doc.userLabel.slice(0, -1)}));
+      // Something like this?
+      for (var i=0; i<this.unlabeledDocs.length; i++){
+        let d = this.unlabeledDocs[i];
+        this.logText += '(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ') ';
+      }
+      this.logText += '\n' + '-'.repeat(10) + '\n';
+
+      // Or maybe like this?
+      this.logText += 'LABELEDDOCS||';
+      for (var i=0; i<curLabeledDocs.length; i++){
+        this.logText += '(' + curLabeledDocs[i].doc_id + ',' + curLabeledDocs[i].user_label + '), '
+      }
+      this.logText += '\n' + '-'.repeat(10) + '\n';
       this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
