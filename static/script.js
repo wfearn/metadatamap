@@ -34,6 +34,7 @@ var app = new Vue({
     canEditAnchors: false,
     showTokens: false,
     displayInstructions: false,
+    // TODO: currently randomly choosing these conditions, but need to ensure that we get equal numbers in all conditions, so instead should use server to track how many participants of each condition
     inputUncertainty: Math.random() >= 0.5,
     perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
@@ -42,15 +43,15 @@ var app = new Vue({
     timer: null,
     totalTime: 20*60*1000,
     time: 0,
-    firstPage: true,
-    started: false,
-    finished: false,
+    firstPage: true, // track which page of modal the user is viewing
+    started: false, // track whether the user has started the task
+    finished: false
     },
   components: {
   //  'modal': Modal,
   },
   mounted: function () {
-    console.log('mounted')
+    // console.log('mounted')
 
     // We dont need vocab for this study
     //this.loading = true;
@@ -539,6 +540,7 @@ var app = new Vue({
       }, 1000);
       this.showModal = false;
       this.started = true;
+      this.logText += (this.getExactTime() + '||STARTING_TASK||' + userId + '||c,' + perceivedControl + ',u,' + inputUncertainty + '\n');
       // Event listener to close the modal on Esc
       document.addEventListener("keydown", (e) => {
         if (this.showModal && e.keyCode == 27) {
