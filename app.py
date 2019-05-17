@@ -256,9 +256,9 @@ class UserList:
     def get_user_dir(self, user_id):
         return os.path.join(self.user_base_dir, user_id)
 
-    def get_filename(self, user_id, update_num):
+    def get_filename(self, user_id, update_num, ext='.pickle'):
         return os.path.join(self.get_user_dir(user_id),
-                            str(update_num).zfill(self.zfill)+user_id+'.pickle')
+                            str(update_num).zfill(self.zfill)+user_id+ext)
 
     def has_user(self, user_id):
         if not user_id:
@@ -441,6 +441,13 @@ def api_update():
     unlabeled_ids = user['unlabeled_ids']
     Q = user['Q']
     D = user['D']
+
+    # Write the log file
+    log_text = data.get('log_text')
+    if log_text is not None:
+        log_filename = users.get_filename(user_id, user['update_num'], '.txt')
+        with open(log_filename, 'w') as outfile:
+            outfile.write(log_text)
 
     users.print_user_ids()
 

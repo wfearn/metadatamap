@@ -133,16 +133,17 @@ var app = new Vue({
       // Something like this?
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
-        this.logText += '(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ') ';
+        this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
+                         (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
-      this.logText += '\n' + '-'.repeat(10) + '\n';
-
       // Or maybe like this?
-      this.logText += 'LABELEDDOCS||';
-      for (var i=0; i<curLabeledDocs.length; i++){
-        this.logText += '(' + curLabeledDocs[i].doc_id + ',' + curLabeledDocs[i].user_label + '), '
-      }
-      this.logText += '\n' + '-'.repeat(10) + '\n';
+      // this.logText += 'LABELEDDOCS||';
+      // for (var i=0; i<curLabeledDocs.length; i++){
+      //   this.logText += ('(' + curLabeledDocs[i].doc_id + ',' + curLabeledDocs[i].user_label +
+      //                    (i<curLabeledDocs.length-1 ? '), ' : ')'));
+      // }
+      this.logText += '\n' + '-'.repeat(10) + '\n\n';
+
       this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
@@ -150,6 +151,7 @@ var app = new Vue({
         //                                            user_label: doc.userLabel})),
         labeled_docs: curLabeledDocs,
         user_id: this.userId,
+        log_text: this.logText,
       }).then(response => {
         console.log(response);
         this.updateData = response.data;
