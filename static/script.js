@@ -42,6 +42,7 @@ var app = new Vue({
     timer: null,
     totalTime: 20*60*1000,
     time: 0,
+    firstPage: false,
     started: false,
     finished: false,
     },
@@ -220,12 +221,13 @@ var app = new Vue({
     closeModal: function(){
       if (this.started){
         this.showModal=false;
-        this.logText += ('CLOSE INSTRUCITONS TIME - ' + this.getExactTime() + '\n');
+        this.logText += ('CLOSE INSTRUCTIONS TIME - ' + this.getExactTime() + '\n');
       }
     },
     openModal: function(){
       this.showModal=true;
-      this.logText += ('OPEN INSTRUCITONS TIME - ' + this.getExactTime() + '\n');
+      this.firstPage = true;
+      this.logText += ('OPEN INSTRUCTIONS TIME - ' + this.getExactTime() + '\n');
     },
     toggleModal: function(){
       if(this.showModal){
@@ -551,4 +553,3 @@ var app = new Vue({
 
   }, //End methods
 });
-

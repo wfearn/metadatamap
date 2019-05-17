@@ -1,3 +1,4 @@
+<!-- HTML FILE FOR THE TEAMING STUDY TASK UI -->
 <!DOCTYPE html>
 <html>
   <head>
@@ -5,31 +6,31 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"/>
     <link rel="stylesheet" href="static/styles/second_style.css"/>
     <link rel="stylesheet" href="static/styles/modal.css"/>
-    <title>Round 2</title>
+    <title>Debate Labeling Task</title>
   </head>
   <body>
 
     <div id="app">
       <div>
-        <strong class="inline large">Label Debates</strong>
-        <strong class="right inline large">User Id - {{ userId }} </strong>
+        <!--<strong class="inline large">Label Debates</strong> -->
+        <strong class="right inline large user-id">user id: {{ userId }} </strong>
       </div>
 
       </br>
       <div>
-        <strong> Labeled so far: {{ labeledCount }} </strong>
+        <strong> # documents you've labeled: {{ labeledCount }} </strong>
         <strong id="timer-box"
-             class="right">
-          {{ prettyTime }}
+             class="right time-remaining">
+          time remaining: {{ prettyTime }}
         </strong>
       </div>
       <div>
-        <button v-on:click='toggleModal()'>Display Instructions</button>
+        <button v-on:click='toggleModal()' title="display instructions">?</button>
 
-        <button v-on:click='labelAllCorrect'>Cheat</button>
-        <button class="right"
+      <!--  <button v-on:click='labelAllCorrect'>Cheat</button> -->
+        <button class="right save-button"
                 v-on:click="sendUpdate">
-          Get new debates to review
+          save and get new set of debates
         </button>
           <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
         </br>
@@ -82,7 +83,7 @@
             <div class="radio-container">
               <div>
                 <div class="vertical-align">
-                  {{ perceivedControl ? "Assign Label" : "Suggest Label" }}
+                  {{ perceivedControl ? "Assign Label:" : "Suggest Label:" }}
                 </div>
               </div>
               <button class="radio-selection"
@@ -196,7 +197,7 @@
         <div class="modal-content instructions" v-on:click.stop>
           <div class="modal-header doc-header">
             <h2>
-              Instructions for the debate labeling task
+              Instructions <!--for the debate labeling task-->
             </h2>
             <button class="btn-close"
                     v-on:click="closeModal()"
@@ -205,29 +206,50 @@
             </button>
           </div>
           <div class="modal-body">
-            <div>The system has predicted the political party affiliation for the
-            speaker of each of the ten debates speeches shown here. For each debate,
-            the system provides its prediction and how sure it is. You can correct or
-            confirm the system’s prediction by assigning whether the speaker is a
-            republican or democrat.
-            </br>
-
-
-            You can click on any debate to expand it to view
-            the text and to see the highlighted words which were most important for
-            the systems prediction.
-            </br>
-
-            You can press the “update and get new documents”
-            button at any point to save your assignments to the system and get an new
-            set of debates to review.
-            </div>
+            <span v-if="firstPage">
+              <div>
+                We have created a political party prediction system to predict if a speaker is a republican or democrat. In this task, you and the system will predict the political party of the speakers for a large set of debate speeches. There are too many speeches for you to read and predict the speakers’ political party for all of them on your own.
+              </div>
+              </br>
+              </br>
+              <div>For each speech, the system predicts the party affiliation of the speaker and highlights the words within the speech that are most important for that prediction. You can correct or confirm the party affiliation for any of the speeches to help the system learn to make better predictions.</div>
+              </br>
+              </br>
+              <div>You will have 20 minutes to review the speeches and correct or confirm the systems predictions. At the end of the task time, the system will label the remaining speeches. Then all speeches (those labeled by you and by the final version of the system) will be scored. You will be given a bonus for how many of the speeches are correctly labeled.
+              </div>
+            </span>
+            <span v-if="!firstPage">
+              <div>The system has predicted the political party affiliation for the
+              speaker of each of the ten debates speeches shown here. For each debate,
+              the system provides its prediction and how sure it is. You can correct or
+              confirm the system’s prediction by {{ perceivedControl ? 'assigning' : 'suggesting' }} whether the speaker is a
+              republican or democrat.
+              </br>
+              </br>
+              Clicking on any debate expands it to view
+              the text. The highlighted words are those that are most important for
+              the system's prediction.
+              </br>
+              </br>
+              Pressing the "save and get new set of documents”
+              button at any point saves your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system and gets a new
+              set of debates to review.
+              </br>
+              </br>
+              Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be scored based on how many out of all total speeches are correct. You can revisit these instructions at any time by clicking the “? button.
+              </div>
+            </span>
           </div> <!-- Modal body -->
           <div class="modal-footer">
-            <button v-if="!started"
+            <button class="modal-button"
+                    v-if="firstPage"
+                    v-on:click="firstPage = false">
+              next
+            </button>
+            <button class="modal-button"
+                    v-if="!started && !firstPage"
                     v-on:click="startTask">
-              Start
-
+              start
             </button>
           </div>
         </div> <!-- Modal content -->
