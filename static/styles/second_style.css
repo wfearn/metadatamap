@@ -1,16 +1,19 @@
 body {
-    font-family: 'Arvo';
-    font-family: 'Roboto';
-    font-size: 14px;
-    padding: 20px 100px 50px 100px;
-    background: #f3f3f3;
+  /*
+  font-family: 'Arvo';
+  */
+  font-family: 'Roboto';
+  padding: 20px 100px 50px 100px;
+  background: #f3f3f3;
 }
 
 button {
-    font-family: 'Arvo';
-    font-size: 1em;
-    cursor:pointer;
-    border-radius: 5px;
+  /*
+  font-family: 'Arvo';
+  */
+  font-size: 16px;
+  cursor:pointer;
+  border-radius: 5px;
 }
 
 .vertical-align {
