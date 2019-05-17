@@ -42,7 +42,7 @@ var app = new Vue({
     timer: null,
     totalTime: 20*60*1000,
     time: 0,
-    firstPage: false,
+    firstPage: true,
     started: false,
     finished: false,
     },
@@ -226,7 +226,7 @@ var app = new Vue({
     },
     openModal: function(){
       this.showModal=true;
-      this.firstPage = true;
+      this.firstPage=true;
       this.logText += ('OPEN INSTRUCTIONS TIME - ' + this.getExactTime() + '\n');
     },
     toggleModal: function(){

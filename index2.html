@@ -13,24 +13,25 @@
     <div id="app">
       <div>
         <!--<strong class="inline large">Label Debates</strong> -->
-        <strong class="right inline large user-id">user id: {{ userId }} </strong>
+        <strong class="right inline user-id">user id: {{ userId }} </strong>
       </div>
 
       </br>
       <div>
-        <strong> # documents you've labeled: {{ labeledCount }} </strong>
+        <strong> # Documents You've Labeled: {{ labeledCount }} </strong>
         <strong id="timer-box"
-             class="right time-remaining">
-          time remaining: {{ prettyTime }}
+             class="right time-remaining"
+             title="task time remaining">
+          Time Remaining: {{ prettyTime }}
         </strong>
       </div>
       <div>
-        <button v-on:click='toggleModal()' title="display instructions">?</button>
+        <button v-on:click='toggleModal()' title="display instructions">View Instructions</button>
 
       <!--  <button v-on:click='labelAllCorrect'>Cheat</button> -->
         <button class="right save-button"
                 v-on:click="sendUpdate">
-          save and get new set of debates
+          Save and Get New Set of Debates
         </button>
           <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
         </br>
@@ -236,7 +237,7 @@
               set of debates to review.
               </br>
               </br>
-              Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be scored based on how many out of all total speeches are correct. You can revisit these instructions at any time by clicking the “? button.
+              Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be scored based on how many out of all total speeches are correct. You can revisit these instructions at any time by clicking the “View Instructions button.
               </div>
             </span>
           </div> <!-- Modal body -->
