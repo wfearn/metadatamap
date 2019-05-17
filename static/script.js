@@ -540,7 +540,7 @@ var app = new Vue({
       }, 1000);
       this.showModal = false;
       this.started = true;
-      this.logText += (this.getExactTime() + '||STARTING_TASK||' + userId + '||c,' + perceivedControl + ',u,' + inputUncertainty + '\n');
+      this.logText += (this.getExactTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
       // Event listener to close the modal on Esc
       document.addEventListener("keydown", (e) => {
         if (this.showModal && e.keyCode == 27) {
