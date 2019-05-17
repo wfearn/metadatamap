@@ -529,6 +529,9 @@ var app = new Vue({
       this.getNewUser();
       this.finished = false;
       this.time = this.totalTime;
+      this.twoMinute = setTimeout( () => {
+        alert('You have 2 minutes remaining');
+      }, this.totalTime - 2*60*1000);
       this.timer = setInterval( () => {
         if (this.time > 0){
           this.time -= 1000;
