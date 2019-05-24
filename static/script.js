@@ -112,7 +112,7 @@ var app = new Vue({
       // console.log('getNewUser');
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
-        this.sendUpdate();
+      //  this.sendUpdate();
       }).catch(error => {
         console.error('error in /api/adduser', error);
         // console.log(error);
@@ -199,6 +199,9 @@ var app = new Vue({
       });
     },
     shuffle: function(array) {
+      if (!array) {
+        return;
+      }
       var currentIndex = array.length;
       var temporaryValue, randomIndex;
 
@@ -571,6 +574,7 @@ var app = new Vue({
     },
     startTask: function(){
       // this.getNewUser();
+      this.sendUpdate();
       this.finished = false;
       this.time = this.totalTime;
       this.twoMinute = setTimeout( () => {
