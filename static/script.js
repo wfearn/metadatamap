@@ -45,7 +45,9 @@ var app = new Vue({
     time: 0,
     firstPage: true, // track which page of modal the user is viewing
     started: false, // track whether the user has started the task
-    finished: false
+    finished: false, // track whether user has finished the task
+    clickedSurvey: false, // track whether the user has clicked the survey link
+    finishedSurvey: false // track whether the user has proceeded to the task after completing the survey
     },
   components: {
   //  'modal': Modal,
@@ -58,7 +60,9 @@ var app = new Vue({
     //this.getVocab();
     //this.sendUpdate();
 
-
+    // is this the on load function?
+    console.log('mounted');
+    this.getNewUser();
 
   }, //End mounted
   computed: {
@@ -83,7 +87,7 @@ var app = new Vue({
       axios.get('/api/vocab').then(response => {
         this.vocab = response.data.vocab;
       }).catch(error => {
-        console.log('error in /api/vocab')
+        console.error('error in /api/vocab', error)
       });
     },
     getIdData: function(id){
@@ -101,17 +105,17 @@ var app = new Vue({
           alert('That user id was not found');
         }
       }).catch(error => {
-        console.log('error in /api/checkuserid')
+        console.error('error in /api/checkuserid', error)
       });
     },
     getNewUser: function(){
-      console.log('getNewUser');
+      // console.log('getNewUser');
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
         this.sendUpdate();
       }).catch(error => {
-        console.log('error in /api/adduser');
-        console.log(error);
+        console.error('error in /api/adduser', error);
+        // console.log(error);
       });
     },
     sendUpdate: function(){
@@ -119,7 +123,7 @@ var app = new Vue({
         return;
       }
       console.log('sendUpdate');
-      this.logText += 'SEND UPDATE TIME - ' + this.getExactTime() + '\n';
+      this.logText += this.getExactTime() + '||SEND_UPDATE||';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -136,13 +140,14 @@ var app = new Vue({
         this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
+      this.logText += '\n';
       // Or maybe like this?
       // this.logText += 'LABELEDDOCS||';
       // for (var i=0; i<curLabeledDocs.length; i++){
       //   this.logText += ('(' + curLabeledDocs[i].doc_id + ',' + curLabeledDocs[i].user_label +
       //                    (i<curLabeledDocs.length-1 ? '), ' : ')'));
       // }
-      this.logText += '\n' + '-'.repeat(10) + '\n\n';
+      // this.logText += '\n' + '-'.repeat(10) + '\n\n';
 
       this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
@@ -151,12 +156,16 @@ var app = new Vue({
         //                                            user_label: doc.userLabel})),
         labeled_docs: curLabeledDocs,
         user_id: this.userId,
+        // updates the log text on call to update
         log_text: this.logText,
       }).then(response => {
         console.log(response);
         this.updateData = response.data;
         this.anchors = response.data.anchors;
+        // new set of unlabeled documents
         this.unlabeledDocs = response.data.unlabeledDocs;
+        // AMR 5/24: shuffle the order randomly (needed for teaming study)
+        this.shuffle(this.unlabledDocs);
         this.labels = response.data.labels;
         this.labeled_docs = [];
         this.loading = false;
@@ -168,6 +177,8 @@ var app = new Vue({
         for (var i=0; i<this.unlabeledDocs.length; i++){
           Vue.set(this.unlabeledDocs[i], 'open', false);
         }
+        // TODO: check the current system accuracy?
+        this.getAccuracy();
       }).catch(error => {
         console.log('Error in /api/update');
         console.log(error);
@@ -179,13 +190,31 @@ var app = new Vue({
       axios.post('/api/accuracy', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords))
       }).then(response => {
+        console.log('current accuracy', response.data.accuracy)
         this.accuracy = response.data.accuracy;
         this.loading = false;
       }).catch(error => {
-        console.log('Error in /api/accuracy');
-        console.log(error);
+        console.error('Error in /api/accuracy', error);
         this.loading = false;
       });
+    },
+    shuffle: function(array) {
+      var currentIndex = array.length;
+      var temporaryValue, randomIndex;
+
+      // While there remain elements to shuffle...
+      while (0 !== currentIndex) {
+        // Pick a remaining element...
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+      }
+
+      return array;
     },
     chooseColors: function(){
       console.log('chooseColors');
@@ -541,14 +570,14 @@ var app = new Vue({
       return new Date() - this.startDate;
     },
     startTask: function(){
-      this.getNewUser();
+      // this.getNewUser();
       this.finished = false;
       this.time = this.totalTime;
       this.twoMinute = setTimeout( () => {
         alert('You have 2 minutes remaining');
       }, this.totalTime - 2*60*1000);
       this.timer = setInterval( () => {
-        if (this.time > 0){
+        if (this.time > 0) {
           this.time -= 1000;
         } else {
           clearInterval(this.timer);
