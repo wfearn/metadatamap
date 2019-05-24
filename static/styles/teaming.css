@@ -22,6 +22,10 @@ button {
   transform: translateY(-50%);
 }
 
+.header {
+  margin-bottom: 5px;
+}
+
 .instructions{
   width: 75%;
 }
@@ -106,6 +110,7 @@ button {
   padding: 10px 30px !important;
   max-width: 800px;
   min-width: 400px;
+  margin: auto;
 }
 input[type="radio"] {
   height: 25px;

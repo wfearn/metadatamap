@@ -38,6 +38,10 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   justify-content: flex-end;
 }
 
+.bold {
+  font-weight: bold;
+}
+
 .modal-body {
   position: relative;
   padding: 20px 10px;
