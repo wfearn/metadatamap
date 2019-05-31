@@ -124,7 +124,7 @@ var app = new Vue({
         return;
       }
       // console.log('sendUpdate');
-      this.logText += this.getCurrTimeStamp() + '||' this.getActiveTime() + '||SEND_UPDATE||';
+      this.logText += this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||SEND_UPDATE||';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -276,7 +276,7 @@ var app = new Vue({
         this.timeWarning = false;
         this.paused = false;
         this.showModal=false;
-        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||CLOSE_INSTRUCTIONS \n');
       }
     },
     openModal: function() {
@@ -288,7 +288,7 @@ var app = new Vue({
       if(this.showModal){
         this.closeModal()
       } else {
-        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||OPEN_INSTRUCTIONS \n');
         this.openModal()
       }
     },
@@ -558,21 +558,21 @@ var app = new Vue({
       if (doc.hasOwnProperty('userLabel')){
         if (doc.userLabel === label){
           this.deleteLabel(doc);
-          this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId +  '\n');
+          this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||UNLABEL_DOC||' + doc.docId +  '\n');
           return;
         }
       }
       Vue.set(doc, 'userLabel', label);
-      this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
+      this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
     },
     getConfidenceWord: function(doc){
       return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
     },
     toggleDocOpen: function(doc){
       if(doc.open){
-        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime()+ '||CLOSE_DOC||' + doc.docId +  '\n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime()+ '||CLOSE_DOC||' + doc.docId +  '\n');
       } else {
-        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||OPEN_DOC||' + doc.docId +  '\n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||OPEN_DOC||' + doc.docId +  '\n');
       }
       doc.open = !doc.open;
     },
@@ -596,7 +596,7 @@ var app = new Vue({
       this.paused = false;
       this.time = this.totalTime;
       this.twoMinute = setTimeout( () => {
-        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||TIME_WARNING \n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||TIME_WARNING \n');
         // show in modal and pause task time
         this.timeWarning = true;
         this.openModal();
@@ -606,7 +606,7 @@ var app = new Vue({
           this.time -= 1000;
         } else {
           clearInterval(this.timer);
-          this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||TIME_UP \n');
+          this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||TIME_UP \n');
           // send final update
           this.sendUpdate();
           // set finished status to true
@@ -617,7 +617,7 @@ var app = new Vue({
       }, 1000);
       this.showModal = false;
       this.started = true;
-      this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+      this.logText += (this.getCurrTimeStamp() + '||' + this.gtActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
       // Event listener to close the modal on Esc
       document.addEventListener("keydown", (e) => {
         if (this.showModal && e.keyCode == 27) {
