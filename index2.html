@@ -203,11 +203,13 @@
           <div class="modal-header doc-header">
             <h2>
               <span v-if="!finishedSurvey">Welcome</span>
-              <span v-if="finishedSurvey && !finished">Instructions</span> <!--for the debate labeling task-->
+              <span v-if="finishedSurvey && firstPage && !finished">Task Overview</span>
+              <span v-if="finishedSurvey && !firstPage && !finished">Tool Instructions</span> <!--for the debate labeling task-->
+              <span v-if="finished">Post-Task Survey</span> 
             </h2>
             <button class="btn-close"
                     v-on:click="closeModal()"
-                    v-if="started">
+                    v-if="started && !finished">
               &times;
             </button>
           </div>
@@ -217,14 +219,14 @@
               <br/>
               <br/>
               Please complete the following survey:
-              <a href="https://forms.gle/DiVdwNuquTKGLjxV7">post-task survey</a>, with your assigned user id: {{userId}}
+              <a href="https://forms.gle/DiVdwNuquTKGLjxV7" target="_blank">post-task survey</a>, with your assigned user id: {{userId}}
             </span>
             <span v-if="!finishedSurvey && !finished">
               Welcome to the debate speech prediction task! Your assigned user id is: <span class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive compensation for this task.
               <br/>
               <br/>
               Please first complete the following survey:
-              <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>, with user id: {{userId}}.
+              <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>, which will open in a new tab or window. After completing the survey, return to this tab to perform the task.
             </span>
             <span v-if="firstPage && finishedSurvey && !finished">
               <div>

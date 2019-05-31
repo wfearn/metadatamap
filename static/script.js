@@ -43,6 +43,7 @@ var app = new Vue({
     timer: null,
     totalTime: 20*60*1000,
     time: 0,
+    paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
     firstPage: true, // track which page of modal the user is viewing
     started: false, // track whether the user has started the task
     finished: false, // track whether user has finished the task
@@ -123,7 +124,7 @@ var app = new Vue({
         return;
       }
       // console.log('sendUpdate');
-      this.logText += this.getExactTime() + '||SEND_UPDATE||';
+      this.logText += this.getCurrTimeStamp() + '||' this.getActiveTime() + '||SEND_UPDATE||';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -270,12 +271,15 @@ var app = new Vue({
       return count;
     },
     closeModal: function(){
-      if (this.started){
+      console.log('closing the modal!');
+      if (this.started) {
+        this.paused = false;
         this.showModal=false;
-        this.logText += (this.getExactTime() + '||CLOSE_INSTRUCTIONS \n');
+        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
       }
     },
-    openModal: function(){
+    openModal: function() {
+      this.paused = true;
       this.showModal=true;
       this.firstPage=true;
     },
@@ -283,7 +287,7 @@ var app = new Vue({
       if(this.showModal){
         this.closeModal()
       } else {
-        this.logText += (this.getExactTime() + '||OPEN_INSTRUCTIONS \n');
+        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
         this.openModal()
       }
     },
@@ -553,44 +557,55 @@ var app = new Vue({
       if (doc.hasOwnProperty('userLabel')){
         if (doc.userLabel === label){
           this.deleteLabel(doc);
-          this.logText += (this.getExactTime() + '||UNLABEL_DOC||' + doc.docId +  '\n');
+          this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId +  '\n');
           return;
         }
       }
       Vue.set(doc, 'userLabel', label);
-      this.logText += (this.getExactTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
+      this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
     },
     getConfidenceWord: function(doc){
       return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
     },
     toggleDocOpen: function(doc){
       if(doc.open){
-        this.logText += (this.getExactTime() + '||CLOSE_DOC||' + doc.docId +  '\n');
+        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime()+ '||CLOSE_DOC||' + doc.docId +  '\n');
       } else {
-        this.logText += (this.getExactTime() + '||OPEN_DOC||' + doc.docId +  '\n');
+        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||OPEN_DOC||' + doc.docId +  '\n');
       }
       doc.open = !doc.open;
     },
-    getExactTime: function(){
+    getExactTime: function() {
+      console.log('curr time', new Date())
       return new Date() - this.startDate;
     },
-    startTask: function(){
+    getActiveTime: function() {
+      return this.totalTime - this.time;
+    },
+    getCurrTimeStamp: function () {
+      return new Date();
+    },
+    startTask: function() {
+      console.log('starting the task!');
       // this.getNewUser();
+      // INITIAL UPDATE
       this.sendUpdate();
+      this.startDate = new Date();
       this.finished = false;
+      this.paused = false;
       this.time = this.totalTime;
       this.twoMinute = setTimeout( () => {
-        this.logText += (this.getExactTime() + '||TIME_WARNING \n');
-        // TODO: show in modal
-        text = 'You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all outstanding ' + (this.perceivedControl ? "assignments" : "suggestions") + ' will be saved to the system.';
-        alert(text);
+        this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||TIME_WARNING \n');
+        // show in modal and pause task time
+        this.timeWarning = true;
+        this.openModal();
       }, this.totalTime - 2*60*1000);
       this.timer = setInterval( () => {
-        if (this.time > 0) {
+        if (this.time > 0 && !this.paused) {
           this.time -= 1000;
         } else {
           clearInterval(this.timer);
-          this.logText += (this.getExactTime() + '||TIME_UP \n');
+          this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||TIME_UP \n');
           // send final update
           this.sendUpdate();
           // set finished status to true
@@ -601,7 +616,7 @@ var app = new Vue({
       }, 1000);
       this.showModal = false;
       this.started = true;
-      this.logText += (this.getExactTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+      this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
       // Event listener to close the modal on Esc
       document.addEventListener("keydown", (e) => {
         if (this.showModal && e.keyCode == 27) {
@@ -610,8 +625,6 @@ var app = new Vue({
       });
 
       //this.maxTopic = this.findMaxTopic()
-      this.startDate = new Date();
-
     }
 
   }, //End methods
