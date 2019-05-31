@@ -589,10 +589,10 @@ var app = new Vue({
     },
     startTask: function() {
       console.log('starting the task!');
+      this.startDate = new Date();
       // this.getNewUser();
       // INITIAL UPDATE
       this.sendUpdate();
-      this.startDate = new Date();
       this.finished = false;
       this.paused = false;
       this.time = this.totalTime;

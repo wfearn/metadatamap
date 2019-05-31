@@ -26,6 +26,10 @@ button {
   margin-bottom: 5px;
 }
 
+.large-label {
+  font-size: 24px;
+}
+
 .instructions{
   width: 75%;
 }
@@ -50,7 +54,7 @@ button {
 
 .doc-container-collapsed {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr 5fr;
+  grid-template-columns: .5fr 1fr 2fr 5fr;
   grid-template-areas:
         "expand title rating radio";
   grid-gap: 10px;
@@ -59,7 +63,7 @@ button {
 
 .doc-container-expanded {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr 5fr;
+  grid-template-columns: .5fr 1fr 2fr 5fr;
   grid-template-rows: auto;
   grid-template-areas:
         "expand  title   rating  radio"
@@ -75,8 +79,9 @@ button {
 }
 
 .expand-button {
-  width: 100%;
-  height: 100%;
+/*  width: 100%;
+  height: 100%; */
+  margin: auto;
   background: None;
   font-size: 30px;
 }

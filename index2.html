@@ -30,7 +30,7 @@
         <button class="save-button"
                 v-on:click="sendUpdate"
                 title="save input and get new set of debates">
-          Save and Get New Set of Debates
+          Save {{ perceivedControl ? "Assignments" : "Suggestions" }} and Get New Set of Debates
         </button>
         <button v-on:click='toggleModal()' class="right" title="show instructions">View Instructions</button>
 
@@ -74,11 +74,11 @@
             </div>
           </div>
           <div class="rating">
-            <div class="vertical-align rounded"
-                 v-bind:style="{'background-color': colors[doc.prediction.label]}">
-              Model Prediction: </br>
-              {{ getConfidenceWord(doc) }} {{ expandLabel(doc.prediction.label) }}
+            <div class="vertical-align large-label">
+              Model Prediction:
             </div>
+              <div class="vertical-align rounded" v-bind:style="{'background-color': colors[doc.prediction.label]}">{{ getConfidenceWord(doc) }} {{ expandLabel(doc.prediction.label) }}
+              </div>
           </div>
 
           <div class="radio">
@@ -87,7 +87,7 @@
             </span>
             <div class="radio-container">
               <div>
-                <div class="vertical-align">
+                <div class="vertical-align large-label">
                   {{ perceivedControl ? "Assign Label:" : "Suggest Label:" }}
                 </div>
               </div>
