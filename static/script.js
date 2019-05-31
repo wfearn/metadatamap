@@ -582,7 +582,8 @@ var app = new Vue({
       this.twoMinute = setTimeout( () => {
         this.logText += (this.getExactTime() + '||TIME_WARNING \n');
         // TODO: show in modal
-        alert('You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all outstanding {{this.perceivedControl ? "assignments" : "suggestions"}} will be saved to the system.');
+        text = 'You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all outstanding ' + (this.perceivedControl ? "assignments" : "suggestions") + ' will be saved to the system.';
+        alert(text);
       }, this.totalTime - 2*60*1000);
       this.timer = setInterval( () => {
         if (this.time > 0) {
