@@ -577,7 +577,7 @@ var app = new Vue({
       this.finished = false;
       this.time = this.totalTime;
       this.twoMinute = setTimeout( () => {
-        this.logText += (this.getExactTime() + '||TIME_WARNING '\n');
+        this.logText += (this.getExactTime() + '||TIME_WARNING \n');
         // TODO: show in modal
         alert('You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all outstanding {{this.perceivedControl ? "assignments" : "suggestions"}} will be saved to the system.');
       }, this.totalTime - 2*60*1000);
@@ -586,7 +586,7 @@ var app = new Vue({
           this.time -= 1000;
         } else {
           clearInterval(this.timer);
-          this.logText += (this.getExactTime() + '||TIME_UP '\n');
+          this.logText += (this.getExactTime() + '||TIME_UP \n');
           // send final update
           this.sendUpdate();
           // set finished status to true
