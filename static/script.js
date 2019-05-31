@@ -122,7 +122,7 @@ var app = new Vue({
       if (this.finished){
         return;
       }
-      console.log('sendUpdate');
+      // console.log('sendUpdate');
       this.logText += this.getExactTime() + '||SEND_UPDATE||';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
@@ -134,6 +134,8 @@ var app = new Vue({
                   doc => doc.hasOwnProperty('userLabel'))
                          .map(doc => ({doc_id: doc.docId,
                                        user_label: doc.userLabel.slice(0, -1)}));
+
+      this.logText += curLabeledDocs.length + '||';
       // Something like this?
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
@@ -165,7 +167,7 @@ var app = new Vue({
         // new set of unlabeled documents
         this.unlabeledDocs = response.data.unlabeledDocs;
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
-        this.shuffle(this.unlabledDocs);
+        this.unlabledDocs = this.shuffle(this.unlabledDocs);
         this.labels = response.data.labels;
         this.labeled_docs = [];
         this.loading = false;
@@ -199,6 +201,7 @@ var app = new Vue({
       });
     },
     shuffle: function(array) {
+      console.log('shuffle array', array);
       if (!array) {
         return;
       }
@@ -216,7 +219,7 @@ var app = new Vue({
         array[currentIndex] = array[randomIndex];
         array[randomIndex] = temporaryValue;
       }
-
+      console.log('shuffled array', array);
       return array;
     },
     chooseColors: function(){
