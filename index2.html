@@ -203,9 +203,10 @@
           <div class="modal-header doc-header">
             <h2>
               <span v-if="!finishedSurvey">Welcome</span>
-              <span v-if="finishedSurvey && firstPage && !finished">Task Overview</span>
-              <span v-if="finishedSurvey && !firstPage && !finished">Tool Instructions</span> <!--for the debate labeling task-->
-              <span v-if="finished">Post-Task Survey</span> 
+              <span v-if="!timeWarning && finishedSurvey && firstPage && !finished">Task Overview</span>
+              <span v-if="!timeWarning && finishedSurvey && !firstPage && !finished">Tool Instructions</span> <!--for the debate labeling task-->
+              <span v-if="finished">Post-Task Survey</span>
+              <span v-if="timeWarning">Time is almost up!</span>
             </h2>
             <button class="btn-close"
                     v-on:click="closeModal()"
@@ -214,6 +215,9 @@
             </button>
           </div>
           <div class="modal-body">
+            <span v-if="timeWarning">
+              You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} will be saved to the system.
+            </span>
             <span v-if="finished">
               Thank you for participating in the task.
               <br/>
@@ -221,14 +225,14 @@
               Please complete the following survey:
               <a href="https://forms.gle/DiVdwNuquTKGLjxV7" target="_blank">post-task survey</a>, with your assigned user id: {{userId}}
             </span>
-            <span v-if="!finishedSurvey && !finished">
+            <span v-if="!timeWarning && !finishedSurvey && !finished">
               Welcome to the debate speech prediction task! Your assigned user id is: <span class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive compensation for this task.
               <br/>
               <br/>
               Please first complete the following survey:
               <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>, which will open in a new tab or window. After completing the survey, return to this tab to perform the task.
             </span>
-            <span v-if="firstPage && finishedSurvey && !finished">
+            <span v-if="!timeWarning && firstPage && finishedSurvey && !finished">
               <div>
                 This is a political party prediction system that predicts if a speaker is a republican or democrat. In this task, <span class="bold">you and the system will predict the political party of the speakers for a large set of debate speeches</span>. There are too many speeches for you to read and predict the speakers’ political party for all of them on your own.
               </div>
@@ -240,7 +244,7 @@
               <div>You will have <span class="bold">20 minutes</span> to review the speeches and correct or confirm the systems predictions. At the end of the task time, the system will label the remaining speeches. Then <span class="bold">all speeches (those labeled by you and by the final version of the system) will be scored</span>. You will be given a <span class="bold">bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
-            <span v-if="!firstPage && finishedSurvey && !finished">
+            <span v-if="!timeWarning && !firstPage && finishedSurvey && !finished">
               <div>The system has predicted the political party affiliation for the
               speaker of each of the ten debates speeches shown here. For each debate speech,
               the system provides its prediction and how sure it is. <span class="bold">You can correct or
@@ -269,12 +273,12 @@
               proceed to task
             </button>
             <button class="modal-button"
-                    v-if="firstPage && finishedSurvey && !finished"
+                    v-if="!timeWarning && firstPage && finishedSurvey && !finished"
                     v-on:click="firstPage = false">
               next
             </button>
             <button class="modal-button"
-                    v-if="!started && !firstPage && !finished"
+                    v-if="!timeWarning && !started && !firstPage && !finished"
                     v-on:click="startTask">
               start
             </button>

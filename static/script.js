@@ -273,6 +273,7 @@ var app = new Vue({
     closeModal: function(){
       console.log('closing the modal!');
       if (this.started) {
+        this.timeWarning = false;
         this.paused = false;
         this.showModal=false;
         this.logText += (this.getCurrTimeStamp() + '||' this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
