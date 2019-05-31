@@ -603,8 +603,10 @@ var app = new Vue({
         this.openModal();
       }, this.totalTime - 2*60*1000);
       this.timer = setInterval( () => {
-        if (this.time > 0 && !this.paused) {
-          this.time -= 1000;
+        if (this.time > 0) {
+          if (!this.paused) {
+            this.time -= 1000;
+          }
         } else {
           clearInterval(this.timer);
           this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_UP \n');
