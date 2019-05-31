@@ -167,7 +167,7 @@ var app = new Vue({
         // new set of unlabeled documents
         this.unlabeledDocs = response.data.unlabeledDocs;
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
-        this.unlabledDocs = this.shuffle(this.unlabledDocs);
+        this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
         this.labels = response.data.labels;
         this.labeled_docs = [];
         this.loading = false;
