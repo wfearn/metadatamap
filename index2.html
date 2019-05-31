@@ -213,18 +213,18 @@
           </div>
           <div class="modal-body">
             <span v-if="finished">
-              Thank you for participating in the task. As a reminder, your assigned User Id is: <span class="bold">{{userId}}</span>.
+              Thank you for participating in the task.
               <br/>
               <br/>
               Please complete the following survey:
-              <a href="https://forms.gle/DiVdwNuquTKGLjxV7">post-task survey</a>
+              <a href="https://forms.gle/DiVdwNuquTKGLjxV7">post-task survey</a>, with your assigned user id: {{userId}}
             </span>
             <span v-if="!finishedSurvey && !finished">
-              Welcome to the debate speech prediction task! Your assigned User Id is: <span class="bold">{{userId}}</span> (you'll need this for filling out the pre and post-task survey).
+              Welcome to the debate speech prediction task! Your assigned user id is: <span class="bold">{{userId}}</span> (you'll need this for filling out the pre and post-task survey).
               <br/>
               <br/>
               Please first complete the following survey:
-              <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>
+              <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>, with user id: {{userId}}.
             </span>
             <span v-if="firstPage && finishedSurvey && !finished">
               <div>

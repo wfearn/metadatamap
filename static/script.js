@@ -177,8 +177,8 @@ var app = new Vue({
         for (var i=0; i<this.unlabeledDocs.length; i++){
           Vue.set(this.unlabeledDocs[i], 'open', false);
         }
-        // TODO: check the current system accuracy?
-        this.getAccuracy();
+        // TODO: check the current system accuracy
+        // this.getAccuracy();
       }).catch(error => {
         console.log('Error in /api/update');
         console.log(error);
@@ -269,18 +269,18 @@ var app = new Vue({
     closeModal: function(){
       if (this.started){
         this.showModal=false;
-        this.logText += ('CLOSE INSTRUCTIONS TIME - ' + this.getExactTime() + '\n');
+        this.logText += (this.getExactTime() + '||CLOSE_INSTRUCTIONS \n');
       }
     },
     openModal: function(){
       this.showModal=true;
       this.firstPage=true;
-      this.logText += ('OPEN INSTRUCTIONS TIME - ' + this.getExactTime() + '\n');
     },
     toggleModal: function(){
       if(this.showModal){
         this.closeModal()
       } else {
+        this.logText += (this.getExactTime() + '||OPEN_INSTRUCTIONS \n');
         this.openModal()
       }
     },
@@ -550,22 +550,21 @@ var app = new Vue({
       if (doc.hasOwnProperty('userLabel')){
         if (doc.userLabel === label){
           this.deleteLabel(doc);
-          this.logText += ('UNLABEL DOC - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
+          this.logText += (this.getExactTime() + '||UNLABEL_DOC||' + doc.docId +  '\n');
           return;
         }
       }
       Vue.set(doc, 'userLabel', label);
-      this.logText += ('LABEL DOC '+label+' - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
+      this.logText += (this.getExactTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
     },
     getConfidenceWord: function(doc){
       return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
     },
     toggleDocOpen: function(doc){
       if(doc.open){
-        this.logText += ('CLOSE DOC - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
+        this.logText += (this.getExactTime() + '||CLOSE_DOC||' + doc.docId +  '\n');
       } else {
-        this.logText += ('OPEN DOC - #' + doc.docId + ' TIME - ' + this.getExactTime() + '\n');
-
+        this.logText += (this.getExactTime() + '||OPEN_DOC||' + doc.docId +  '\n');
       }
       doc.open = !doc.open;
     },
@@ -578,15 +577,22 @@ var app = new Vue({
       this.finished = false;
       this.time = this.totalTime;
       this.twoMinute = setTimeout( () => {
-        alert('You have 2 minutes remaining');
+        this.logText += (this.getExactTime() + '||TIME_WARNING '\n');
+        // TODO: show in modal
+        alert('You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all outstanding {{this.perceivedControl ? "assignments" : "suggestions"}} will be saved to the system.');
       }, this.totalTime - 2*60*1000);
       this.timer = setInterval( () => {
         if (this.time > 0) {
           this.time -= 1000;
         } else {
           clearInterval(this.timer);
+          this.logText += (this.getExactTime() + '||TIME_UP '\n');
+          // send final update
           this.sendUpdate();
+          // set finished status to true
           this.finished = true;
+          // open the modal
+          this.openModal();
         }
       }, 1000);
       this.showModal = false;
