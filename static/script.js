@@ -139,10 +139,16 @@ var app = new Vue({
 
       this.logText += curLabeledDocs.length + '||';
       // Something like this?
+      var correctText = '';
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
+        if (d.userLabel && d.userLabel === d.trueLabel) {
+          correctText = 'true';
+        } else {
+          correctText = 'false';
+        }
         console.log('document', d);
-        this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
+        this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',' + correctText +
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       this.logText += '\n';
@@ -568,7 +574,8 @@ var app = new Vue({
       this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
     },
     getConfidenceWord: function(doc){
-      return doc.prediction.confidence < .9 ? 'Maybe' : 'Definitely';
+      // TODO: need a better way to set this threshold..
+      return doc.prediction.confidence < .95 ? 'Maybe' : 'Definitely';
     },
     toggleDocOpen: function(doc){
       if(doc.open){

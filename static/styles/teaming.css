@@ -3,8 +3,19 @@ body {
   font-family: 'Arvo';
   */
   font-family: 'Roboto';
-  padding: 20px 100px 50px 100px;
+  padding: 20px 5px 50px 5px;
   background: #f3f3f3;
+}
+
+#app {
+  max-width:1150px;
+  min-width: 850px;
+  overflow-x: scroll;
+  margin: auto;
+}
+
+#doc-list {
+  background-color: white;
 }
 
 button {
@@ -32,10 +43,6 @@ button {
 
 .instructions{
   width: 75%;
-}
-
-.doc-list {
-  max-width: 1150px;
 }
 
 .doc-container {
@@ -103,6 +110,7 @@ button {
 }
 .radio {
   grid-area: radio;
+  margin-left: 10px;
   /*background: gold;*/
 }
 .model-prediction {
