@@ -140,10 +140,12 @@ var app = new Vue({
       this.logText += curLabeledDocs.length + '||';
       // Something like this?
       var correctText = '';
+      var correctLabels = 0;
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
         if (d.userLabel && d.trueLabel === (d.userLabel.substring(0, d.userLabel.length - 1))) {
           correctText = 'true';
+          correctLabels += 1;
         } else {
           correctText = 'false';
         }
@@ -151,6 +153,7 @@ var app = new Vue({
         this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',' + correctText +
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
+      this.logText + "||" + correctLabels;
       this.logText += '\n';
       // Or maybe like this?
       // this.logText += 'LABELEDDOCS||';
