@@ -222,10 +222,10 @@
               You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of your outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} will be saved to the system.
             </span>
             <span v-if="finished">
-              Thank you for participating in the task.
+              Time is now up; any outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} were saved to the system.
               <br/>
               <br/>
-              Please complete the following survey:
+              Thank you for participating in the task. Please complete the following survey:
               <a href="https://forms.gle/DiVdwNuquTKGLjxV7" target="_blank">post-task survey</a>, with your assigned user id: {{userId}}
             </span>
             <span v-if="!timeWarning && !finishedSurvey && !finished">
