@@ -74,11 +74,14 @@
             </div>
           </div>
           <div class="rating">
-            <div class="vertical-align large-label">
-              Model Prediction:
-            </div>
-              <div class="vertical-align rounded" v-bind:style="{'background-color': colors[doc.prediction.label]}">{{ getConfidenceWord(doc) }} {{ expandLabel(doc.prediction.label) }}
+            <div>
+              <div class="vertical-align large-label">
+                Model Prediction:
               </div>
+            </div>
+            <div class="model-prediction rounded" v-bind:style="{'background-color': colors[doc.prediction.label]}">
+              {{ getConfidenceWord(doc) }} {{ expandLabel(doc.prediction.label) }}
+            </div>
           </div>
 
           <div class="radio">

@@ -141,6 +141,7 @@ var app = new Vue({
       // Something like this?
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
+        console.log('document', d);
         this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }

@@ -33,6 +33,11 @@ button {
 .instructions{
   width: 75%;
 }
+
+.doc-list {
+  max-width: 1150px;
+}
+
 .doc-container {
   border: 1px solid black;
   padding: 5px;
@@ -93,10 +98,15 @@ button {
 .rating {
   grid-area: rating;
   /*background: lightgreen;*/
+  display: grid;
+  grid-template-columns: repeat(2 1fr);
 }
 .radio {
   grid-area: radio;
   /*background: gold;*/
+}
+.model-prediction {
+  padding-top: 20px;
 }
 .radio-container {
   display: grid;
