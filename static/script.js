@@ -142,7 +142,7 @@ var app = new Vue({
       var correctText = '';
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
-        if (d.userLabel && d.userLabel === d.trueLabel) {
+        if (d.userLabel && d.trueLabel === (d.userLabel.substring(0, d.userLabel.length - 1))) {
           correctText = 'true';
         } else {
           correctText = 'false';

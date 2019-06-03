@@ -106,7 +106,7 @@ button {
   grid-area: rating;
   /*background: lightgreen;*/
   display: grid;
-  grid-template-columns: repeat(2 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 .radio {
   grid-area: radio;
