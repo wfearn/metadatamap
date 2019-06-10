@@ -578,7 +578,7 @@ var app = new Vue({
     },
     getConfidenceWord: function(doc){
       // TODO: need a better way to set this threshold..
-      return doc.prediction.confidence < .95 ? 'Maybe' : 'Definitely';
+      return doc.prediction.confidence < .95 ? 'Possibly' : 'Probably';
     },
     toggleDocOpen: function(doc){
       if(doc.open){

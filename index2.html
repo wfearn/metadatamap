@@ -97,7 +97,7 @@
               <button class="radio-selection"
                       v-on:click="labelDoc(doc, labels[0].label+'1')"
                       v-bind:style="{'background-color': colors[labels[0].label]}">
-                Definitely {{ expandLabel(labels[0].label) }}</br>
+                 {{ expandLabel(labels[0].label) }}</br>
                 <input type="radio"
                        v-bind:value="labels[0].label+'1'"
                        v-model="doc.userLabel"/>
@@ -108,7 +108,7 @@
                       v-on:click="labelDoc(doc, labels[0].label+'2')"
                       v-bind:style="{'background-color':
                       lightenDarkenColor(colors[labels[0].label], -40)}">
-                Maybe {{ expandLabel(labels[0].label) }}
+                Possibly {{ expandLabel(labels[0].label) }}
                 </br>
                 <input type="radio"
                        v-bind:value="labels[0].label+'2'"
@@ -120,7 +120,7 @@
                       v-on:click="labelDoc(doc, labels[1].label+'2')"
                       v-bind:style="{'background-color':
                       lightenDarkenColor(colors[labels[1].label], -40)}">
-                Maybe {{ expandLabel(labels[1].label) }}
+                Possibly {{ expandLabel(labels[1].label) }}
                 </br>
                 <input type="radio"
                        v-bind:value="labels[1].label+'2'"
@@ -130,7 +130,7 @@
               <button class="radio-selection"
                       v-on:click="labelDoc(doc, labels[1].label+'1')"
                       v-bind:style="{'background-color': colors[labels[1].label]}">
-                Definitely {{ expandLabel(labels[1].label) }}
+                 {{ expandLabel(labels[1].label) }}
                 </br>
                 <input type="radio"
                        v-bind:value="labels[1].label+'1'"
@@ -241,16 +241,21 @@
               </div>
               </br>
               </br>
-              <div>For each speech, the system predicts the party affiliation of the speaker and highlights the words within the speech that are most important for that prediction. You can <span class="bold">correct or confirm the party affiliation for any of the speeches to help the system learn to make better predictions</span>.</div>
+              <div>The system has been trained with a small set of debates for which the true politcial party of the speaker is known. From these labeled debates, the system learns a model to distinguish republican and democrat speakers based on the words they use and the topics they discuss.
               </br>
               </br>
-              <div>You will have <span class="bold">20 minutes</span> to review the speeches and correct or confirm the systems predictions. At the end of the task time, the system will label the remaining speeches. Then <span class="bold">all speeches (those labeled by you and by the final version of the system) will be scored</span>. You will be given a <span class="bold">bonus for how many of the speeches are correctly labeled</span>.
+              <div>For each speech, the system predicts the party affiliation of the speaker and highlights the words within the speech that are most important for that prediction. You can help the system learn to make better predictions by <span class="bold">{{ perceivedControl ? 'assigning' : 'suggesting' }} labels that correct or confirm the party affiliation of any of the speeches</span>.</div>
+              </br>
+              </br>
+              <div>The system will update its model to {{ perceivedControl ? 'replace the document's label with the one that you assign' : 'take your suggested label into account when deciding on how to label that document' }}</div>.
+              </br>
+              </br>
+              <div>You will have <span class="bold">20 minutes</span> to review the speeches and correct or confirm the systems predictions. At the end of the task time, the system will label the remaining speeches. Then <span class="bold">all speeches (those labeled by you and by the final version of the system) will be scored</span>. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
             <span v-if="!timeWarning && !firstPage && finishedSurvey && !finished">
-              <div>The system has predicted the political party affiliation for the
-              speaker of each of the ten debates speeches shown here. For each debate speech,
-              the system provides its prediction and how sure it is. <span class="bold">You can correct or
+              <div>The system predicts the political party affiliation for ten debates speeches at a time. For each speech,
+              the system gives its prediction and how sure it is. <span class="bold">You can correct or
               confirm the system’s prediction by {{ perceivedControl ? 'assigning' : 'suggesting' }} whether the speaker is a
               republican or democrat</span>.
               </br>
@@ -260,12 +265,12 @@
               the system's prediction</span>.
               </br>
               </br>
-              Pressing the <span class="bold">"Save and Get New Set of Debates"
+              Pressing the <span class="bold">"Save {{ perceivedControl ? 'Assignments' : 'Suggestions' }} and Get New Set of Debates"
               button at any point saves your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system and gets a new
               set of debates to review</span>.
               </br>
               </br>
-              <span class="bold">Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be scored based on how many out of all total speeches are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
+              <span class="bold">Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be scored and given up to a $5 bonus based on how many out of all total speeches are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
               </div>
             </span>
           </div> <!-- Modal body -->
