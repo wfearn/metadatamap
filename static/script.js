@@ -134,17 +134,16 @@ var app = new Vue({
     //                         user_label: label},...]
     //        }
       this.loading = true;
+      var curLabeledDocs = this.unlabeledDocs.filter(
+                  doc => doc.hasOwnProperty('userLabel'))
+                         .map(doc => ({doc_id: doc.docId,
+                                       user_label: doc.userLabel.slice(0, -1)}));
+      this.logText += curLabeledDocs.length + '||';
       if (curLabeledDocs.length > 0) {
         this.inputProvided = true;
       } else {
         this.inputProvided = false;
       }
-      var curLabeledDocs = this.unlabeledDocs.filter(
-                  doc => doc.hasOwnProperty('userLabel'))
-                         .map(doc => ({doc_id: doc.docId,
-                                       user_label: doc.userLabel.slice(0, -1)}));
-
-      this.logText += curLabeledDocs.length + '||';
       // Something like this?
       var correctText = '';
       var correctLabels = 0;
