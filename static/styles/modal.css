@@ -6,6 +6,10 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   font-weight: bold;
 }
 
+.underline {
+  text-decoration: underline;
+}
+
 .modal-shell {
   position: fixed;
   top: 0;
@@ -20,6 +24,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
 }
 
 .modal-content {
+  font-size: 16pt;
   background: #FFFFFF;
   box-shadow: 2px 2px 20px 1px;
   overflow-x: auto;

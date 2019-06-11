@@ -48,6 +48,8 @@ var app = new Vue({
     firstPage: true, // track which page of modal the user is viewing
     started: false, // track whether the user has started the task
     finished: false, // track whether user has finished the task
+    refreshed: false, // track whether the system has just updated with new debates
+    inputProvided: false, // track whether the user provided input on the last round
     clickedSurvey: false, // track whether the user has clicked the survey link
     finishedSurvey: false // track whether the user has proceeded to the task after completing the survey
     },
@@ -132,6 +134,11 @@ var app = new Vue({
     //                         user_label: label},...]
     //        }
       this.loading = true;
+      if (curLabeledDocs.length > 0) {
+        this.inputProvided = true;
+      } else {
+        this.inputProvided = false;
+      }
       var curLabeledDocs = this.unlabeledDocs.filter(
                   doc => doc.hasOwnProperty('userLabel'))
                          .map(doc => ({doc_id: doc.docId,
@@ -191,6 +198,9 @@ var app = new Vue({
         for (var i=0; i<this.unlabeledDocs.length; i++){
           Vue.set(this.unlabeledDocs[i], 'open', false);
         }
+        // pop up the modal
+        this.refreshed = true;
+        this.openModal();
         // TODO: check the current system accuracy
         // this.getAccuracy();
       }).catch(error => {
@@ -287,6 +297,7 @@ var app = new Vue({
         this.timeWarning = false;
         this.paused = false;
         this.showModal=false;
+        this.refreshed = false;
         this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
       }
     },

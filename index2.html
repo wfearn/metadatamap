@@ -206,20 +206,23 @@
           <div class="modal-header doc-header">
             <h2>
               <span v-if="!finishedSurvey">Welcome</span>
-              <span v-if="!timeWarning && finishedSurvey && firstPage && !finished">Task Overview</span>
-              <span v-if="!timeWarning && finishedSurvey && !firstPage && !finished">Tool Instructions</span> <!--for the debate labeling task-->
+              <span v-if="!timeWarning && finishedSurvey && firstPage && !finished && !refreshed">Task Overview</span>
+              <span v-if="!timeWarning && finishedSurvey && !firstPage && !finished && !refreshed">Tool Instructions</span> <!--for the debate labeling task-->
               <span v-if="finished">Post-Task Survey</span>
               <span v-if="timeWarning">Time is almost up!</span>
             </h2>
             <button class="btn-close"
                     v-on:click="closeModal()"
-                    v-if="started && !finished">
+                    v-if="started && !finished && !refreshed">
               &times;
             </button>
           </div>
           <div class="modal-body">
             <span v-if="timeWarning">
               You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of your outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} will be saved to the system.
+            </span>
+            <span v-if="refreshed">
+              The system <span v-if="inputProvided">has updated the model by {{perceivedControl ? 'replacing those debate labels with the ones you assigned' : 'taking your suggested labels into account for deciding how to label those debates'}} and</span> has labeled ten new debates.
             </span>
             <span v-if="finished">
               Time is now up; any outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} were saved to the system.
@@ -228,14 +231,14 @@
               Thank you for participating in the task. Please complete the following survey:
               <a href="https://forms.gle/DiVdwNuquTKGLjxV7" target="_blank">post-task survey</a>, with your assigned user id: {{userId}}
             </span>
-            <span v-if="!timeWarning && !finishedSurvey && !finished">
+            <span v-if="!timeWarning && !finishedSurvey && !finished && !refreshed">
               Welcome to the debate speech prediction task! Your assigned user id is: <span class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive compensation for this task.
               <br/>
               <br/>
               Please first complete the following survey:
               <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>, which will open in a new tab or window. After completing the survey, return to this tab to perform the task.
             </span>
-            <span v-if="!timeWarning && firstPage && finishedSurvey && !finished">
+            <span v-if="!timeWarning && firstPage && finishedSurvey && !finished && !refreshed">
               <div>
                 This is a political party prediction system that predicts if a speaker is a republican or democrat. In this task, <span class="bold">you and the system will predict the political party of the speakers for a large set of debate speeches</span>. There are too many speeches for you to read and predict the speakers’ political party for all of them on your own.
               </div>
@@ -247,17 +250,17 @@
               <div>For each speech, the system predicts the party affiliation of the speaker and highlights the words within the speech that are most important for that prediction. You can help the system learn to make better predictions by <span class="bold">{{ perceivedControl ? 'assigning' : 'suggesting' }} labels that correct or confirm the party affiliation of any of the speeches</span>.</div>
               </br>
               </br>
-              <div>The system will update its model to {{ perceivedControl ? "replace the debate's label with the one that you assign" : 'take your suggested label into account when deciding how to label that debate' }}.</div>
+              <div class="bold underline">The system will update the model to {{ perceivedControl ? "replace that debate's label with the one that you assign" : 'take your suggested label into account when deciding how to label that debate' }}.</div>
               </br>
               </br>
-              <div>You will have <span class="bold">20 minutes</span> to review the speeches and correct or confirm the systems predictions. At the end of the task time, the system will label the remaining speeches. Then <span class="bold">all speeches (those labeled by you and by the final version of the system) will be scored</span>. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
+              <div>You will have <span class="bold">20 minutes</span> to review the speeches and correct or confirm the systems predictions. At the end of the task time, the system will label the remaining speeches. Then <span class="bold">all speeches (those labeled by you and by the final version of the system) will be scored</span>. You will be given up to a <span class="bold underline">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
-            <span v-if="!timeWarning && !firstPage && finishedSurvey && !finished">
+            <span v-if="!timeWarning && !firstPage && finishedSurvey && !finished && !refreshed">
               <div>The system predicts the political party affiliation for ten debates speeches at a time. For each speech,
-              the system gives its prediction and how sure it is. <span class="bold">You can correct or
+              the system gives its prediction and how sure it is. You can correct or
               confirm the system’s prediction by {{ perceivedControl ? 'assigning' : 'suggesting' }} whether the speaker is a
-              republican or democrat</span>.
+              republican or democrat.
               </br>
               </br>
               Clicking on any debate expands it to view
@@ -265,30 +268,34 @@
               the system's prediction</span>.
               </br>
               </br>
-              Pressing the <span class="bold">"Save and Get New Set of Debates"
-              button at any point saves your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system and gets a new
-              set of debates to review</span>.
+              Pressing the "Save and Get New Set of Debates"
+              button at any point gives your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system, which it {{ perceivedControl ? 'adheres to', 'considers'}} when predicting the next set of debates for you to review.
               </br>
               </br>
-              <span class="bold">Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be scored and given up to a $5 bonus based on how many out of all total speeches are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
+              Remember, your goal is to correct or confirm the systems predictions to help it learn to make better predictions. After the 20 minute timer is up, the system will label the remaining speeches and you will be given <span class="bold">up to a $5 bonus based on how many out of all total speeches are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
               </div>
             </span>
           </div> <!-- Modal body -->
           <div class="modal-footer">
             <button class="modal-button"
-                    v-if="clickedSurvey && !finishedSurvey && !finished"
+                    v-if="clickedSurvey && !finishedSurvey && !finished && !refreshed"
                     v-on:click="finishedSurvey = true">
               proceed to task
             </button>
             <button class="modal-button"
-                    v-if="!timeWarning && firstPage && finishedSurvey && !finished"
+                    v-if="!timeWarning && firstPage && finishedSurvey && !finished && !refreshed"
                     v-on:click="firstPage = false">
               next
             </button>
             <button class="modal-button"
-                    v-if="!timeWarning && !started && !firstPage && !finished"
+                    v-if="!timeWarning && !started && !firstPage && !finished && !refreshed"
                     v-on:click="startTask">
               start
+            </button>
+            <button class="modal-button"
+                    v-if="refreshed"
+                    v-on:click="closeModal()">
+              ok
             </button>
           </div>
         </div> <!-- Modal content -->
