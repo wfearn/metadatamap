@@ -207,7 +207,8 @@
             <h2>
               <span v-if="!finishedSurvey">Welcome</span>
               <span v-if="!timeWarning && finishedSurvey && firstPage && !finished && !refreshed">Task Overview</span>
-              <span v-if="!timeWarning && finishedSurvey && !firstPage && !finished && !refreshed">Tool Instructions</span> <!--for the debate labeling task-->
+              <span v-if="!timeWarning && finishedSurvey && secondPage && !finished && !refreshed">System Overview</span>
+              <span v-if="!timeWarning && finishedSurvey && !firstPage && !secondPage && !finished && !refreshed">Tool Instructions</span> <!--for the debate labeling task-->
               <span v-if="finished">Post-Task Survey</span>
               <span v-if="timeWarning">Time is almost up!</span>
             </h2>
@@ -247,8 +248,8 @@
               <div>
                 In this task, <span class="bold">you and the system will predict the political party of the speakers for a large set of debate speeches</span>. There are too many speeches for you to read and predict the speakers’ political party for all of them on your own, but the system has only been trained on a small set of debates, so it needs your help to learn to better distinguish between republican and democrat speakers.
               </div>
-              </br>
-              </br>
+            </span>
+            <span v-if="!timeWarning && secondPage && finishedSurvey && !finished && !refreshed">
               <div>
                 For each speech, the system will predict the party affiliation of the speaker and highlight the words within the speech that are most important for that prediction. You will help the system learn to make better predictions by <span class="bold">{{ perceivedControl ? 'assigning' : 'suggesting' }} labels that correct or confirm the party affiliation of any of the speeches</span>.
               </div>
@@ -263,7 +264,7 @@
               <div>You will have <span class="bold">20 minutes</span> for this task. At the end of the task time, the system will label all the speeches using the updated model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
-            <span v-if="!timeWarning && !firstPage && finishedSurvey && !finished && !refreshed">
+            <span v-if="!timeWarning && !secondPage && !firstPage && finishedSurvey && !finished && !refreshed">
               <div>To begin, the system predicts the political party affiliation for ten randomly chosen debate speeches. For each speech,
               the tool will show the model's prediction and how sure it is. Clicking the + button next to the speech expands it to view the text. The highlighted words are those that are most important for the model's prediction. You {{ perceivedControl ? 'assign' : 'suggest' }} the political party label for the speaker by clicking the radio buttons. Clicking the button again clears the label.
               </br>
@@ -283,12 +284,17 @@
               proceed to instructions
             </button>
             <button class="modal-button"
-                    v-if="!timeWarning && firstPage && finishedSurvey && !finished && !refreshed"
-                    v-on:click="firstPage = false">
+                    v-if="!timeWarning && firstPage && !secondPage && finishedSurvey && !finished && !refreshed"
+                    v-on:click="firstPage = false; secondPage = true;">
               next
             </button>
             <button class="modal-button"
-                    v-if="!timeWarning && !started && !firstPage && !finished && !refreshed"
+                    v-if="!timeWarning && !firstPage && secondPage finishedSurvey && !finished && !refreshed"
+                    v-on:click="secondPage = false">
+              next
+            </button>
+            <button class="modal-button"
+                    v-if="!timeWarning && !started && !firstPage && !secondPage && !finished && !refreshed"
                     v-on:click="startTask">
               start task
             </button>

@@ -46,6 +46,7 @@ var app = new Vue({
     paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
     timeWarning: false, // track whether the user should see the time warning alert
     firstPage: true, // track which page of modal the user is viewing
+    secondPage: false,
     started: false, // track whether the user has started the task
     finished: false, // track whether user has finished the task
     refreshed: false, // track whether the system has just updated with new debates
@@ -89,9 +90,9 @@ var app = new Vue({
   methods: {
     getSliderUrl: function() {
       if (this.perceivedControl) {
-        return './static/images/spectrum-of-adherence-assign.pdf';
+        return '/static/images/spectrum-of-adherence-assign.png';
       } else {
-        return './static/images/spectrum-of-adherence-suggest.pdf';
+        return '/static/images/spectrum-of-adherence-suggest.png';
       }
     },
     getVocab: function(){
@@ -311,6 +312,7 @@ var app = new Vue({
       this.paused = true;
       this.showModal=true;
       this.firstPage=true;
+      this.secondPage = false;
     },
     toggleModal: function(){
       if(this.showModal){
