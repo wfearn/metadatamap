@@ -219,12 +219,15 @@
             </button>
           </div>
           <div class="modal-body">
+            <!-- TIME WARNING MODAL -->
             <span v-if="timeWarning">
               You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of your outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} will be saved to the system.
             </span>
+            <!-- REFRESH CONFIRMATION MODAL -->
             <span v-if="refreshed">
               The system <span v-if="inputProvided">has updated the model by {{perceivedControl ? 'replacing those debate labels with the ones you assigned' : 'taking your suggested labels into account for deciding how to label those debates'}} and</span> has labeled ten new randomly chosen debates.
             </span>
+            <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
               Time is now up; any outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} were saved to the system.
               <br/>
@@ -232,6 +235,7 @@
               Thank you for participating in the task. Please complete the following survey:
               <a href="https://forms.gle/DiVdwNuquTKGLjxV7" target="_blank">post-task survey</a>, with your assigned user id: {{userId}}
             </span>
+            <!-- INSTRUCTIONS (1 OF 4) MODAL -->
             <span v-if="!timeWarning && !finishedSurvey && !finished && !refreshed">
               Welcome to the political party prediction task! Your assigned user id is: <span class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive compensation for this task.
               <br/>
@@ -239,6 +243,7 @@
               Please first complete the
               <a v-on:click="clickedSurvey = true" target="_blank" href="https://forms.gle/XRLTyQTAYQZL4iTPA">pre-task survey</a>, which will open in a new tab or window. After completing the survey, return to this tab to continue the task.
             </span>
+            <!-- INSTRUCTIONS (2 OF 4) MODAL -->
             <span v-if="!timeWarning && firstPage && finishedSurvey && !finished && !refreshed">
               <div>
                 This is a political party prediction system that predicts if a speaker is a republican or democrat. It has been trained with a small set of debates for which the true political party is known. From these labeled debates, the system learns a model to distinguish republican and democrat speakers based on the words they use and the topics they discuss.
@@ -249,6 +254,7 @@
                 In this task, <span class="bold">you and the system will predict the political party of the speakers for a large set of debate speeches</span>. There are too many speeches for you to read and predict the speakers’ political party for all of them on your own, but the system has only been trained on a small set of debates, so it needs your help to learn to better distinguish between republican and democrat speakers.
               </div>
             </span>
+            <!-- INSTRUCTIONS (3 OF 4) MODAL -->
             <span v-if="!timeWarning && secondPage && finishedSurvey && !finished && !refreshed">
               <div>
                 For each speech, the system will predict the party affiliation of the speaker and highlight the words within the speech that are most important for that prediction. You will help the system learn to make better predictions by <span class="bold">{{ perceivedControl ? 'assigning' : 'suggesting' }} labels that correct or confirm the party affiliation of any of the speeches</span>.
@@ -264,6 +270,7 @@
               <div>You will have <span class="bold">20 minutes</span> for this task. At the end of the task time, the system will label all the speeches using the updated model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
+            <!-- INSTRUCTIONS (4 OF 4) MODAL -->
             <span v-if="!timeWarning && !secondPage && !firstPage && finishedSurvey && !finished && !refreshed">
               <div>
                 <ul>
@@ -282,6 +289,7 @@
               </br>
               <img class="modal-image" :src="getScreenshotUrl()" />
               </br>
+              <div>
               Remember, the goal is to label as many debates as possible. There isn't enough time to read and label all of the debates yourself, so you'll help the system learn a model that distinguishes between republican and democrat speakers. After 20 minutes, the system will use the final version of the model to label the speeches, and you will be given <span class="bold">up to a $5 bonus based on how many out of thespeeches are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
               </div>
             </span>
