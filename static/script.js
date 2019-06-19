@@ -88,7 +88,7 @@ var app = new Vue({
   }, //End watch
   methods: {
     getSliderUrl: function() {
-      if (perceivedControl) {
+      if (this.perceivedControl) {
         return './static/images/spectrum-of-adherence-assign.pdf';
       } else {
         return './static/images/spectrum-of-adherence-suggest.pdf';
