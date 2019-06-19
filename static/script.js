@@ -56,13 +56,6 @@ var app = new Vue({
   components: {
   //  'modal': Modal,
   },
-  getSliderUrl: function() {
-    if (perceivedControl) {
-      return './static/images/spectrum-of-adherence-assign.pdf';
-    } else {
-      return './static/images/spectrum-of-adherence-suggest.pdf';
-    }
-  },
   mounted: function () {
     // console.log('mounted')
 
@@ -94,6 +87,13 @@ var app = new Vue({
   watch: {
   }, //End watch
   methods: {
+    getSliderUrl: function() {
+      if (perceivedControl) {
+        return './static/images/spectrum-of-adherence-assign.pdf';
+      } else {
+        return './static/images/spectrum-of-adherence-suggest.pdf';
+      }
+    },
     getVocab: function(){
       axios.get('/api/vocab').then(response => {
         this.vocab = response.data.vocab;
