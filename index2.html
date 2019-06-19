@@ -264,7 +264,7 @@
               <div>
                 Your input could be incorporated in such a system in many ways, from overriding the systems predictions to being ignored completely. <span class="bold">This system incorporates your labels by updating the model to {{ perceivedControl ? "replace that debate's label with the one that you assign" : 'take your suggested label into account when deciding how to label that debate' }}.</span>
               </div>
-              <img class="modal-image" :src="getSliderUrl()" />
+              <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
               </br>
               <div>You will have <span class="bold">20 minutes</span> for this task. At the end of the task time, the system will label all the speeches using the updated model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
@@ -274,7 +274,7 @@
             <span v-if="!timeWarning && !secondPage && !firstPage && finishedSurvey && !finished && !refreshed">
               <div>
                 <ul>
-                  <li>To begin, the system predicts the political party affiliation for ten randomly chosen debate speeches.For each speech:
+                  <li>To begin, the system predicts the political party affiliation for ten randomly chosen debate speeches. For each speech:
                   <ul>
                     <li>The tool shows the prediction and how sure it is.</li>
                     <li>Click the + button next to the speech to view text.</li>
@@ -286,11 +286,9 @@
                 button at any point to save your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system, which it {{ perceivedControl ? 'adheres to' : 'considers'}} to update the model and then predicts the the party affiliation for the next random set of debates.</li>
               </ul>
               </div>
-              </br>
-              <img class="modal-image" :src="getScreenshotUrl()" />
-              </br>
+              <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
               <div>
-              Remember, the goal is to label as many debates as possible. There isn't enough time to read and label all of the debates yourself, so you'll help the system learn a model that distinguishes between republican and democrat speakers. After 20 minutes, the system will use the final version of the model to label the speeches, and you will be given <span class="bold">up to a $5 bonus based on how many out of thespeeches are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
+              Remember, the goal is to correctly determine the political party of the speaker for as many debate speeches as possible. There isn't enough time to read and label all of the speeches yourself, so you'll help the system learn a model that distinguishes between republican and democrat speakers. After 20 minutes, the system will use the final version of the model to label the speeches, and you will be given <span class="bold">up to a $5 bonus based on how many are correct.</span> You can revisit these instructions at any time by clicking the “View Instructions" button.
               </div>
             </span>
           </div> <!-- Modal body -->

@@ -1,10 +1,15 @@
 /*
 Modal css from https://alligator.io/vuejs/vue-modal-component/
 */
+.image-holder {
+  width: 100%;
+}
+
 .modal-image {
   max-width: 1000px;
   margin: auto;
 }
+
 .bold {
   font-weight: bold;
 }
@@ -33,12 +38,16 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   overflow-x: auto;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  height: 90%;
 }
 
-.modal-header,
+.modal-header {
+  padding-left: 15px;
+  display: flex;
+}
 .modal-footer {
   padding: 15px;
-  display: flex;
 }
 
 .modal-header {
