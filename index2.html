@@ -255,12 +255,12 @@
               </br>
               </br>
               <div>
-                Your input could be incorporated in such a system in many ways, from overriding the systems predictions to being ignored completely. <span class="bold underline">This system incorporates your labels by updating the model to {{ perceivedControl ? "replace that debate's label with the one that you assign" : 'take your suggested label into account when deciding how to label that debate' }}.</span>
+                Your input could be incorporated in such a system in many ways, from overriding the systems predictions to being ignored completely. <span class="bold">This system incorporates your labels by updating the model to {{ perceivedControl ? "replace that debate's label with the one that you assign" : 'take your suggested label into account when deciding how to label that debate' }}.</span>
               </div>
-              <img src="{{perceivedControl ? 'images/spectrum-of-adherence-assign.pdf' : 'images/spectrum-of-adherence-suggest.pdf'}}" />
+              <img :src="getSliderUrl()" />
               </br>
               </br>
-              <div>You will have <span class="bold">20 minutes</span> for this task. At the end of the task time, the system will label all the speeches using the updated model. You will be given up to a <span class="bold underline">$5 bonus for how many of the speeches are correctly labeled</span>.
+              <div>You will have <span class="bold">20 minutes</span> for this task. At the end of the task time, the system will label all the speeches using the updated model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
             <span v-if="!timeWarning && !firstPage && finishedSurvey && !finished && !refreshed">

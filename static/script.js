@@ -56,6 +56,13 @@ var app = new Vue({
   components: {
   //  'modal': Modal,
   },
+  getSliderUrl: function() {
+    if (perceivedControl) {
+      return './static/images/spectrum-of-adherence-assign.pdf';
+    } else {
+      return './static/images/spectrum-of-adherence-suggest.pdf';
+    }
+  },
   mounted: function () {
     // console.log('mounted')
 
