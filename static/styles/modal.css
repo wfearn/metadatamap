@@ -6,6 +6,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
 }
 
 .modal-image {
+  width: 100%;
   max-width: 1000px;
   margin: auto;
 }
@@ -39,7 +40,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  height: 90%;
+  max-height: 90%;
 }
 
 .modal-header {
@@ -48,6 +49,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
 }
 .modal-footer {
   padding: 15px;
+  display: flex;
 }
 
 .modal-header {
