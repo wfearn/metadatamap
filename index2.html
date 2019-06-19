@@ -224,7 +224,7 @@
               You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of your outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} will be saved to the system.
             </span>
             <!-- REFRESH CONFIRMATION MODAL -->
-            <span v-if="refreshed">
+            <span v-if="refreshed && !finished">
               The system <span v-if="inputProvided">has updated the model by {{perceivedControl ? 'replacing those debate labels with the ones you assigned' : 'taking your suggested labels into account for deciding how to label those debates'}} and</span> has labeled ten new randomly chosen debates.
             </span>
             <!-- TASK FINISHED MODAL -->
