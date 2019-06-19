@@ -1,7 +1,10 @@
 /*
 Modal css from https://alligator.io/vuejs/vue-modal-component/
 */
-
+.modal-image {
+  max-width: 1000px;
+  margin: auto;
+}
 .bold {
   font-weight: bold;
 }

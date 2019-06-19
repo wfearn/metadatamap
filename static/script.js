@@ -35,6 +35,7 @@ var app = new Vue({
     showTokens: false,
     displayInstructions: false,
     // TODO: currently randomly choosing these conditions, but need to ensure that we get equal numbers in all conditions, so instead should use server to track how many participants of each condition
+    // if perceived control is true, that means it's the assign condition; if input uncertainty is true, that means it's the four option condition
     inputUncertainty: Math.random() >= 0.5,
     perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
@@ -99,9 +100,21 @@ var app = new Vue({
     // determine which tool screenshot to provide given the condition
     getScreenshotUrl: function() {
       if (this.perceivedControl) {
-        return '/static/images/spectrum-of-adherence-assign.png';
+        if (this.inputUncertainty) {
+          // assign and four options
+          return '/static/images/assign-four-screenshot.png'
+        } else {
+          // assign and two options
+          return '/static/images/assign-two-screenshot.png'
+        }
       } else {
-        return '/static/images/spectrum-of-adherence-suggest.png';
+        if (this.inputUncertainty) {
+          // suggest and four options
+          return '/static/images/suggest-four-screenshot.png'
+        } else {
+          // suggest and two options
+          return '/static/images/suggest-two-screenshot.png'
+        }
       }
     },
     getVocab: function(){
