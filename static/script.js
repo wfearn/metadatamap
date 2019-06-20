@@ -621,7 +621,7 @@ var app = new Vue({
       } else {
         return this.colors[doc.prediction.label];
       }
-    }
+    },
     toggleDocOpen: function(doc){
       if(doc.open){
         this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime()+ '||CLOSE_DOC||' + doc.docId +  '\n');
