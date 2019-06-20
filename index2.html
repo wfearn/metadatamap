@@ -335,7 +335,7 @@
     <transition name="fade">
       <div v-if="loading"
            class="modal-shell">
-           <div class="loader-text">Training the model with your {{perceivedControl ? 'assignments' ||
+           <div class="loader-text">Training the model with your {{perceivedControl ? 'assignments' :
            'suggestions'}} and using the updated model to predict the political party for the next set of debate speeches.</div>
         <img v-bind:src="'static/images/spinner.gif'"></img>
       </div>
