@@ -19,7 +19,7 @@
 
       </br>
       <div>
-        <strong> # Documents You've Labeled: {{ labeledCount }} </strong>
+        <strong> # Debates You've Labeled: {{ labeledCount }} </strong>
         <strong id="timer-box"
              class="right time-remaining"
              title="task time remaining">
@@ -30,7 +30,7 @@
         <button class="save-button"
                 v-on:click="sendUpdate"
                 title="save input and get new set of debates">
-          Save {{ perceivedControl ? "Assignments" : "Suggestions" }} and Get New Set of Debates
+          Provide {{ perceivedControl ? "Assignments" : "Suggestions" }} and Get New Predictions
         </button>
         <button v-on:click='toggleModal()' class="right" title="show instructions">View Instructions</button>
 
@@ -79,8 +79,8 @@
                 Model Prediction:
               </div>
             </div>
-            <div class="model-prediction rounded" v-bind:style="{'background-color': colors[doc.prediction.label]}">
-              {{ getConfidenceWord(doc) }} {{ expandLabel(doc.prediction.label) }}
+            <div class="model-prediction rounded" v-bind:style="{'background-color': getConfidenceColor(doc)}">
+              {{ getConfidenceWord(doc) }} </br> {{ expandLabel(doc.prediction.label) }}
             </div>
           </div>
 
@@ -225,7 +225,11 @@
             </span>
             <!-- REFRESH CONFIRMATION MODAL -->
             <span v-if="refreshed && !finished">
-              The system <span v-if="inputProvided">has updated the model by {{perceivedControl ? 'replacing those debate labels with the ones you assigned' : 'taking your suggested labels into account for deciding how to label those debates'}} and</span> has labeled ten new randomly chosen debates.
+              The system has:
+              <ol>
+                <li v-if="inputProvided"><span class="bold">updated the model by {{perceivedControl ? 'replacing previously learned information about those debates with the labels you assigned' : 'taking your suggested labels into account with previously learned information about those debates'}}</li>
+                <li>labeled ten new randomly chosen debates using the updated model</li>
+              </ol>
             </span>
             <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
@@ -246,28 +250,28 @@
             <!-- INSTRUCTIONS (2 OF 4) MODAL -->
             <span v-if="!timeWarning && firstPage && finishedSurvey && !finished && !refreshed">
               <div>
-                This is a political party prediction system that predicts if a speaker is a republican or democrat. It has been trained with a small set of debates for which the true political party is known. From these labeled debates, the system learns a model to distinguish republican and democrat speakers based on the words they use and the topics they discuss.
+                This is a political party prediction system for predicting if a speaker is a republican or democrat. The system is "in-training": it was first trained with a small set of debates for which the true political party is known. From these labeled debates, the system learned an initial model to distinguish republican and democrat speakers based on the words they use and the topics they discuss.
               </div>
               </br>
               </br>
               <div>
-                In this task, <span class="bold">you and the system will predict the political party of the speakers for a large set of debate speeches</span>. There are too many speeches for you to read and predict the speakers’ political party for all of them on your own, but the system has only been trained on a small set of debates, so it needs your help to learn to better distinguish between republican and democrat speakers.
+                In this task, <span class="bold">you and the system will predict the political party of the speakers for a large set of debate speeches</span>. There are too many speeches for you to do this without the help of the system. But, the system has only been trained on a small set of debates, so it needs your help to train an improved model to better distinguish between republican and democrat speakers.
               </div>
             </span>
             <!-- INSTRUCTIONS (3 OF 4) MODAL -->
             <span v-if="!timeWarning && secondPage && finishedSurvey && !finished && !refreshed">
               <div>
-                For each speech, the system will predict the party affiliation of the speaker and highlight the words within the speech that are most important for that prediction. You will help the system learn to make better predictions by <span class="bold">{{ perceivedControl ? 'assigning' : 'suggesting' }} labels that correct or confirm the party affiliation of any of the speeches</span>.
+                For each speech, the system will predict the party affiliation of the speaker and highlight the words within the speech that are most important for that prediction. You will help train the model to make better predictions by <span class="bold">{{ perceivedControl ? 'assigning' : 'suggesting' }} labels for any of the debate speeches with what you think is the correct party affiliation</span>.
               </div>
               </br>
               </br>
               <div>
-                Your input could be incorporated in such a system in many ways, from overriding the systems predictions to being ignored completely. <span class="bold">This system incorporates your labels by updating the model to {{ perceivedControl ? "replace that debate's label with the one that you assign" : 'take your suggested label into account when deciding how to label that debate' }}.</span>
+                The picture below shows the range of how your labels <span class="italic">could</span> be incorporated to train a model, from overriding all previously learned information (left) to being ignored completely (right). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned information about those debates with the labels you assign" : 'take the labels you suggest into account with previously learned information about those debates' }}.</span>
               </div>
               <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
               </br>
-              <div>You will have <span class="bold">20 minutes</span> for this task. At the end of the task time, the system will label all the speeches using the updated model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
+              <div>You will have <span class="bold">20 minutes</span> to provide your input and train a better model. When the time is up, the system will predict the label of all the speeches using the final model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
             </span>
             <!-- INSTRUCTIONS (4 OF 4) MODAL -->
@@ -282,15 +286,16 @@
                     <li>Click the radio buttons to {{ perceivedControl ? 'assign' : 'suggest' }} the political party label for the speaker. Click again to clear the label.</li>
                   </ul>
                 </li>
-                <li>Click "Save and Get New Set of Debates"
-                at any point to save your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system, which it {{ perceivedControl ? 'adheres to' : 'considers'}} to update the model and then predicts the the party affiliation for the next random set of debates.</li>
+                <li>Click "Provide Labels and Get New Predictions"
+                at any point to save your {{ perceivedControl ? 'assignments' : 'suggestions' }} to the system, which it {{ perceivedControl ? 'adheres to' : 'considers'}} to update the model and then predicts the party affiliation for the next random set of debates.</li>
               </ul>
               </div>
               <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
               <div>
                 <ul>
-                  <li>Remember, the goal is to correctly determine the political party of the speaker for as many debate speeches as possible.</li>
-                  <li>There isn't enough time to read and label all of the speeches yourself, so you'll help the system learn a model that distinguishes between republican and democrat speakers.</li> <li>After 20 minutes, the system will use the final version of the model to label the speeches.</li>
+                  <li>Remember, the goal is for you and the system to correctly label the political party of the speaker for as many debate speeches as possible.</li>
+                  <li>As there isn't enough time to read and label them all yourself, you'll help train a model that distinguishes between republican and democrat speakers.</li>
+                  <li>After 20 minutes, the system will use the final version of the model to label the speeches.</li>
                   <li>You will be given <span class="bold">up to a $5 bonus based on how many are correct.</span></li>
                   <li>You can revisit these instructions at any time by clicking the “View Instructions" button.</li>
                 </ul>
@@ -330,6 +335,7 @@
     <transition name="fade">
       <div v-if="loading"
            class="modal-shell">
+           <div class="loader-text">Training the model with your {{perceivedControl ? 'assignments' || suggestions}} and using the updated model to predict the political party for the next set of debate speeches.</div>
         <img v-bind:src="'static/images/spinner.gif'"></img>
       </div>
     </transition>

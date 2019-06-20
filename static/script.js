@@ -92,9 +92,9 @@ var app = new Vue({
     // determine which slider image to put in instructions given the perceived control condition
     getSliderUrl: function() {
       if (this.perceivedControl) {
-        return '/static/images/spectrum-of-adherence-assign.png';
+        return '/static/images/spectrum-assign.png';
       } else {
-        return '/static/images/spectrum-of-adherence-suggest.png';
+        return '/static/images/spectrum-suggest.png';
       }
     },
     // determine which tool screenshot to provide given the condition
@@ -175,30 +175,23 @@ var app = new Vue({
         this.inputProvided = false;
       }
       // Something like this?
-      var correctText = '';
       var correctLabels = 0;
+      var incorrectLabels = 0;
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
         if (d.userLabel && d.trueLabel === (d.userLabel.substring(0, d.userLabel.length - 1))) {
-          correctText = 'true';
           correctLabels += 1;
         } else {
-          correctText = 'false';
+          incorrectLabels += 1;
         }
         console.log('document', d);
-        this.logText += ('(' + d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',' + correctText +
+        // doc id, true label, system label, system label confidence, user label
+        this.logText += ('(' + d.docId + ',' + d.trueLabel + ',' + d.prediction.label + ',' + d.prediction.confidence + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
-      this.logText + "||" + correctLabels;
+      // number of correct labels, number of incorrect labels (for the user)
+      this.logText + "||" + correctLabels + ',' + incorrectLabels;
       this.logText += '\n';
-      // Or maybe like this?
-      // this.logText += 'LABELEDDOCS||';
-      // for (var i=0; i<curLabeledDocs.length; i++){
-      //   this.logText += ('(' + curLabeledDocs[i].doc_id + ',' + curLabeledDocs[i].user_label +
-      //                    (i<curLabeledDocs.length-1 ? '), ' : ')'));
-      // }
-      // this.logText += '\n' + '-'.repeat(10) + '\n\n';
-
       this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
@@ -615,12 +608,20 @@ var app = new Vue({
         }
       }
       Vue.set(doc, 'userLabel', label);
-      this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + label + '\n');
+      // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
+      this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
     },
     getConfidenceWord: function(doc){
       // TODO: need a better way to set this threshold..
       return doc.prediction.confidence < .95 ? 'Possibly' : 'Probably';
     },
+    getConfidenceColor: function(doc) {
+      if (doc.prediction.confidence < .95) {
+        return this.lightenDarkenColor(this.colors[doc.prediction.label], -40);
+      } else {
+        return this.colors[doc.prediction.label];
+      }
+    }
     toggleDocOpen: function(doc){
       if(doc.open){
         this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime()+ '||CLOSE_DOC||' + doc.docId +  '\n');
