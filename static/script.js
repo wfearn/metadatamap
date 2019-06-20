@@ -190,7 +190,7 @@ var app = new Vue({
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
-      this.logText + "||" + correctLabels + ',' + incorrectLabels;
+      this.logText += "||" + correctLabels + ',' + incorrectLabels;
       this.logText += '\n';
       this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {

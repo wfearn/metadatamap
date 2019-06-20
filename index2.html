@@ -268,8 +268,8 @@
               <div>
                 The picture below shows the range of how your labels <span class="italic">could</span> be incorporated to train a model, from overriding all previously learned information (left) to being ignored completely (right). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned information about those debates with the labels you assign" : 'take the labels you suggest into account with previously learned information about those debates' }}.</span>
               </div>
-              <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
+              <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
               <div>You will have <span class="bold">20 minutes</span> to provide your input and train a better model. When the time is up, the system will predict the label of all the speeches using the final model. You will be given up to a <span class="bold">$5 bonus for how many of the speeches are correctly labeled</span>.
               </div>
@@ -335,8 +335,8 @@
     <transition name="fade">
       <div v-if="loading"
            class="modal-shell">
-           <div class="loader-text">Training the model with your {{perceivedControl ? 'assignments' :
-           'suggestions'}} and using the updated model to predict the political party for the next set of debate speeches.</div>
+          <!-- <div class="loader-text">Training the model with your {{perceivedControl ? 'assignments' :
+           'suggestions'}} and using the updated model to predict the political party for the next set of debate speeches.</div> -->
         <img v-bind:src="'static/images/spinner.gif'"></img>
       </div>
     </transition>
