@@ -261,6 +261,7 @@
             <!-- INSTRUCTIONS (3 OF 4) MODAL -->
             <span v-if="!timeWarning && secondPage && finishedSurvey && !finished && !refreshed">
               <div>
+                <span class="bold">System Example:</span>
                 <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
                 During the task,
                 <ul>
@@ -289,9 +290,8 @@
             <!-- Instructions (4 OF 4) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
             <span v-if="!timeWarning && !secondPage && !firstPage && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, the model used a small set of labeled debate speeches to learn a model to distinguish republican and democrat speakers based on the words they use and the topics they discuss. .
+                Remember, the model used a small set of labeled debate speeches to learn a model to distinguish republican and democrat speakers based on the words they use and the topics they discuss. However, the initial model is not perfect and sometimes makes mistakes.
               </div>
-              </br>
               </br>
               <div>
                 The picture below shows the range of how your labels <span class="italic">could</span> be used to improve the model, from overriding all previously learned words and topics (left) to being ignored completely (right). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with previously learned republican and democrat words in those debates' }}.</span>
