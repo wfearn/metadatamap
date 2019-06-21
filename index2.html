@@ -253,7 +253,6 @@
                 Imagine you have been given a large set of congressional debate speeches and are asked to <span class="bold">determine the political party of the speakers for as many of the speeches as possible</span>. There are too many speeches for you to do this without help, so for this task, you will have access to a political party prediction system that predicts if a speaker is a republican or democrat.
               </div>
               </br>
-              </br>
               <div>
                 The system is "in-training": it was previously given a small set of debate speeches with labels describing whether the speakers are republicans or democrats. From these labeled debates, the system learned an initial model to distinguish republican and democrat speakers based on the words they use and the topics they discuss. However, the initial model is not perfect and sometimes makes mistakes. You will help improve the model by labeling additional speeches as republican or democrat. <span class="bold">You will be given up to a $5 bonus based on the quality of the final, updated model</span>.
               </div>
@@ -261,8 +260,6 @@
             <!-- INSTRUCTIONS (3 OF 4) MODAL -->
             <span v-if="!timeWarning && secondPage && finishedSurvey && !finished && !refreshed">
               <div>
-                <span class="bold">System Example:</span>
-                <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
                 During the task,
                 <ul>
                   <li>The system will predict whether the speaker is republican or democrat for ten debate speeches at a time, chosen at random from the large set. For each speech,
@@ -282,6 +279,10 @@
                 <li>Hint: you do not need to wait until you've labeled all ten debates to provide your labels to the model and move on to the next ten of debates.</li>
                 <li>Repeat this process until the 20 minute timer is up.</li>
               </ul>
+              </div>
+              <div>
+                <span>System Example:</span>
+                <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
               </div>
               <div>
                 When time is up, the final version of the model will predict the labels for the entire set of debate speeches. You will receive up to a <span class="bold">$5 bonus for how many speeches are correctly labeled by the final model.</span>
