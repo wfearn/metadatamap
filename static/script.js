@@ -34,6 +34,8 @@ var app = new Vue({
     canEditAnchors: false,
     showTokens: false,
     displayInstructions: false,
+    numCorrect: 0, // track the total number of correctly predicted documents the user was exposed to
+    totalDocs: 0, // track the total number of predicted documents the user was exposed to
     // TODO: currently randomly choosing these conditions, but need to ensure that we get equal numbers in all conditions, so instead should use server to track how many participants of each condition
     // if perceived control is true, that means it's the assign condition; if input uncertainty is true, that means it's the four option condition
     inputUncertainty: Math.random() >= 0.5,
@@ -42,8 +44,8 @@ var app = new Vue({
     logText: '',
     startDate: null,
     timer: null,
-    totalTime: 20*60*1000,
-    time: 0,
+    totalTime: 20*60*1000, // total time is 20 minutes
+    time: 0, // initially, time is 0
     paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
     timeWarning: false, // track whether the user should see the time warning alert
     firstPage: true, // track which page of modal the user is viewing
@@ -67,14 +69,15 @@ var app = new Vue({
     //this.sendUpdate();
 
     // is this the on load function?
-    console.log('mounted');
+  //  console.log('mounted');
+
     this.getNewUser();
 
   }, //End mounted
   computed: {
     docsByLabel: function(){
       docsByLabelObj = {}
-      console.log(this.labels);
+  //    console.log(this.labels);
       for(var i=0; i<this.labels.length; i++){
         Vue.set(docsByLabelObj, this.labels[i], this.filterDocs(this.labels[i]));
       }
@@ -146,6 +149,7 @@ var app = new Vue({
       // console.log('getNewUser');
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
+          this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
       //  this.sendUpdate();
       }).catch(error => {
         console.error('error in /api/adduser', error);
@@ -184,9 +188,9 @@ var app = new Vue({
         } else {
           incorrectLabels += 1;
         }
-        console.log('document', d);
+      //  console.log('document', d);
         // doc id, true label, system label, system label confidence, user label
-        this.logText += ('(' + d.docId + ',' + d.trueLabel + ',' + d.prediction.label + ',' + d.prediction.confidence + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
+        this.logText += ('(doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
@@ -202,11 +206,26 @@ var app = new Vue({
         // updates the log text on call to update
         log_text: this.logText,
       }).then(response => {
-        console.log(response);
+      //  console.log(response);
         this.updateData = response.data;
         this.anchors = response.data.anchors;
         // new set of unlabeled documents
         this.unlabeledDocs = response.data.unlabeledDocs;
+        // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
+        var numCorrect = 0;
+        this.totalDocs += this.unlabeledDocs.length;
+        for (var i=0; i<this.unlabeledDocs.length; i++){
+          let d = this.unlabeledDocs[i];
+          if (d.trueLabel === d.prediction.label) {
+            numCorrect += 1;
+            this.numCorrect += 1;
+          }
+        }
+        // determine curr accuracy and total accuracy
+        var currAccuracy = numCorrect/this.unlabeledDocs.length;
+        var totalAccuracy = this.numCorrect/this.totalDocs;
+        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currAccuracy,' + currAccuracy + ',totalAccuracy,' + totalAccuracy + '\n');
+
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
         this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
         this.labels = response.data.labels;
@@ -226,17 +245,16 @@ var app = new Vue({
         // TODO: check the current system accuracy
         // this.getAccuracy();
       }).catch(error => {
-        console.log('Error in /api/update');
-        console.log(error);
+        console.error('Error in /api/update', error);
       });
     },//end sendUpdate function
     getAccuracy: function(){
-      console.log('getAccuracy');
+  //    console.log('getAccuracy');
       this.loading = true;
       axios.post('/api/accuracy', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords))
       }).then(response => {
-        console.log('current accuracy', response.data.accuracy)
+//        console.log('current accuracy', response.data.accuracy)
         this.accuracy = response.data.accuracy;
         this.loading = false;
       }).catch(error => {
@@ -245,7 +263,7 @@ var app = new Vue({
       });
     },
     shuffle: function(array) {
-      console.log('shuffle array', array);
+  //    console.log('shuffle array', array);
       if (!array) {
         return;
       }
@@ -263,11 +281,11 @@ var app = new Vue({
         array[currentIndex] = array[randomIndex];
         array[randomIndex] = temporaryValue;
       }
-      console.log('shuffled array', array);
+    //  console.log('shuffled array', array);
       return array;
     },
     chooseColors: function(){
-      console.log('chooseColors');
+    //  console.log('chooseColors');
       //var colorsList = ['#191919', '#FE8000','#191919', , '#FE8000','#8B0000', '#4C4CFF','#0000FF', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
       //Christmas
       //Halloween
@@ -282,10 +300,10 @@ var app = new Vue({
           this.labels[0].label === 'positive'){
         var colorsList = ['#bb2528', '#146b3a'];
         Vue.set(this.colors, 'negative', colorsList[0]);
-        console.log(this.colors)
+    //    console.log(this.colors)
         Vue.set(this.colors, 'positive', colorsList[1]);
-        console.log(this.colors)
-        console.log(colorsList)
+    //    console.log(this.colors)
+    //    console.log(colorsList)
       } else {
         // original
         //var colorsList = ['#0015bc', '#e9141d'];
@@ -300,10 +318,10 @@ var app = new Vue({
         var colorsList = ['#A8A8FD', '#F38E93'];
 
         Vue.set(this.colors, 'D', colorsList[0]);
-        console.log(this.colors)
+    //    console.log(this.colors)
         Vue.set(this.colors, 'R', colorsList[1]);
-        console.log(this.colors)
-        console.log(colorsList)
+    //    console.log(this.colors)
+    //    console.log(colorsList)
       }
     },
     colSize: function(label){
@@ -314,7 +332,7 @@ var app = new Vue({
       return count;
     },
     closeModal: function(){
-      console.log('closing the modal!');
+    //  console.log('closing the modal!');
       if (this.started) {
         this.timeWarning = false;
         this.paused = false;
@@ -343,7 +361,7 @@ var app = new Vue({
       });
     },
     findMaxTopic: function(){
-      console.log('MAXTOPIC');
+    //  console.log('MAXTOPIC');
       var max = 0;
       for (var i=0; i<this.anchors.length; i++){
         var arr = this.docs.map(obj => obj[this.anchors[i].topic]);
@@ -356,7 +374,7 @@ var app = new Vue({
     //timeout
     //https://schier.co/blog/2014/12/08/wait-for-user-to-stop-typing-using-javascript.html
     dragItem: function(item, id, arr){
-      console.log('dragItem');
+    //  console.log('dragItem');
       this.drag = item;
       Vue.set(item,'dragging', true);
       $('#'+id).addClass('dragging');
@@ -377,7 +395,7 @@ var app = new Vue({
              this.drag.hasOwnProperty('anchorId'))
          )){ return; }
 
-      console.log('dropItem');
+    //  console.log('dropItem');
       var indexItem = arr.indexOf(this.drag);
       var indexTarget = arr.indexOf(item);
       arr.splice(indexItem,1);
@@ -399,26 +417,26 @@ var app = new Vue({
             (item.hasOwnProperty('anchorId') &&
              this.drag.hasOwnProperty('anchorId'))
          )){ return; }
-      console.log('dragOver');
+    //  console.log('dragOver');
       $('#'+id).addClass('dragover');
-      console.log(id);
+    //  console.log(id);
       var indexItem = arr.indexOf(this.drag);
       var indexTarget = arr.indexOf(item);
       arr.splice(indexItem,1);
       arr.splice(indexTarget,0,this.drag);
     },
     dragIntoDivider: function(label){
-      console.log('------------');
-      console.log(label);
+    //  console.log('------------');
+    //  console.log(label);
       Vue.set(this.drag, 'label', label);
     },
     dragLeave: function(item, id, arr){
-      console.log('dragLeave');
+    //  console.log('dragLeave');
       $('#'+id).removeClass('dragover');
     },
     dragEnd: function(item, id, arr){
-      console.log('dragEnd');
-      console.log(id);
+    //  console.log('dragEnd');
+    //  console.log(id);
       $('#'+id).removeClass('dragging');
       Vue.set(this.drag, 'dragging', false);
     },
@@ -541,7 +559,7 @@ var app = new Vue({
     },
     addWord: function(e, anchor){
       var word = anchor.autocompleteInput.toLowerCase().trim();
-      console.log('attempt to add', word);
+  //    console.log('attempt to add', word);
       if (this.vocab.includes(word)){
         anchor.anchorWords.push(word);
         anchor.autocompleteInput = "";
@@ -551,7 +569,7 @@ var app = new Vue({
       }
     },
     deleteWord: function(anchor, index){
-      console.log(index);
+  //    console.log(index);
       anchor.anchorWords.splice(index, 1);
     },
     addAnchor: function(){
@@ -576,7 +594,7 @@ var app = new Vue({
       }
     },
     getDocHtml: function(doc){
-      console.log('Getting HTML');
+  //    console.log('Getting HTML');
       var html = '';
       var prev = 0
       var loc;
@@ -631,7 +649,7 @@ var app = new Vue({
       doc.open = !doc.open;
     },
     getExactTime: function() {
-      console.log('curr time', new Date())
+  //    console.log('curr time', new Date())
       return new Date() - this.startDate;
     },
     getActiveTime: function() {
@@ -641,7 +659,7 @@ var app = new Vue({
       return new Date();
     },
     startTask: function() {
-      console.log('starting the task!');
+  //    console.log('starting the task!');
       this.startDate = new Date();
       // this.getNewUser();
       // INITIAL UPDATE
