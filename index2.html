@@ -295,7 +295,12 @@
               </div>
               </br>
               <div>
-                The system uses two types of information for improving the model: (1) the previously learned information (i.e. the political party-distinguishing words) and (2) the labels you provide. The picture below shows the range of how these two types of information <span class="italic">could</span> be used to improve the model, from (left) using only your labels (throwing away previously learned information) to (right) ignoring your labels (using only previously learned information). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with the previously learned republican and democratic words in those debates' }}.</span>
+                The system uses two types of information for improving the model:
+                <ol>
+                  <li>The previously learned information (i.e. the political party-distinguishing words)
+                  <li>The republican or democrat labeeled speeches you provide</li>
+                </ol>
+                The picture below shows the range of how these two types of information <span class="italic">could</span> be used to improve the model, from (left) using only your labels (throwing away previously learned information) to (right) ignoring your labels (using only previously learned information). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with the previously learned republican and democratic words in those debates' }}.</span>
               </div>
               </br>
               <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
