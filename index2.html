@@ -30,7 +30,7 @@
         <button class="save-button"
                 v-on:click="sendUpdate"
                 title="save input and get new set of debates">
-          Provide {{ perceivedControl ? "Assignments" : "Suggestions" }} and Get New Predictions
+          Save {{ perceivedControl ? "Assignments" : "Suggestions" }} to Update the Model and Get Another Set of Debates
         </button>
         <button v-on:click='toggleModal()' class="right" title="show instructions">View Instructions</button>
 
@@ -270,13 +270,13 @@
                   </ul>
                 </li>
                 <li>You can {{ perceivedControl ? 'assign' : 'suggest' }} labels for any of these speeches with whether you think the speaker is republican or democrat by clicking the radio buttons. Click again to clear the label.</li>
-                <li>At any point, click the “Provide Labels and Get New Predictions” button.
+                <li>At any point, click the “Save Labels to Update Model and Get Another Set of Debates” button.
                   <ul>
-                    <li>The system {{ perceivedControl ? 'adheres to' : 'considers'}} your labels to improve the model.</li>
+                    <li>The system updates the model by {{ perceivedControl ? 'replacing the previously learned republican and democratic words in those debates with the political party labels you assign' : 'taking the political party labels you suggest into account with the previously learned republican and democratic words in those debates'}}.</li>
                     <li>The system uses the updated model to predict the political party for ten new debates randomly chosen from the large set.</li>
                   </ul>
                 </li>
-                <li>Hint: you do not need to wait until you've labeled all ten debates to provide your labels to the model and move on to the next ten of debates.</li>
+                <li>Hint: you do not need to wait until you've labeled all ten debates to save your labels to the model and move on to another set of ten debates.</li>
                 <li>Repeat this process until the 20 minute timer is up.</li>
               </ul>
               </div>
@@ -291,16 +291,16 @@
             <!-- Instructions (4 OF 4) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
             <span v-if="!timeWarning && !secondPage && !firstPage && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, the model used a small set of labeled debate speeches to learn a model to distinguish republican and democrat speakers based on the words they use and the topics they discuss. However, the initial model is not perfect and sometimes makes mistakes.
+                Remember, the system used a small set of labeled debate speeches to learn an initial model to distinguish republican and democrat speakers based on the words they use and the topics they discuss. However, the initial model is not perfect and sometimes makes mistakes.
               </div>
               </br>
               <div>
-                The picture below shows the range of how your labels <span class="italic">could</span> be used to improve the model, from overriding all previously learned words and topics (left) to being ignored completely (right). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with previously learned republican and democrat words in those debates' }}.</span>
+                The system uses two types of information for improving the model: (1) the previously learned information (i.e. the political party-distinguishing words) and (2) the labels you provide. The picture below shows the range of how these two types of information <span class="italic">could</span> be used to improve the model, from (left) using only your labels (throwing away previously learned information) to (right) ignoring your labels (using only previously learned information). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with the previously learned republican and democratic words in those debates' }}.</span>
               </div>
               </br>
               <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
-              <div>Remember, the goal is to work with the system to train a model that can accurately distinguish between republican and democrat speakers. You will have 20 minutes for this task. <span class="bold">Every time you click the “Provide Labels and Get New Predictions” button, the model will learn from your labels as described above and present the next set of ten randomly chosen speeches with the new predictions.</span> When time is up, the final, updated model will predict the labels for the entire set of debate speeches. You will receive up to a $5 bonus for how many of these speeches are correctly labeled by the final model. You can revisit these instructions at any time by clicking the “View Instructions” button.
+              <div>Remember, the goal is to work with the system to train a model that can accurately distinguish between republican and democrat speakers. You will have 20 minutes for this task. <span class="bold">Every time you click the “Save Labels to Update Model and Get Another Set of Debates” button, the model will learn from your labels as described above and present another set of ten randomly chosen speeches with the new predictions.</span> When time is up, the final, updated model will predict the labels for the entire set of debate speeches. You will receive up to a $5 bonus for how many of these speeches are correctly labeled by the final model. You can revisit these instructions at any time by clicking the “View Instructions” button.
               </div>
             </span>
           </div> <!-- Modal body -->

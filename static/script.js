@@ -161,7 +161,7 @@ var app = new Vue({
         return;
       }
       // console.log('sendUpdate');
-      this.logText += this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||';
+      this.logText += this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -194,7 +194,7 @@ var app = new Vue({
                          (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
-      this.logText += "||" + correctLabels + ',' + incorrectLabels;
+      this.logText += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
       this.logText += '\n';
       this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
