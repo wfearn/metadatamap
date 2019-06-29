@@ -366,6 +366,49 @@ def index3():
 def answers():
     return send_from_directory('.', 'answers.html')
 
+def get_acc(user_id):
+    user = users.get_user_data(user_id)
+    web_unlabeled_ids = user['web_unlabeled_ids']
+    labeled_docs = user['labeled_docs']
+    labeled_ids = set(labeled_docs)
+    unlabeled_ids = user['unlabeled_ids']
+    Q = user['Q']
+    D = user['D']
+    anchor_tokens = user['anchor_tokens']
+    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
+                                                  train_corpus, epsilon=ta_epsilon)
+    C, topics = ankura.anchor.recover_topics(
+        Q, anchor_vectors,
+        epsilon=rt_epsilon, get_c=True
+    )
+
+    for doc_id, label in labeled_docs.items():
+        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
+
+    clf = ankura.topic.free_classifier_dream(train_corpus,
+                                             attr_name=USER_LABEL_ATTR,
+                                             labeled_docs=labeled_ids,
+                                             topics=topics,
+                                             C=C, labels=labels)
+
+    contingency = ankura.validate.Contingency()
+    start = time.time()
+    for doc in test_corpus.documents:
+        gold = doc.metadata[GOLD_ATTR_NAME]
+        pred = clf(doc)
+        contingency[gold, pred] += 1
+    print(time.time() - start, contingency.accuracy())
+    return contingency.accuracy()
+
+
+@app.route('/api/allaccuracy')
+def api_allaccuracy():
+    user_folder = os.path.join(PICKLE_FOLDER, 'UserData')
+    user_ids = [f for f in os.listdir(user_folder) if len(f)==USER_ID_LENGTH]
+    accuracy_data = {}
+    for user_id in user_ids:
+        accuracy_data[user_id] = get_acc(user_id)
+    return jsonify(accuracies=accuracy_data)
 
 # GET - Send the vocabulary to the client
 @app.route('/api/vocab')
