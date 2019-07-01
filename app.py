@@ -373,7 +373,7 @@ def answers():
 
 def get_acc(user_id):
     user = users.get_user_data(user_id)
-    if !user:
+    if not user:
         return 0
     web_unlabeled_ids = user['web_unlabeled_ids']
     labeled_docs = user['labeled_docs']
