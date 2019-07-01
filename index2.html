@@ -30,11 +30,11 @@
         <button class="save-button"
                 v-on:click="sendUpdate"
                 title="save input and get new set of debates">
-          Save {{ perceivedControl ? "Assignments" : "Suggestions" }} to Update the Model and Get Another Set of Debates
+          Save {{ perceivedControl ? "Overrides" : "Suggestions" }} to Update the Model and Get Another Set of Debates
         </button>
         <button v-on:click='toggleModal()' class="right" title="show instructions">View Instructions</button>
 
-        <button v-on:click='labelAllCorrect'>Cheat</button> 
+        <button v-on:click='labelAllCorrect'>Cheat</button>
 
           <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
         </br>
@@ -91,7 +91,7 @@
             <div class="radio-container">
               <div>
                 <div class="vertical-align large-label">
-                  {{ perceivedControl ? "Your Assigned Label:" : "Your Suggested Label:" }}
+                  {{ perceivedControl ? "Override the model:" : "Suggest a label:" }}
                 </div>
               </div>
               <button class="radio-selection"
@@ -221,7 +221,7 @@
           <div class="modal-body">
             <!-- TIME WARNING MODAL -->
             <span v-if="timeWarning">
-              You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of your outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} will be saved to the system.
+              You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of your outstanding {{perceivedControl ? 'overrides' : 'suggestions' }} will be saved to the system.
             </span>
             <!-- REFRESH CONFIRMATION MODAL -->
             <span v-if="refreshed && !finished">
@@ -233,7 +233,7 @@
             </span>
             <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
-              Time is now up; any outstanding {{perceivedControl ? 'assignments' : 'suggestions' }} were saved to the system.
+              Time is now up; any outstanding {{perceivedControl ? 'overrides' : 'suggestions' }} were saved to the system.
               <br/>
               <br/>
               Thank you for participating in the task. Please complete the following survey:
@@ -269,7 +269,7 @@
                     <li>The highlighted words are most important for the model's prediction.</li>
                   </ul>
                 </li>
-                <li>You can {{ perceivedControl ? 'assign' : 'suggest' }} labels for any of these speeches with whether you think the speaker is republican or democrat by clicking the radio buttons. Click again to clear the label.</li>
+                <li>You can {{ perceivedControl ? "override the system's " : 'suggest' }} labels for any of these speeches with whether you think the speaker is republican or democrat by clicking the radio buttons. Click again to clear the label.</li>
                 <li>At any point, click the “Save Labels to Update Model and Get Another Set of Debates” button.
                   <ul>
                     <li>The system updates the model by {{ perceivedControl ? 'replacing the previously learned republican and democratic words in those debates with the political party labels you assign' : 'taking the political party labels you suggest into account with the previously learned republican and democratic words in those debates'}}.</li>
@@ -300,12 +300,12 @@
                   <li>The previously learned information (i.e. the political party-distinguishing words)
                   <li>The republican or democrat labeeled speeches you provide</li>
                 </ol>
-                The picture below shows the range of how these two types of information <span class="italic">could</span> be used to improve the model, from (left) using only your labels (throwing away previously learned information) to (right) ignoring your labels (using only previously learned information). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "replace the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with the previously learned republican and democratic words in those debates' }}.</span>
+                The picture below shows the range of how these two types of information <span class="italic">could</span> be used to improve the model, from (left) using only your labels (ignoring previously learned information) to (right) ignoring your labels (using only previously learned information). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "override the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with the previously learned republican and democratic words in those debates' }}.</span>
               </div>
               </br>
               <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
-              <div>Remember, the goal is to work with the system to train a model that can accurately distinguish between republican and democrat speakers. You will have 20 minutes for this task. <span class="bold">Every time you click the “Save Labels to Update Model and Get Another Set of Debates” button, the model will learn from your labels as described above and present another set of five randomly chosen speeches with the new predictions.</span> When time is up, the final, updated model will predict the labels for the entire set of debate speeches. You will receive up to a $5 bonus for how many of these speeches are correctly labeled by the final model. You can revisit these instructions at any time by clicking the “View Instructions” button.
+              <div>Remember, the goal is to work with the system to train a model that can accurately distinguish between republican and democrat speakers. You will have 20 minutes for this task. <span class="bold">Every time you click to “Save and Get Another Set of Debates”, the model will learn from your labels as described above and present another set of five randomly chosen speeches with the new predictions.</span> When time is up, the final, updated model will predict the labels for the entire set of debate speeches. You will receive up to a $5 bonus for how many of these speeches are correctly labeled by the final model. You can revisit these instructions at any time by clicking the “View Instructions” button.
               </div>
             </span>
           </div> <!-- Modal body -->
