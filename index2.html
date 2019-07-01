@@ -30,7 +30,7 @@
         <button class="save-button"
                 v-on:click="sendUpdate"
                 title="save input and get new set of debates">
-          Save {{ perceivedControl ? "Overrides" : "Suggestions" }} to Update the Model and Get Another Set of Debates
+          {{ perceivedControl ? "Assign Labels to Override the Model" : "Suggest Labels to Update the Model" }} and Get Another Set of Debates
         </button>
         <button v-on:click='toggleModal()' class="right" title="show instructions">View Instructions</button>
 
