@@ -320,6 +320,9 @@ class UserList:
             self.load_last_update(user_id)
         return self.users[user_id]
 
+    def rem_user(self, user_id):
+        self.users.pop(user_id)
+
     def check_user_timeout(self):
         delete_list = []
         for user_id, user in self.users.items():
@@ -415,8 +418,7 @@ def api_allaccuracy():
     accuracy_data = {}
     for user_id in user_ids:
         accuracy_data[user_id] = get_acc(user_id)
-        # pop the user off the users stack, so be warned, calling /allaccuracy clears any current user information
-        self.users.pop(user_id)
+        users.rem_user(user_id)
     return jsonify(accuracies=accuracy_data)
 
 # GET - Send the vocabulary to the client
