@@ -54,7 +54,7 @@ USER_LABEL_ATTR = 'user_label'
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 NUM_TOPICS = 20
-PRELABELED_SIZE = 200
+PRELABELED_SIZE = 50
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
@@ -415,6 +415,8 @@ def api_allaccuracy():
     accuracy_data = {}
     for user_id in user_ids:
         accuracy_data[user_id] = get_acc(user_id)
+        # pop the user off the users stack, so be warned, calling /allaccuracy clears any current user information
+        self.users.pop(user_id)
     return jsonify(accuracies=accuracy_data)
 
 # GET - Send the vocabulary to the client
