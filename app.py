@@ -32,7 +32,8 @@ THETA_ATTR = 'theta'
 PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs on the web
-UNLABELED_COUNT = 10
+#UNLABELED_COUNT = 10
+UNLABELED_COUNT = 5
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
@@ -273,6 +274,7 @@ class UserList:
         print(self.get_user_dir(user_id))
         updates = [filename for filename in os.listdir(self.get_user_dir(user_id))
                    if user_id in filename]
+        print(updates)
         last_update = sorted(updates)[-1]
         time.sleep(5)
         try:
