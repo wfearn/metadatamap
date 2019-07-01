@@ -172,7 +172,8 @@ var app = new Vue({
                   doc => doc.hasOwnProperty('userLabel'))
                          .map(doc => ({doc_id: doc.docId,
                                        user_label: doc.userLabel.slice(0, -1)}));
-      this.logText += curLabeledDocs.length + '||';
+      this.labeledCount += curLabeledDocs.length;
+      this.logText += curLabeledDocs.length + 'total,' + this.labeledCount + '||';
       if (curLabeledDocs.length > 0) {
         this.inputProvided = true;
       } else {
@@ -183,10 +184,13 @@ var app = new Vue({
       var incorrectLabels = 0;
       for (var i=0; i<this.unlabeledDocs.length; i++){
         let d = this.unlabeledDocs[i];
-        if (d.userLabel && d.trueLabel === (d.userLabel.substring(0, d.userLabel.length - 1))) {
+        // score the user labels
+        if (d.userLabel) {
+          if (d.trueLabel === (d.userLabel.substring(0, d.userLabel.length - 1))) {
           correctLabels += 1;
-        } else {
-          incorrectLabels += 1;
+          } else {
+            incorrectLabels += 1;
+          }
         }
       //  console.log('document', d);
         // doc id, true label, system label, system label confidence, user label
@@ -196,7 +200,6 @@ var app = new Vue({
       // number of correct labels, number of incorrect labels (for the user)
       this.logText += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
       this.logText += '\n';
-      this.labeledCount += curLabeledDocs.length
       axios.post('/api/update', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
         //labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
