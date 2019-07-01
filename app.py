@@ -276,6 +276,7 @@ class UserList:
                    if user_id in filename]
         # some users do not have any updates
         if(len(updates)==0):
+            self.users[user_id]=None
             return
         last_update = sorted(updates)[-1]
         time.sleep(5)
@@ -372,6 +373,8 @@ def answers():
 
 def get_acc(user_id):
     user = users.get_user_data(user_id)
+    if !user:
+        return 0
     web_unlabeled_ids = user['web_unlabeled_ids']
     labeled_docs = user['labeled_docs']
     labeled_ids = set(labeled_docs)
