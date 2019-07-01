@@ -274,7 +274,9 @@ class UserList:
         print(self.get_user_dir(user_id))
         updates = [filename for filename in os.listdir(self.get_user_dir(user_id))
                    if user_id in filename]
-        print(updates)
+        # some users do not have any updates
+        if(len(updates)==0):
+            return
         last_update = sorted(updates)[-1]
         time.sleep(5)
         try:
