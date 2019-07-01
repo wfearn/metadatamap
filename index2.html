@@ -331,7 +331,7 @@
               start task
             </button>
             <button class="modal-button"
-                    v-if="refreshed"
+                    v-if="refreshed && !finished"
                     v-on:click="closeModal()">
               ok
             </button>
