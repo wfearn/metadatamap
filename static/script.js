@@ -173,7 +173,7 @@ var app = new Vue({
                          .map(doc => ({doc_id: doc.docId,
                                        user_label: doc.userLabel.slice(0, -1)}));
       this.labeledCount += curLabeledDocs.length;
-      this.logText += curLabeledDocs.length + 'total,' + this.labeledCount + '||';
+      this.logText += curLabeledDocs.length + ',total,' + this.labeledCount + '||';
       if (curLabeledDocs.length > 0) {
         this.inputProvided = true;
       } else {
@@ -194,8 +194,8 @@ var app = new Vue({
         }
       //  console.log('document', d);
         // doc id, true label, system label, system label confidence, user label
-        this.logText += ('(doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') +
-                         (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
+        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled;';
+                      //   (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
       this.logText += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
