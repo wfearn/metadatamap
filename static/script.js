@@ -95,9 +95,9 @@ var app = new Vue({
     // determine which slider image to put in instructions given the perceived control condition
     getSliderUrl: function() {
       if (this.perceivedControl) {
-        return '/static/images/spectrum-assign.jpeg';
+        return '/static/images/spectrum-assign.png';
       } else {
-        return '/static/images/spectrum-suggest.jpeg';
+        return '/static/images/spectrum-suggest.png';
       }
     },
     // determine which tool screenshot to provide given the condition
