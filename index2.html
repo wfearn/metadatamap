@@ -298,7 +298,7 @@
                 The system uses two types of information for improving the model:
                 <ol>
                   <li>The previously learned information (i.e. the political party-distinguishing words)
-                  <li>The republican or democrat labeeled speeches you provide</li>
+                  <li>The republican or democrat labeled speeches you provide</li>
                 </ol>
                 The picture below shows the range of how these two types of information <span class="italic">could</span> be used to improve the model, from (left) using only your labels (ignoring previously learned information) to (right) ignoring your labels (using only previously learned information). <span class="bold">In this task, the system incorporates your labels by updating the model to {{ perceivedControl ? "override the previously learned republican and democratic words in those debates with the political party labels you assign" : 'take the political party labels you suggest into account with the previously learned republican and democratic words in those debates' }}.</span>
               </div>
