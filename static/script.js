@@ -194,7 +194,7 @@ var app = new Vue({
         }
       //  console.log('document', d);
         // doc id, true label, system label, system label confidence, user label
-        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled;';
+        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled;'));
                       //   (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
