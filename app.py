@@ -374,14 +374,56 @@ def index3():
 def answers():
     return send_from_directory('.', 'answers.html')
 
-def get_acc(user_id):
+
+def get_lr_acc(user_id):
+    from sklearn.linear_model import LogisticRegression
     user = users.get_user_data(user_id)
     if not user:
         return 0
-    web_unlabeled_ids = user['web_unlabeled_ids']
     labeled_docs = user['labeled_docs']
     labeled_ids = set(labeled_docs)
-    unlabeled_ids = user['unlabeled_ids']
+    Q = user['Q']
+    D = user['D']
+    anchor_tokens = user['anchor_tokens']
+    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
+                                                  train_corpus, epsilon=ta_epsilon)
+    C, topics = ankura.anchor.recover_topics(
+        Q, anchor_vectors,
+        epsilon=rt_epsilon, get_c=True
+    )
+
+    for doc_id, label in labeled_docs.items():
+        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
+
+    # Assign topics to documents in corpus
+    ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR)
+    ankura.topic.gensim_assign(test_corpus, topics, theta_attr=THETA_ATTR)
+    print(labels)
+    l_to_num = {l:i for i, l in enumerate(labels)}
+
+    train_docs = [d for d in train_corpus.documents
+                  if USER_LABEL_ATTR in d.metadata]
+
+    X_train = np.array([d.metadata[THETA_ATTR] for d in train_docs])
+    X_test = np.array([d.metadata[THETA_ATTR] for d in test_corpus.documents])
+
+    y_train = np.array([l_to_num[d.metadata[USER_LABEL_ATTR]]
+                        for d in train_docs])
+    y_test = np.array([l_to_num[d.metadata[GOLD_ATTR_NAME]]
+                        for d in test_corpus.documents])
+
+    clf = LogisticRegression().fit(X_train, y_train)
+    acc = (clf.score(X_test, y_test))
+    print(acc)
+    return acc
+
+
+def get_fc_acc(user_id):
+    user = users.get_user_data(user_id)
+    if not user:
+        return 0
+    labeled_docs = user['labeled_docs']
+    labeled_ids = set(labeled_docs)
     Q = user['Q']
     D = user['D']
     anchor_tokens = user['anchor_tokens']
@@ -403,6 +445,16 @@ def get_acc(user_id):
 
     contingency = ankura.validate.Contingency()
     start = time.time()
+    print(len(train_corpus.documents))
+    for doc in train_corpus.documents:
+        gold = doc.metadata[GOLD_ATTR_NAME]
+        pred = clf(doc)
+        contingency[gold, pred] += 1
+    print('TRAIN', time.time() - start, contingency.accuracy())
+
+    contingency = ankura.validate.Contingency()
+    start = time.time()
+    print(len(test_corpus.documents))
     for doc in test_corpus.documents:
         gold = doc.metadata[GOLD_ATTR_NAME]
         pred = clf(doc)
@@ -417,7 +469,9 @@ def api_allaccuracy():
     user_ids = [f for f in os.listdir(user_folder) if len(f)==USER_ID_LENGTH]
     accuracy_data = {}
     for user_id in user_ids:
-        accuracy_data[user_id] = get_acc(user_id)
+        # GET ACCURACY FOR BOTH FC AND LR
+        accuracy_data[user_id + 'fc'] = get_fc_acc(user_id)
+        accuracy_data[user_id + 'lr'] = get_lr_acc(user_id)
         users.rem_user(user_id)
     return jsonify(accuracies=accuracy_data)
 
