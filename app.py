@@ -33,7 +33,7 @@ PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs to show per iteration on the web
 #UNLABELED_COUNT = 10
-UNLABELED_COUNT = 100
+UNLABELED_COUNT = 50
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
