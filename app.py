@@ -31,9 +31,9 @@ THETA_ATTR = 'theta'
 # Prior attr
 PRIOR_ATTR = 'lambda' # UNUSED
 
-# Number of unlabled docs on the web
+# Number of unlabled docs to show per iteration on the web
 #UNLABELED_COUNT = 10
-UNLABELED_COUNT = 5
+UNLABELED_COUNT = 50
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
@@ -47,14 +47,17 @@ ta_epsilon = 1e-15
 # Epsilon for recover topics
 rt_epsilon = 1e-5
 
+# percentage of words to highlight per round (top 10%)
+PERCENT_HIGHLIGHT = .1
+
 # Name of the user_label (for metadata on each document)
 USER_LABEL_ATTR = 'user_label'
 
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-NUM_TOPICS = 20
-PRELABELED_SIZE = 50
+NUM_TOPICS = 200
+PRELABELED_SIZE = 100
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
@@ -711,7 +714,7 @@ def api_update():
     tok_data.sort(key=lambda d: d['weight'], reverse=True)
 
     highlight_dict = {d['token']: d['probs'].argmax()
-                      for d in tok_data[:int(len(tok_data)*.2)]}
+                      for d in tok_data[:int(len(tok_data)*PERCENT_HIGHLIGHT)]}
 
 
     def get_highlights2(doc):
