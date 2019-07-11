@@ -57,7 +57,7 @@ USER_LABEL_ATTR = 'user_label'
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 NUM_TOPICS = 200
-PRELABELED_SIZE = 0
+PRELABELED_SIZE = 350
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
