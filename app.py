@@ -274,11 +274,12 @@ class UserList:
         return False
 
     def load_last_update(self, user_id):
-        print(self.get_user_dir(user_id))
+        print('load last update for', self.get_user_dir(user_id))
         updates = [filename for filename in os.listdir(self.get_user_dir(user_id))
                    if user_id in filename]
         # some users do not have any updates
         if(len(updates)==0):
+            print('no updates for user')
             self.users[user_id]=None
             return
         last_update = sorted(updates)[-1]
@@ -429,10 +430,13 @@ def get_fc_acc(user_id):
     if not user:
         return 0
     labeled_docs = user['labeled_docs']
+    print('get accuracy for user', user_id)
+    print('labeled docs',labeled_docs)
     labeled_ids = set(labeled_docs)
     Q = user['Q']
     D = user['D']
     anchor_tokens = user['anchor_tokens']
+    print('anchor tokens', anchor_tokens)
     anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
                                                   train_corpus, epsilon=ta_epsilon)
     C, topics = ankura.anchor.recover_topics(
@@ -451,7 +455,7 @@ def get_fc_acc(user_id):
 
     contingency = ankura.validate.Contingency()
     start = time.time()
-    print(len(train_corpus.documents))
+    print('NUM DOCS IN TRAIN CORPUS', len(train_corpus.documents))
     for doc in train_corpus.documents:
         gold = doc.metadata[GOLD_ATTR_NAME]
         pred = clf(doc)
@@ -460,7 +464,7 @@ def get_fc_acc(user_id):
 
     contingency = ankura.validate.Contingency()
     start = time.time()
-    print(len(test_corpus.documents))
+    print('NUM DOCS IN TEST CORPUS', len(test_corpus.documents))
     for doc in test_corpus.documents:
         gold = doc.metadata[GOLD_ATTR_NAME]
         pred = clf(doc)
