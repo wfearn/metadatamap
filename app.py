@@ -56,8 +56,8 @@ USER_LABEL_ATTR = 'user_label'
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-NUM_TOPICS = 200
-PRELABELED_SIZE = 100
+NUM_TOPICS = 20
+PRELABELED_SIZE = 75
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
@@ -65,10 +65,45 @@ USER_ID_LENGTH = 5
 # Changing these params requires making a clean version
 # (run program and include the -c or --clean argument)
 smoothing = 1e-4
+#smoothing = 0
 
 
 # if PRELABELED_SIZE < LABELS_COUNT:
 #     raise ValueError("prelabled_size cannot be less than LABELS_COUNT")
+
+
+
+SELECTED_ANCHOR_TOKENS = [
+    ['amendment',],
+    ['percent',],
+    ['united',],
+    ['committee',],
+    ['federal',],
+    ['people',],
+    ['bill',],
+    ['gentleman',],
+    ['national',],
+    ['legislation',],
+    ['year',],
+    ['vote',],
+    ['state',],
+    ['nation',],
+    ['speaker',],
+    ['country',],
+    ['work',],
+    ['congress',],
+    ['members',],
+    ['years',],
+    ['health', 'bad',],
+    ['rights',],
+    ['jobs',],
+    ['freedom',],
+    ['millions',],
+    ['safety',],
+    ['farmers',],
+    ['business', 'small',],
+    ['sexual',],
+]
 
 def parse_args():
     class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
@@ -198,7 +233,7 @@ class UserList:
         self.zfill = zfill
 
         # Timeout in seconds
-        self.timeout = 20*60
+        self.timeout = timeout*60
 
         self.user_id_length = USER_ID_LENGTH
 
@@ -233,7 +268,7 @@ class UserList:
 
         # Set up labeling
         web_unlabeled_ids = set()
-        unlabeled_ids = set(range(len(train_corpus.documents)))
+        unlabeled_ids = {*range(len(train_corpus.documents))}
         unlabeled_ids.difference_update(STARTING_LABELED_IDS)
         labeled_docs = {i: train_corpus.documents[i].metadata[GOLD_ATTR_NAME]
                         for i in STARTING_LABELED_IDS}
@@ -244,12 +279,15 @@ class UserList:
                 'unlabeled_ids': unlabeled_ids,
                 'Q': Q,
                 'D': D,
-                'anchor_tokens': gs_anchor_tokens.copy(),
+                #'anchor_tokens': gs_anchor_tokens.copy(),
+                'anchor_tokens': SELECTED_ANCHOR_TOKENS,
                 'update_time': time.time(),
                 'update_num': 0,
                 'corpus_file': corpus_file,
                 'original_QD_file': QD_file,
-                'user_dir': user_dir
+                'user_dir': user_dir,
+                'fc_acc': None,
+                'lr_acc': None,
                }
 
 
@@ -279,11 +317,14 @@ class UserList:
                    if user_id in filename]
         # some users do not have any updates
         if(len(updates)==0):
-            print('no updates for user')
-            self.users[user_id]=None
+            print('no updates for user:', user_id)
+            self.users[user_id] = None
             return
         last_update = sorted(updates)[-1]
-        time.sleep(5)
+
+        # QUESTION Why is this in here?
+        time.sleep(2)
+
         try:
             self.load_update(user_id, int(last_update[:self.zfill]))
         except:
@@ -317,6 +358,9 @@ class UserList:
             pickle.dump(user, outfile)
 
         if remove:
+            print('*')
+            print('removing', user_id)
+            print('*')
             self.users.pop(user_id)
 
     def get_user_data(self, user_id):
@@ -387,7 +431,12 @@ def get_lr_acc(user_id):
     user = users.get_user_data(user_id)
     if not user:
         return 0
+    # if user['lr_acc'] is not None:
+    #     return user['lr_acc']
     labeled_docs = user['labeled_docs']
+    for doc_id, label in labeled_docs.items():
+        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
+
     labeled_ids = set(labeled_docs)
     Q = user['Q']
     D = user['D']
@@ -399,13 +448,10 @@ def get_lr_acc(user_id):
         epsilon=rt_epsilon, get_c=True
     )
 
-    for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
 
     # Assign topics to documents in corpus
     ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR)
     ankura.topic.gensim_assign(test_corpus, topics, theta_attr=THETA_ATTR)
-    print(labels)
     l_to_num = {l:i for i, l in enumerate(labels)}
 
     train_docs = [d for d in train_corpus.documents
@@ -421,6 +467,7 @@ def get_lr_acc(user_id):
 
     clf = LogisticRegression().fit(X_train, y_train)
     acc = (clf.score(X_test, y_test))
+    user['lr_acc'] = acc
     print(acc)
     return acc
 
@@ -429,23 +476,34 @@ def get_fc_acc(user_id):
     user = users.get_user_data(user_id)
     if not user:
         return 0
+    # if user['fc_acc'] is not None:
+    #     return user['fc_acc']
     labeled_docs = user['labeled_docs']
+    for doc_id, label in labeled_docs.items():
+        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
     print('get accuracy for user', user_id)
-    print('labeled docs',labeled_docs)
+    # print('labeled docs',labeled_docs)
     labeled_ids = set(labeled_docs)
+    print('labeled_ids -', len(labeled_ids))
     Q = user['Q']
     D = user['D']
     anchor_tokens = user['anchor_tokens']
-    print('anchor tokens', anchor_tokens)
+    #print('anchor tokens', anchor_tokens)
+    s = set(train_corpus.vocabulary)
+    for tand in anchor_tokens:
+        for tok in tand:
+            if tok not in s:
+                raise ValueError(f'Invalid token `{tok}`')
     anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
                                                   train_corpus, epsilon=ta_epsilon)
+
     C, topics = ankura.anchor.recover_topics(
         Q, anchor_vectors,
         epsilon=rt_epsilon, get_c=True
     )
+    print('c', C)
+    print('topics', topics)
 
-    for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
 
     clf = ankura.topic.free_classifier_dream(train_corpus,
                                              attr_name=USER_LABEL_ATTR,
@@ -453,6 +511,8 @@ def get_fc_acc(user_id):
                                              topics=topics,
                                              C=C, labels=labels)
 
+    print('Corpus labeled docs', sum(1 for doc in train_corpus.documents if USER_LABEL_ATTR in
+    doc.metadata))
     contingency = ankura.validate.Contingency()
     start = time.time()
     print('NUM DOCS IN TRAIN CORPUS', len(train_corpus.documents))
@@ -460,29 +520,40 @@ def get_fc_acc(user_id):
         gold = doc.metadata[GOLD_ATTR_NAME]
         pred = clf(doc)
         contingency[gold, pred] += 1
-    print('TRAIN', time.time() - start, contingency.accuracy())
+    print('TRAIN', contingency.accuracy())
 
     contingency = ankura.validate.Contingency()
     start = time.time()
     print('NUM DOCS IN TEST CORPUS', len(test_corpus.documents))
+    counts = Counter()
     for doc in test_corpus.documents:
         gold = doc.metadata[GOLD_ATTR_NAME]
         pred = clf(doc)
+        counts[pred] += 1
         contingency[gold, pred] += 1
-    print(time.time() - start, contingency.accuracy())
-    return contingency.accuracy()
+    print('Preds', counts)
+    print('TEST', contingency.accuracy())
+    acc = contingency.accuracy()
+    user['fc_acc'] = acc
+    return acc
 
 
 @app.route('/api/allaccuracy')
-def api_allaccuracy():
+def api_allaccuracy(fresh=False):
+    users.print_user_ids()
     user_folder = os.path.join(PICKLE_FOLDER, 'UserData')
     user_ids = [f for f in os.listdir(user_folder) if len(f)==USER_ID_LENGTH]
     accuracy_data = {}
     for user_id in user_ids:
         # GET ACCURACY FOR BOTH FC AND LR
-        accuracy_data[user_id + 'fc'] = get_fc_acc(user_id)
-        accuracy_data[user_id + 'lr'] = get_lr_acc(user_id)
-        users.rem_user(user_id)
+        accuracy_data[user_id + '_fc'] = get_fc_acc(user_id)
+        accuracy_data[user_id + '_lr'] = get_lr_acc(user_id)
+
+        # Why are we doing this?
+        #users.rem_user(user_id)
+    ds = sum(1 for doc in test_corpus.documents if doc.metadata[GOLD_ATTR_NAME]=='D')
+    n = len(test_corpus.documents)
+    print('BASELINE', f'{ds}/{n}', ds/n)
     return jsonify(accuracies=accuracy_data)
 
 # GET - Send the vocabulary to the client
@@ -538,6 +609,30 @@ def api_getuserdata(user_id):
 
     return jsonify(documents=ret_docs)
 
+def old_get_highlights(doc):
+    base = clf(doc, get_log_probabilities=True)
+    label = base.argmax()
+    ranking = []
+    highlights = []
+    for i in range(len(doc.tokens)):
+        loc = doc.tokens[i].loc
+        new_doc = ankura.pipeline.Document('',
+                    doc.tokens[:i]+doc.tokens[i+1:], {})
+        probs = clf(new_doc, get_log_probabilities=True)
+        new_label = probs.argmax()
+        if new_label != label:
+            highlights.append((loc, labels[new_label]))
+        else:
+            ratio = probs/base
+            l = ratio.argmin()
+            lab = labels[l]
+            x = ratio[l]
+            ranking.append((x, loc, lab))
+    highlights += [(loc, lab) for x, loc, lab in
+                sorted(ranking)[:int(len(doc.tokens)*.5)]]
+    return highlights
+
+
 @app.route('/api/update', methods=['POST'])
 def api_update():
     data = request.get_json()
@@ -575,6 +670,9 @@ def api_update():
         anchor_tokens = user['anchor_tokens']
     if not anchor_tokens:
         anchor_tokens = gs_anchor_tokens
+
+    anchor_tokens = SELECTED_ANCHOR_TOKENS
+
 
     print(anchor_tokens)
     anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
@@ -681,28 +779,6 @@ def api_update():
     # print(fine)
     # sys.exit()
 
-    def get_highlights(doc):
-        base = clf(doc, get_log_probabilities=True)
-        label = base.argmax()
-        ranking = []
-        highlights = []
-        for i in range(len(doc.tokens)):
-            loc = doc.tokens[i].loc
-            new_doc = ankura.pipeline.Document('',
-                        doc.tokens[:i]+doc.tokens[i+1:], {})
-            probs = clf(new_doc, get_log_probabilities=True)
-            new_label = probs.argmax()
-            if new_label != label:
-                highlights.append((loc, labels[new_label]))
-            else:
-                ratio = probs/base
-                l = ratio.argmin()
-                lab = labels[l]
-                x = ratio[l]
-                ranking.append((x, loc, lab))
-        highlights += [(loc, lab) for x, loc, lab in
-                    sorted(ranking)[:int(len(doc.tokens)*.5)]]
-        return highlights
 
     web_tokens = {tok.token for doc in
                   (train_corpus.documents[doc_id] for doc_id in web_unlabeled_ids)
@@ -723,8 +799,7 @@ def api_update():
     highlight_dict = {d['token']: d['probs'].argmax()
                       for d in tok_data[:int(len(tok_data)*PERCENT_HIGHLIGHT)]}
 
-
-    def get_highlights2(doc):
+    def get_highlights(doc):
         highlights = []
         for tok_loc in doc.tokens:
             if tok_loc.token in highlight_dict:
@@ -756,7 +831,7 @@ def api_update():
            'anchorIdToValue': {i: float(val)
                                for i, val in enumerate(doc.metadata[THETA_ATTR])},
            #'highlight': [list(tok.loc) for tok in doc.tokens],
-           'highlights': get_highlights2(doc)
+           'highlights': get_highlights(doc)
            })
     print('***Time - Classify:', time.time()-start)
 
