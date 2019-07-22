@@ -73,7 +73,7 @@ var app = new Vue({
 
     this.getNewUser();
     // include the below to skip the tutorial
-    this.startTask();
+    //this.startTask();
 
   }, //End mounted
   computed: {
