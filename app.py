@@ -56,7 +56,7 @@ USER_LABEL_ATTR = 'user_label'
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-NUM_TOPICS = 20
+NUM_TOPICS = 1
 PRELABELED_SIZE = 5
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
