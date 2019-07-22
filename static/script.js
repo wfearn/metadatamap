@@ -71,9 +71,10 @@ var app = new Vue({
     // is this the on load function?
   //  console.log('mounted');
 
-    this.getNewUser();
+  // commen out the below to skip the tutorial
+    //this.getNewUser();
     // include the below to skip the tutorial
-    //this.startTask();
+    this.startTask();
 
   }, //End mounted
   computed: {
@@ -152,7 +153,8 @@ var app = new Vue({
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
           this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
-      //  this.sendUpdate();
+          // include the below to hide the tutorial
+         this.sendUpdate();
       }).catch(error => {
         console.error('error in /api/adduser', error);
         // console.log(error);
@@ -666,9 +668,12 @@ var app = new Vue({
     startTask: function() {
   //    console.log('starting the task!');
       this.startDate = new Date();
-      // this.getNewUser();
+
+      // include the below to hide the tutorial
+       this.getNewUser();
       // INITIAL UPDATE
-      this.sendUpdate();
+      // comment out the below to hide the tutorial
+    //  this.sendUpdate();
       this.finished = false;
       this.paused = false;
       this.time = this.totalTime;
