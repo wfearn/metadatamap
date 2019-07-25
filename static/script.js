@@ -197,8 +197,8 @@ var app = new Vue({
           }
         }
       //  console.log('document', d);
-        // doc id, true label, system label, system label confidence, user label
-        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled;'));
+        // doc id, true label, system label, system label confidence, user label, highlights
+        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled' + ',highlights,' + d.highlights + ';'));
                       //   (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
@@ -250,7 +250,7 @@ var app = new Vue({
         this.refreshed = true;
         this.openModal();
         // TODO: check the current system accuracy
-         this.getAccuracy();
+         // this.getAccuracy();
       }).catch(error => {
         console.error('Error in /api/update', error);
       });
