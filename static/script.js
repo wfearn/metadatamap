@@ -250,7 +250,7 @@ var app = new Vue({
         this.refreshed = true;
         this.openModal();
         // TODO: check the current system accuracy
-        // this.getAccuracy();
+         this.getAccuracy();
       }).catch(error => {
         console.error('Error in /api/update', error);
       });
@@ -261,7 +261,7 @@ var app = new Vue({
       axios.post('/api/accuracy', {
         anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords))
       }).then(response => {
-//        console.log('current accuracy', response.data.accuracy)
+        console.log('current accuracy',  response.data.accuracy)
         this.accuracy = response.data.accuracy;
         this.loading = false;
       }).catch(error => {

@@ -33,7 +33,7 @@ PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs to show per iteration on the web
 #UNLABELED_COUNT = 10
-UNLABELED_COUNT = 50
+UNLABELED_COUNT = 25
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
@@ -57,7 +57,7 @@ USER_LABEL_ATTR = 'user_label'
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
 NUM_TOPICS = 10
-PRELABELED_SIZE = 5
+PRELABELED_SIZE = 25
 LABEL_WEIGHT = 1
 USER_ID_LENGTH = 5
 
