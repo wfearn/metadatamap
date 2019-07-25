@@ -196,9 +196,22 @@ var app = new Vue({
             incorrectLabels += 1;
           }
         }
+
+        // determine how many R and D highlighted words
+        let numD = 0;
+        let numR = 0;
+        for (var j=0; j<d.highlights.length; j++){
+          let h = d.highlights[j];
+          if (h[1] === 'D') {
+            numD += 1;
+          } else {
+            numR += 1;
+          }
+        }
+
       //  console.log('document', d);
         // doc id, true label, system label, system label confidence, user label, highlights
-        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',highlights,' + d.highlights.length + ';');
+        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',highlights,' + d.highlights.length + ',D,' + numD + ',R,' + numR + ';');
                       //   (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
