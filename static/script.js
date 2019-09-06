@@ -230,6 +230,7 @@ var app = new Vue({
             this.numCorrect += 1;
           }
         }
+
         // determine curr accuracy and total accuracy
         var currAccuracy = numCorrect / this.unlabeledDocs.length;
         var totalAccuracy = this.numCorrect / this.totalDocs;
@@ -254,6 +255,7 @@ var app = new Vue({
         for (var i = 0; i < this.unlabeledDocs.length; i++) {
           Vue.set(this.unlabeledDocs[i], 'open', false);
         }
+
         // pop up the modal
         this.refreshed = true;
         this.openModal();
@@ -305,43 +307,19 @@ var app = new Vue({
       return array;
     },
     chooseColors: function(){
-    //  console.log('chooseColors');
-      //var colorsList = ['#191919', '#FE8000','#191919', , '#FE8000','#8B0000', '#4C4CFF','#0000FF', '#228B22', '#4B0082', '#FFA500', '#008080', '#FF4500'];
-      //Christmas
-      //Halloween
-      //colorsList = ['#191919', '#FE8000']
 
-      // var lenColors = colorsList.length;
-      // for (var i=0; i<this.labels.length; i++){
-      //   console.log(this.labels[i].label, colorsList[i%lenColors]);
-      //   Vue.set(this.colors, this.labels[i].label, colorsList[i%lenColors]);
-      // }
-      if (this.labels[0].label === 'negative' ||
-          this.labels[0].label === 'positive'){
+      if (this.labels[0].label === 'negative' || this.labels[0].label === 'positive') {
         var colorsList = ['#bb2528', '#146b3a'];
         Vue.set(this.colors, 'negative', colorsList[0]);
-    //    console.log(this.colors)
+
         Vue.set(this.colors, 'positive', colorsList[1]);
-    //    console.log(this.colors)
-    //    console.log(colorsList)
+
       } else {
-        // original
-        //var colorsList = ['#0015bc', '#e9141d'];
-
-        // lighter shade
-        //var colorsList = ['#6673D6', '#F17278'];
-
-        // lighterer shade
-        //var colorsList = ['#848FDE', '#F38E93'];
-
-        // lightererer shade
         var colorsList = ['#A8A8FD', '#F38E93'];
 
         Vue.set(this.colors, 'D', colorsList[0]);
-    //    console.log(this.colors)
         Vue.set(this.colors, 'R', colorsList[1]);
-    //    console.log(this.colors)
-    //    console.log(colorsList)
+
       }
     },
     colSize: function(label){
@@ -609,29 +587,26 @@ var app = new Vue({
       if (label === 'R') return 'Rep';
     },
     labelAllCorrect: function(){
-      for(var i=0; i<this.unlabeledDocs.length; i++){
+      for(var i = 0; i < this.unlabeledDocs.length; i++){
         Vue.set(this.unlabeledDocs[i], 'userLabel', this.unlabeledDocs[i].trueLabel+'1');
       }
     },
     getDocHtml: function(doc){
   //    console.log('Getting HTML');
-      var html = '';
+      var html = doc.text;
       var prev = 0
       var loc;
       var label;
       var a;
       var b;
-      for (var i=0; i<doc.highlights.length; i++){
-        loc = doc.highlights[i][0];
-        label = doc.highlights[i][1];
-        a = loc[0];
-        b = loc[1];
-        html += doc.text.substr(prev, a-prev);
-        html += ('<span class="rounded" style="background-color: ' + this.colors[label] +
-                      '">' + doc.text.substr(a, b-a) + '</span> ');
-        prev = b;
+      for (var i = 0; i < doc.highlights.length; i++){
+          ngram = doc.highlights[i][0];
+          label = doc.highlights[i][1];
+          html_tagged = `<span class="rounded" style="background-color: ${this.colors[label]}">${ngram}</span>`;
+          html = html.replace(ngram, html_tagged);
+
       }
-      html += doc.text.substr(prev, doc.text.length);
+
       return html;
     },
     deleteLabel: function(doc){
