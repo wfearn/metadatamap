@@ -57,43 +57,29 @@ var app = new Vue({
     clickedSurvey: false, // track whether the user has clicked the survey link
     finishedSurvey: false // track whether the user has proceeded to the task after completing the survey
     },
-  components: {
-  //  'modal': Modal,
-  },
+  components: {},
   mounted: function () {
-    // console.log('mounted')
-
-    // We dont need vocab for this study
-    //this.loading = true;
-    //this.getVocab();
-    //this.sendUpdate();
-
-    // is this the on load function?
-  //  console.log('mounted');
-
-  // commen out the below to skip the tutorial
-    //this.getNewUser();
-    // include the below to skip the tutorial
     this.startTask();
-
   }, //End mounted
   computed: {
-    docsByLabel: function(){
+    docsByLabel: function() {
       docsByLabelObj = {}
-  //    console.log(this.labels);
-      for(var i=0; i<this.labels.length; i++){
+      for(var i = 0; i < this.labels.length; i++){
         Vue.set(docsByLabelObj, this.labels[i], this.filterDocs(this.labels[i]));
       }
+
       return docsByLabelObj;
     },
+
     prettyTime: function(){
       let seconds = parseInt(this.time / 1000);
       let remaining = ('0' + (seconds % 60)).slice(-2);
+
       return parseInt(seconds/60) + ':' + remaining;
     },
+
   }, //End computed
-  watch: {
-  }, //End watch
+  watch: {}, //End watch
   methods: {
     // determine which slider image to put in instructions given the perceived control condition
     getSliderUrl: function() {
@@ -149,7 +135,6 @@ var app = new Vue({
       });
     },
     getNewUser: function(){
-      // console.log('getNewUser');
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
           this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
@@ -164,7 +149,6 @@ var app = new Vue({
       if (this.finished){
         return;
       }
-      // console.log('sendUpdate');
       this.logText += this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,';
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
@@ -178,15 +162,19 @@ var app = new Vue({
                                        user_label: doc.userLabel.slice(0, -1)}));
       this.labeledCount += curLabeledDocs.length;
       this.logText += curLabeledDocs.length + ',total,' + this.labeledCount + '||';
+
       if (curLabeledDocs.length > 0) {
         this.inputProvided = true;
+
       } else {
         this.inputProvided = false;
+
       }
       // Something like this?
       var correctLabels = 0;
       var incorrectLabels = 0;
-      for (var i=0; i<this.unlabeledDocs.length; i++){
+
+      for (var i = 0; i < this.unlabeledDocs.length; i++) {
         let d = this.unlabeledDocs[i];
         // score the user labels
         if (d.userLabel) {
@@ -200,41 +188,42 @@ var app = new Vue({
         // determine how many R and D highlighted words
         let numD = 0;
         let numR = 0;
-        for (var j=0; j<d.highlights.length; j++){
+        for (var j = 0; j < d.highlights.length; j++) {
           let h = d.highlights[j];
+
           if (h[1] === 'D') {
             numD += 1;
+
           } else {
             numR += 1;
+
           }
         }
 
-      //  console.log('document', d);
         // doc id, true label, system label, system label confidence, user label, highlights
         this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',highlights,' + d.highlights.length + ',D,' + numD + ',R,' + numR + ';');
-                      //   (i<this.unlabeledDocs.length-1 ? ') ' : ')'));
       }
       // number of correct labels, number of incorrect labels (for the user)
       this.logText += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
       this.logText += '\n';
+
       axios.post('/api/update', {
-        anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords)),
-        //labeled_docs: this.labeledDocs.map(doc => ({doc_id: doc.docId,
-        //                                            user_label: doc.userLabel})),
         labeled_docs: curLabeledDocs,
         user_id: this.userId,
+
         // updates the log text on call to update
         log_text: this.logText,
       }).then(response => {
-      //  console.log(response);
         this.updateData = response.data;
         this.anchors = response.data.anchors;
+
         // new set of unlabeled documents
         this.unlabeledDocs = response.data.unlabeledDocs;
+
         // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
         var numCorrect = 0;
         this.totalDocs += this.unlabeledDocs.length;
-        for (var i=0; i<this.unlabeledDocs.length; i++){
+        for (var i = 0; i < this.unlabeledDocs.length; i++) {
           let d = this.unlabeledDocs[i];
           if (d.trueLabel === d.prediction.label) {
             numCorrect += 1;
@@ -242,8 +231,12 @@ var app = new Vue({
           }
         }
         // determine curr accuracy and total accuracy
-        var currAccuracy = numCorrect/this.unlabeledDocs.length;
-        var totalAccuracy = this.numCorrect/this.totalDocs;
+        var currAccuracy = numCorrect / this.unlabeledDocs.length;
+        var totalAccuracy = this.numCorrect / this.totalDocs;
+
+        console.log('Current Accuracy', currAccuracy)
+        console.log('Overall Accuracy', totalAccuracy)
+
         this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currAccuracy,' + currAccuracy + ',totalAccuracy,' + totalAccuracy + '\n');
 
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
@@ -252,38 +245,45 @@ var app = new Vue({
         this.labeled_docs = [];
         this.loading = false;
         this.isMounted = true;
+
         if (!this.colorsChosen){
           this.chooseColors();
           this.colorsChosen = true;
         }
-        for (var i=0; i<this.unlabeledDocs.length; i++){
+
+        for (var i = 0; i < this.unlabeledDocs.length; i++) {
           Vue.set(this.unlabeledDocs[i], 'open', false);
         }
         // pop up the modal
         this.refreshed = true;
         this.openModal();
         // TODO: check the current system accuracy
-         // this.getAccuracy();
+        //this.getAccuracy();
       }).catch(error => {
         console.error('Error in /api/update', error);
       });
+
     },//end sendUpdate function
     getAccuracy: function(){
-  //    console.log('getAccuracy');
       this.loading = true;
+
       axios.post('/api/accuracy', {
-        anchor_tokens: this.anchors.map(anchorObj => (anchorObj.anchorWords))
+          user_id: this.userId
       }).then(response => {
-        console.log('current accuracy',  response.data.accuracy)
-        this.accuracy = response.data.accuracy;
+        if(response.data.accuracy) {
+          console.log('current accuracy',  response.data.accuracy)
+          this.accuracy = response.data.accuracy;
+        }
+
         this.loading = false;
+
       }).catch(error => {
         console.error('Error in /api/accuracy', error);
         this.loading = false;
+
       });
     },
     shuffle: function(array) {
-  //    console.log('shuffle array', array);
       if (!array) {
         return;
       }
@@ -649,10 +649,12 @@ var app = new Vue({
       // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
       this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
     },
+
     getConfidenceWord: function(doc){
       // TODO: need a better way to set this threshold..
       return doc.prediction.confidence < .95 ? 'Possibly' : 'Probably';
     },
+
     getConfidenceColor: function(doc) {
       if (doc.prediction.confidence < .95) {
         return this.lightenDarkenColor(this.colors[doc.prediction.label], -40);
@@ -660,6 +662,7 @@ var app = new Vue({
         return this.colors[doc.prediction.label];
       }
     },
+
     toggleDocOpen: function(doc){
       if(doc.open){
         this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime()+ '||CLOSE_DOC||' + doc.docId +  '\n');
@@ -668,6 +671,7 @@ var app = new Vue({
       }
       doc.open = !doc.open;
     },
+
     getExactTime: function() {
   //    console.log('curr time', new Date())
       return new Date() - this.startDate;

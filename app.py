@@ -12,6 +12,11 @@ import contextlib
 import random
 import string
 import pickle
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import cross_validate, ShuffleSplit
+from sklearn.metrics import accuracy_score, make_scorer
+from vowpalwabbit.sklearn_vw import VWClassifier
+from sklearn.preprocessing import MinMaxScaler, minmax_scale
 
 # Init flask app
 app = Flask(__name__)
@@ -19,7 +24,7 @@ app = Flask(__name__)
 DEBUG = False
 
 # I think this is unnecessary for what we are doing as there are no cookies
-# app.secret_key = '-\xc2\xbe6\xeeL\xd0\xa2\x02\x8a\xee\t\xb7.\xa8b\xf0\xf9\xb8f'
+#TODO: Add in selectable features such as loss function, unigrams, bigrams, etc.
 
 # Attribute names:
 # Token topics
@@ -65,6 +70,10 @@ USER_ID_LENGTH = 5
 # Changing these params requires making a clean version
 # (run program and include the -c or --clean argument)
 smoothing = 1e-4
+
+SCORING_DICT = {
+                    'accuracy': make_scorer(accuracy_score)
+               }
 #smoothing = 0
 
 
@@ -73,43 +82,43 @@ smoothing = 1e-4
 
 
 
-SELECTED_ANCHOR_TOKENS = [
-    ['energy', 'oil', 'production'],
-    ['security', 'national'],
-    ['health', 'care', 'support'],
-    ['poor', 'care', 'people'],
-    ['republican', 'republicans'],
-    ['health', 'care', 'bad'],
-    ['pension', 'benefit', 'support'],
-    ['medicare', 'spending'],
-    ['people', 'vote'],
-    ['energy', 'companies'],
-    ['iraq', 'war'],
-    ['president', 'administration'],
-    ['support', 'families', 'american', 'tax'],
-    ['children', 'child'],
-    ['border', 'immigration'],
-    ['prices', 'gas', 'oil', 'energy', 'bill'],
-    ['small', 'business'],
-    ['osha', 'workers'],
-    ['social', 'security', 'massive'],
-    ['retirement', 'plan', 'benefit'],
-    ['tax', 'relief'],
-    ['economy'],
-    ['rules', 'committee'],
-    ['water'],
-    ['united', 'states'],
-    ['housing',],
-    ['defense', 'spending'],
-    ['sexual', 'children'],
-    ['congress'],
-    ['tax', 'cut'],
-    ['retirement', 'pension', 'workers'],
-    ['911', 'terrorists'],
-    ['iraq', 'people'],
-    ['democrats', 'minority'],
-    ['family']
-]
+#SELECTED_ANCHOR_TOKENS = [
+#    ['energy', 'oil', 'production'],
+#    ['security', 'national'],
+#    ['health', 'care', 'support'],
+#    ['poor', 'care', 'people'],
+#    ['republican', 'republicans'],
+#    ['health', 'care', 'bad'],
+#    ['pension', 'benefit', 'support'],
+#    ['medicare', 'spending'],
+#    ['people', 'vote'],
+#    ['energy', 'companies'],
+#    ['iraq', 'war'],
+#    ['president', 'administration'],
+#    ['support', 'families', 'american', 'tax'],
+#    ['children', 'child'],
+#    ['border', 'immigration'],
+#    ['prices', 'gas', 'oil', 'energy', 'bill'],
+#    ['small', 'business'],
+#    ['osha', 'workers'],
+#    ['social', 'security', 'massive'],
+#    ['retirement', 'plan', 'benefit'],
+#    ['tax', 'relief'],
+#    ['economy'],
+#    ['rules', 'committee'],
+#    ['water'],
+#    ['united', 'states'],
+#    ['housing',],
+#    ['defense', 'spending'],
+#    ['sexual', 'children'],
+#    ['congress'],
+#    ['tax', 'cut'],
+#    ['retirement', 'pension', 'workers'],
+#    ['911', 'terrorists'],
+#    ['iraq', 'people'],
+#    ['democrats', 'minority'],
+#    ['family']
+#]
 
 def parse_args():
     class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
@@ -126,6 +135,8 @@ def parse_args():
     parser.add_argument('port', nargs='?', default=5000, type=int,
                         help='Port to be used in hosting the webpage')
     parser.add_argument('-c', '--clean', action='store_true')
+    parser.add_argument('-l', '--loss', default='logistic', type=str, choices=['logistic', 'hinge'], required=False)
+    parser.add_argument('-n', '--ngrams', default=1, type=int, choices=set(range(5)), required=False)
     return parser.parse_args()
 
 
@@ -133,6 +144,8 @@ args = parse_args()
 DATASET_NAME = args.dataset
 PORT = args.port
 clean = args.clean
+lossfn = args.loss
+ngrams = args.ngrams
 
 
 # Set the attr_name for the true label
@@ -163,17 +176,9 @@ if SHUFFLE_SEED:
 # Place to save pickle files
 PICKLE_FOLDER_BASE = 'PickledFiles'
 
-# Naming of this pickle file
-# filename = (f'SemiSup_{DATASET_NAME}_K{num_topics}_prelabeled{prelabeled_size}'
-#             + f'_lw{LABEL_WEIGHT}_ss{SHUFFLE_SEED}.pickle')
-
 subfolder = f'K{NUM_TOPICS}_prelabeled{PRELABELED_SIZE}_lw{LABEL_WEIGHT}'
 PICKLE_FOLDER = os.path.join(PICKLE_FOLDER_BASE, DATASET_NAME, subfolder)
 os.makedirs(PICKLE_FOLDER, exist_ok=True)
-
-
-filename = (f'QD_SemiSup.pickle')
-QD_filename = os.path.join(PICKLE_FOLDER, filename)
 
 filename = (f'corpus_SemiSup.pickle')
 corpus_filename = os.path.join(PICKLE_FOLDER, filename)
@@ -182,53 +187,41 @@ corpus_filename = os.path.join(PICKLE_FOLDER, filename)
 if clean and os.environ.get('WERKZEUG_RUN_MAIN') == 'true': # If clean, remove file and remake
     with contextlib.suppress(FileNotFoundError):
         os.remove(corpus_filename)
-        os.remove(QD_filename)
+
 if clean: # If clean, remove file and remake
     with contextlib.suppress(FileNotFoundError):
         os.remove(corpus_filename)
-        os.remove(QD_filename)
 
-@ankura.util.multi_pickle_cache(QD_filename, corpus_filename)
+@ankura.util.pickle_cache(corpus_filename)
 def load_initial_data():
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
     # Split to labeled and unlabeled (80-20)
-    split = ankura.pipeline.train_test_split(corpus, return_ids=True)
-    (train_ids, train_corpus), (test_ids, test_corpus) = split
+    (train_ids, train_corpus), (test_ids, test_corpus) = ankura.pipeline.train_test_split(corpus, return_ids=True)
 
     # Must have at least one labeled for each label
-    # TODO
+    # TODO What does this do?
     # while (len({doc.metadata[GOLD_ATTR_NAME] for doc in train_corpus.documents}) < LABELS_COUNT):
     #     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
     #     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
     starting_labeled_labels = set()
     all_label_set = set(LABELS)
+    V = len(train_corpus.vocabulary)
+    labels = {l: V + i for i, l in enumerate(LABELS)}
+    labels = sorted(labels, key=labels.get)
+
+    # TODO: What is the significance of this?
     while starting_labeled_labels != all_label_set:
-        starting_labeled_ids = set(random.sample(range(len(train_corpus.documents)), PRELABELED_SIZE))
+        # random
+        #starting_labeled_ids = set(random.sample(range(len(train_corpus.documents)), PRELABELED_SIZE))
+        starting_labeled_ids = set(range(PRELABELED_SIZE))
         starting_labeled_labels = set(train_corpus.documents[i].metadata[GOLD_ATTR_NAME] for i in starting_labeled_ids)
         # TODO
         break
 
-    print('***Constructing Q...')
-    Q, labels, D = ankura.anchor.build_labeled_cooccurrence(train_corpus,
-                                                        GOLD_ATTR_NAME,
-                                                        starting_labeled_ids,
-                                                        label_weight=LABEL_WEIGHT,
-                                                        smoothing=smoothing,
-                                                        get_d=True,
-                                                        labels=LABELS)
-
-    gs_anchor_indices = ankura.anchor.gram_schmidt_anchors(train_corpus, Q,
-                                                           k=NUM_TOPICS, return_indices=True)
-    gs_anchor_vectors = Q[gs_anchor_indices]
-    gs_anchor_tokens = [[train_corpus.vocabulary[index]] for index in gs_anchor_indices]
-
-    return (Q, D), (labels, train_ids, train_corpus, test_ids, test_corpus,
-                    gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens,
-                    starting_labeled_ids)
-
+    return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
 
 class UserList:
     """List of user data in memory on the server"""
@@ -259,17 +252,13 @@ class UserList:
                                for i in range(self.user_id_length)])
         return user_id
 
-    def add_user(self, corpus_file, QD_file):
+    def add_user(self, corpus_file):
 
         user_id = self.generate_user_id()
 
         # Make the directory
         user_dir = self.get_user_dir(user_id)
         os.makedirs(user_dir, exist_ok=True)
-
-        # Load Q and D
-        with open(QD_file, 'rb') as infile:
-            Q, D = pickle.load(infile)
 
 
         # Set up labeling
@@ -283,14 +272,14 @@ class UserList:
                 'labeled_docs': labeled_docs,
                 'web_unlabeled_ids': set(),
                 'unlabeled_ids': unlabeled_ids,
-                'Q': Q,
-                'D': D,
+                #'Q': Q,
+                #'D': D,
                 #'anchor_tokens': gs_anchor_tokens.copy(),
-                'anchor_tokens': SELECTED_ANCHOR_TOKENS,
+                #'anchor_tokens': SELECTED_ANCHOR_TOKENS,
                 'update_time': time.time(),
                 'update_num': 0,
                 'corpus_file': corpus_file,
-                'original_QD_file': QD_file,
+                #'original_QD_file': QD_file,
                 'user_dir': user_dir,
                 'fc_acc': None,
                 'lr_acc': None,
@@ -400,13 +389,8 @@ class UserList:
 
 
 
-(Q, D), (labels, train_ids, train_corpus, test_ids, test_corpus,
-         gs_anchor_vectors, gs_anchor_indices, gs_anchor_tokens,
-         STARTING_LABELED_IDS) = load_initial_data()
-
+(labels, train_ids, train_corpus, test_ids, test_corpus, STARTING_LABELED_IDS) = load_initial_data()
 del corpus
-
-
 
 for doc_id in STARTING_LABELED_IDS:
     doc = train_corpus.documents[doc_id]
@@ -444,103 +428,67 @@ def get_lr_acc(user_id):
         train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
 
     labeled_ids = set(labeled_docs)
-    Q = user['Q']
-    D = user['D']
-    anchor_tokens = user['anchor_tokens']
-    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                  train_corpus, epsilon=ta_epsilon)
-    C, topics = ankura.anchor.recover_topics(
-        Q, anchor_vectors,
-        epsilon=rt_epsilon, get_c=True
-    )
 
+    train_docs = [train_corpus.documents[docid].text for docid in labeled_ids]
+    train_targets = [train_corpus.documents[docid].metadata[USER_LABEL_ATTR] for docid in labeled_ids]
 
-    # Assign topics to documents in corpus
-    ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR)
-    ankura.topic.gensim_assign(test_corpus, topics, theta_attr=THETA_ATTR)
-    l_to_num = {l:i for i, l in enumerate(labels)}
+    test_docs = [doc.text for doc in test_corpus.documents]
+    test_targets = [doc.metadata[USER_LABEL_ATTR] for doc in test_corpus.documents]
 
-    train_docs = [d for d in train_corpus.documents
-                  if USER_LABEL_ATTR in d.metadata]
+    train_docs.extend(test_docs)
+    train_targets.extend(test_targets)
 
-    X_train = np.array([d.metadata[THETA_ATTR] for d in train_docs])
-    X_test = np.array([d.metadata[THETA_ATTR] for d in test_corpus.documents])
+    tfv = TfidfVectorizer()
+    tfv.fit_transform(train_docs)
 
-    y_train = np.array([l_to_num[d.metadata[USER_LABEL_ATTR]]
-                        for d in train_docs])
-    y_test = np.array([l_to_num[d.metadata[GOLD_ATTR_NAME]]
-                        for d in test_corpus.documents])
+    ss = ShuffleSplit(n_splits=5, test_size=len(test_targets), random_state=0)
+    lr = LogisticRegression()
 
-    clf = LogisticRegression().fit(X_train, y_train)
-    acc = (clf.score(X_test, y_test))
+    results = cross_validate(lr, train_docs, train_targets, cv=ss, scoring=SCORING_DICT)
+
+    acc = np.mean(results['test_accuracy'])
+
     user['lr_acc'] = acc
-    print(acc)
+
+    print('Logistic Regression Accuracy for user', user_id, ':', acc)
+
     return acc
 
 
-def get_fc_acc(user_id):
+def get_vw_acc(user_id):
     user = users.get_user_data(user_id)
     if not user:
         return 0
-    # if user['fc_acc'] is not None:
-    #     return user['fc_acc']
+
     labeled_docs = user['labeled_docs']
     for doc_id, label in labeled_docs.items():
         train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
-    print('get accuracy for user', user_id)
-    # print('labeled docs',labeled_docs)
+
     labeled_ids = set(labeled_docs)
-    print('labeled_ids -', len(labeled_ids))
-    Q = user['Q']
-    D = user['D']
-    anchor_tokens = user['anchor_tokens']
-    #print('anchor tokens', anchor_tokens)
-    s = set(train_corpus.vocabulary)
-    for tand in anchor_tokens:
-        for tok in tand:
-            if tok not in s:
-                raise ValueError(f'Invalid token `{tok}`')
-    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                  train_corpus, epsilon=ta_epsilon)
 
-    C, topics = ankura.anchor.recover_topics(
-        Q, anchor_vectors,
-        epsilon=rt_epsilon, get_c=True
-    )
-    print('c', C)
-    print('topics', topics)
+    train_docs = [train_corpus.documents[docid].text for docid in labeled_ids]
+    train_targets = [train_corpus.documents[docid].metadata[USER_LABEL_ATTR] for docid in labeled_ids]
 
+    test_docs = [doc.text for doc in test_corpus.documents]
+    test_targets = [doc.metadata[USER_LABEL_ATTR] for doc in test_corpus.documents]
 
-    clf = ankura.topic.free_classifier_dream(train_corpus,
-                                             attr_name=USER_LABEL_ATTR,
-                                             labeled_docs=labeled_ids,
-                                             topics=topics,
-                                             C=C, labels=labels)
+    train_docs.extend(test_docs)
+    train_targets.extend(test_targets)
 
-    print('Corpus labeled docs', sum(1 for doc in train_corpus.documents if USER_LABEL_ATTR in
-    doc.metadata))
-    contingency = ankura.validate.Contingency()
-    start = time.time()
-    print('NUM DOCS IN TRAIN CORPUS', len(train_corpus.documents))
-    for doc in train_corpus.documents:
-        gold = doc.metadata[GOLD_ATTR_NAME]
-        pred = clf(doc)
-        contingency[gold, pred] += 1
-    print('TRAIN', contingency.accuracy())
+    train_targets = [-1 if t == 0 else 1 for t in train_targets]
 
-    contingency = ankura.validate.Contingency()
-    start = time.time()
-    print('NUM DOCS IN TEST CORPUS', len(test_corpus.documents))
-    counts = Counter()
-    for doc in test_corpus.documents:
-        gold = doc.metadata[GOLD_ATTR_NAME]
-        pred = clf(doc)
-        counts[pred] += 1
-        contingency[gold, pred] += 1
-    print('Preds', counts)
-    print('TEST', contingency.accuracy())
-    acc = contingency.accuracy()
-    user['fc_acc'] = acc
+    tfv = TfidfVectorizer()
+    tfv.fit_transform(train_docs)
+
+    ss = ShuffleSplit(n_splits=5, test_size=len(test_targets), random_state=0)
+    vw = VWClassifier()
+
+    results = cross_validate(vw, train_docs, train_targets, cv=ss, scoring=SCORING_DICT)
+
+    acc = np.mean(results['test_accuracy'])
+
+    user['vw_acc'] = acc
+
     return acc
 
 
@@ -548,18 +496,18 @@ def get_fc_acc(user_id):
 def api_allaccuracy(fresh=False):
     users.print_user_ids()
     user_folder = os.path.join(PICKLE_FOLDER, 'UserData')
-    user_ids = [f for f in os.listdir(user_folder) if len(f)==USER_ID_LENGTH]
+    user_ids = [f for f in os.listdir(user_folder) if len(f) == USER_ID_LENGTH]
     accuracy_data = {}
     for user_id in user_ids:
         # GET ACCURACY FOR BOTH FC AND LR
-        accuracy_data[user_id + '_fc'] = get_fc_acc(user_id)
+        accuracy_data[user_id + '_vw'] = get_vw_acc(user_id)
         accuracy_data[user_id + '_lr'] = get_lr_acc(user_id)
 
-        # Why are we doing this?
-        #users.rem_user(user_id)
-    ds = sum(1 for doc in test_corpus.documents if doc.metadata[GOLD_ATTR_NAME]=='D')
+    ds = sum(1 for doc in test_corpus.documents if doc.metadata[GOLD_ATTR_NAME] == 'D')
     n = len(test_corpus.documents)
+
     print('BASELINE', f'{ds}/{n}', ds/n)
+
     return jsonify(accuracies=accuracy_data)
 
 # GET - Send the vocabulary to the client
@@ -571,7 +519,7 @@ users = UserList()
 
 @app.route('/api/adduser', methods=['POST'])
 def api_adduser():
-    user_id = users.add_user(corpus_filename, QD_filename)
+    user_id = users.add_user(corpus_filename)
     users.print_user_ids()
     return jsonify(userId=user_id)
 
@@ -615,34 +563,18 @@ def api_getuserdata(user_id):
 
     return jsonify(documents=ret_docs)
 
-def old_get_highlights(doc):
-    base = clf(doc, get_log_probabilities=True)
-    label = base.argmax()
-    ranking = []
-    highlights = []
-    for i in range(len(doc.tokens)):
-        loc = doc.tokens[i].loc
-        new_doc = ankura.pipeline.Document('',
-                    doc.tokens[:i]+doc.tokens[i+1:], {})
-        probs = clf(new_doc, get_log_probabilities=True)
-        new_label = probs.argmax()
-        if new_label != label:
-            highlights.append((loc, labels[new_label]))
-        else:
-            ratio = probs/base
-            l = ratio.argmin()
-            lab = labels[l]
-            x = ratio[l]
-            ranking.append((x, loc, lab))
-    highlights += [(loc, lab) for x, loc, lab in
-                sorted(ranking)[:int(len(doc.tokens)*.5)]]
-    return highlights
-
+def write_to_logfile(text, user, uid):
+    if text is not None:
+        log_filename = users.get_filename(uid, user['update_num'], '.txt')
+        with open(log_filename, 'w') as outfile:
+            outfile.write(text)
 
 @app.route('/api/update', methods=['POST'])
 def api_update():
     data = request.get_json()
-#    print(data)
+
+    global ngrams
+    global lossfn
 
     # Data is expected to come back in this form:
     # data = {anchor_tokens: [[token_str,..],...]
@@ -656,190 +588,117 @@ def api_update():
     users.save_user(user_id)
     web_unlabeled_ids = user['web_unlabeled_ids']
     labeled_docs = user['labeled_docs']
-#    print('labeled_docs', labeled_docs)
     unlabeled_ids = user['unlabeled_ids']
-    Q = user['Q']
-    D = user['D']
 
     # Write the log file
-    log_text = data.get('log_text')
-    if log_text is not None:
-        log_filename = users.get_filename(user_id, user['update_num'], '.txt')
-        with open(log_filename, 'w') as outfile:
-            outfile.write(log_text)
-
+    write_to_logfile(data.get('log_text'), user, user_id)
     users.print_user_ids()
 
-    anchor_tokens = [t for t in data.get('anchor_tokens') if t]
-
-    if not anchor_tokens:
-        anchor_tokens = user['anchor_tokens']
-    if not anchor_tokens:
-        anchor_tokens = gs_anchor_tokens
-
-    anchor_tokens = SELECTED_ANCHOR_TOKENS
-
-
-    print(anchor_tokens)
-    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                  train_corpus, epsilon=ta_epsilon)
-    user['anchor_tokens'] = anchor_tokens
+    # TODO: Get rid of anchors entirely
+    #anchor_tokens = SELECTED_ANCHOR_TOKENS
 
     newly_labeled_docs = data.get('labeled_docs')
 
     # Label docs onto user
     for doc in newly_labeled_docs:
-        print(doc['doc_id'])
         labeled_docs[doc['doc_id']] = doc[USER_LABEL_ATTR]
         unlabeled_ids.discard(doc['doc_id'])
 
     # Label docs into corpus
-    # FIXME Really probably shouldn't relabel the corpus like this.
-    # It doesn't increase big-O, but it does seem a bit odd
-    # Would need to make Ankura changes to change this
     for doc_id, label in labeled_docs.items():
         train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
 
-    # Replace the unlabeled docs
-
     # Remove elements without creating new object
     web_unlabeled_ids.clear()
-
     web_unlabeled_ids.update(random.sample(unlabeled_ids, UNLABELED_COUNT))
 
     newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
+    labeled_ids = set(labeled_docs).union(newly_labeled_doc_ids)
 
-    labeled_ids = set(labeled_docs)
 
-    # QUICK Q update with newly_labeled_docs
-    if newly_labeled_doc_ids:
-        start = time.time()
-        Q = ankura.anchor.quick_Q(Q, train_corpus, USER_LABEL_ATTR, labeled_ids,
-                                  newly_labeled_doc_ids, labels,
-                                  D, label_weight=LABEL_WEIGHT, smoothing=smoothing)
-        print('***Time - quick_Q:', time.time()-start)
-    user['Q'] = Q
+    corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in labeled_ids])
 
-    # Get anchor vectors
-    start = time.time()
-    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                  train_corpus, epsilon=ta_epsilon)
-    print('***Time - tandem_anchors:', time.time()-start)
-
-    # TODO OPTIMIZE Look into using the parallelism keyword or some other way
-    #   to make this faster, as it is currently the longest thing by a long shot.
-    start = time.time()
-    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=rt_epsilon, get_c=True)
-    print('***Time - recover_topics:', time.time()-start)
-
-    start=time.time()
-    ankura.topic.gensim_assign(train_corpus, topics, theta_attr=THETA_ATTR,
-                               needs_assign=(web_unlabeled_ids | labeled_ids))
-    print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
+    tfidfv = TfidfVectorizer(ngram_range=(ngrams, ngrams))
 
     start = time.time()
-    topic_summary = ankura.topic.topic_summary(topics[:len(train_corpus.vocabulary)], train_corpus)
-    print('***Time - topic_summary:', time.time()-start)
+    X = tfidfv.fit_transform(corpus_text)
+    print('Features:', tfidfv.get_feature_names()[:10])
+    print('***Time - Vectorize:', time.time() - start)
+
+    y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in labeled_ids]
+
+    vw = VWClassifier(loss_function=lossfn, invert_hash='output.txt')
 
     start = time.time()
-    # OPTIMIZE This will be slower than necessary because we will be recounting all
-    # the documents that have a specific label every time. Look into changing
-    # how we use the prior_attr_name, or maybe manipulate the corpus outside of
-    # this function. More thought needs to be put into this first
-    clf = ankura.topic.free_classifier_dream(train_corpus, attr_name=USER_LABEL_ATTR,
-                                             labeled_docs=labeled_ids, topics=topics,
-                                             C=C, labels=labels)
-                                             #prior_attr_name=PRIOR_ATTR)
-    print('***Time - Get Classifier:', time.time()-start, '-Could be optimized')
+    vw.fit(X, y)
+    print('***Time - Train:', time.time() - start)
 
     # PREPARE TO SEND OBJECTS BACK
 
-    # TODO Consider redoing this somehow.... I don't like it.
-    # It's kind of a mess....
-    start=time.time()
-    # Classify, getting probabilities
-    left_right = lambda arr: -1 if arr[0]>arr[1] else 1
-    relative_dif = lambda arr: abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
-    labeled_relative_dif = lambda arr: left_right(arr) * relative_dif
+    unlabeled_docs = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
+    u_X = tfidfv.transform(unlabeled_docs)
+    inverse = tfidfv.inverse_transform(u_X)
 
-    # FIXME Sometimes arr is [0,0]... This is because the log probabilities are
-    # just too small to convert back to regular prob space in the free
-    # classifier. I haven't nailed down exactly what leads to this thing, but
-    # we may imagine anything could do this as you are just multiplying a bunch
-    # of numbers in [0,1], with most of them tending toward 0 anyway.
-    def relative_dif(arr, i):
-        if arr[0]==0 and arr[1]==0:
-            return 0
-        #return abs((arr[0]-arr[1])/((arr[0]+arr[1])/2))
-        return abs((arr[i])/(arr.sum()))
+    web_tokens = list(set({ng for arr in inverse for ng in arr}))
 
-    # probs = 0
-    # fine = 0
-    # for doc in train_corpus.documents:
-    #     arr = clf(doc, get_probabilities=True)
-    #     if arr[0]==0 and arr[1]==0:
-    #         probs += 1
-    #     else:
-    #         fine += 1
-    # print(probs)
-    # print(fine)
-    # sys.exit()
+    token_vectors = tfidfv.transform(web_tokens)
 
+    predictions = np.abs(vw.decision_function(token_vectors))
+    prediction_scaler = MinMaxScaler(feature_range=(0, 1))
+    prediction_scaler.fit(np.asarray([predictions]).reshape(-1, 1))
 
-    web_tokens = {tok.token for doc in
-                  (train_corpus.documents[doc_id] for doc_id in web_unlabeled_ids)
-                  for tok in doc.tokens}
+    token_data = list()
+    for i in range(len(web_tokens)):
+        decision = vw.decision_function(token_vectors[i])[0]
 
-    tok_docs  = (ankura.pipeline.Document('', [ankura.pipeline.TokenLoc(t, ())], {})
-                 for t in web_tokens)
+        prob = prediction_scaler.transform([[abs(decision)]])
 
-    tok_data = [{'token': d.tokens[0].token,
-                 'probs': clf(d, get_probabilities=True)} for d in tok_docs]
+        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(np.squeeze(prob)), 'decision' : decision})
 
-    for data in tok_data:
-        p = data['probs']
-        data['weight'] = p.max()/p.sum()
+    token_data.sort(key=lambda d: d['probs'], reverse=True)
 
-    tok_data.sort(key=lambda d: d['weight'], reverse=True)
+    for i, t in enumerate(token_data):
+        if i > 20: break
+        print('Token:', t['token'], 'Decision:', t['decision'])
 
-    highlight_dict = {d['token']: d['probs'].argmax()
-                      for d in tok_data[:int(len(tok_data)*PERCENT_HIGHLIGHT)]}
+    # 1 for R (Republican) and 0 for Democrat (D)
+    highlight_dict = {d['token']: 0 if d['decision'] < 0 else 1
+                      for d in token_data[:int( len(token_data) * PERCENT_HIGHLIGHT )]}
 
     def get_highlights(doc):
         highlights = []
         for tok_loc in doc.tokens:
-            if tok_loc.token in highlight_dict:
+            t = train_corpus.vocabulary[tok_loc.token]
+            if t in highlight_dict:
                 highlights.append((tok_loc.loc,
-                                   labels[highlight_dict[tok_loc.token]]))
+                                   labels[highlight_dict[t]]))
         return highlights
 
     unlabeled_docs = []
 
-    for doc_id in web_unlabeled_ids:
-        doc = train_corpus.documents[doc_id]
-        predict_logprobs = clf(doc, get_log_probabilities=True)
-        i_label = np.argmax(predict_logprobs)
+    new_text = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
+    predictions = vw.decision_function(tfidfv.transform(new_text))
+
+    for i, doc_id in enumerate(web_unlabeled_ids):
+        predict_logprobs = predictions[i]
+        i_label = 0 if predict_logprobs < 0 else 1
         predict_label = labels[i_label]
 
-        predict_probs = normalize_logprobs(predict_logprobs)
-        # predict_probs = np.exp(predict_logprobs)
-        # print(predict_probs/predict_probs.sum())
+        rdif = prediction_scaler.transform([[abs(predict_logprobs)]])
+        con = prediction_scaler.transform([[abs(predict_logprobs)]])
+
         unlabeled_docs.append(
           {'docId': doc_id,
-           'text': doc.text,
-           'tokens': [train_corpus.vocabulary[tok.token] for tok in doc.tokens],
-           'trueLabel': doc.metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out
-                                                      # before user study
-           'prediction': {'label': predict_label,
-                          'relativeDif': relative_dif(predict_probs, i_label),
-                          'confidence': predict_probs[i_label]
+           'text': new_text[i],
+           'tokens': new_text[i].split(),
+           'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
+           'prediction': {
+                          'label': predict_label,
+                          'relativeDif': rdif[0][0],
+                          'confidence': con[0][0]
                           }, # THIS IS WRONG
-           'anchorIdToValue': {i: float(val)
-                               for i, val in enumerate(doc.metadata[THETA_ATTR])},
-           #'highlight': [list(tok.loc) for tok in doc.tokens],
-           'highlights': get_highlights(doc)
+           'highlights': get_highlights(train_corpus.documents[doc_id])
            })
-    print('***Time - Classify:', time.time()-start)
 
     labels_dict = {label: i for i, label in enumerate(labels)}
     # A bit of a complex sort, but gets the job done
@@ -847,112 +706,68 @@ def api_update():
                             (-1)**(labels_dict[doc['prediction']['label']] + 1)
                                 * doc['prediction']['relativeDif'])
     unlabeled_docs.sort(key=doc_sort)
-    # with open('vals.txt', 'a') as outfile:
-    #     outfile.writelines(f'{p[0]} {p[1]}\n' for p in ps)
-
-    # for p in ps:
-    #     print(p)
-    #     print(np.exp(p) / np.exp(p).sum())
-    #     print(normalize_logprobs(p))
-    #     print()
-
 
     # Calculate average for each label
     # TODO Find a better way of doing this?
-    labeled_topic_total = defaultdict(lambda: np.zeros(len(anchor_tokens)))
+
     label_count = Counter()
     for doc_id in labeled_ids:
         doc = train_corpus.documents[doc_id]
         label = doc.metadata[USER_LABEL_ATTR]
-        labeled_topic_total[label] += doc.metadata[THETA_ATTR]
         label_count[label] += 1
 
-    labeled_averages = {label: list(labeled_topic_total[label]/label_count[label])
-        if label_count[label] else [.5]*len(anchor_tokens) for label in labels}
+    return_labels = [{'labelId': i, 'label': label, 'count': label_count[label]} for i, label in enumerate(labels)]
 
-    return_labels = [
-        {'labelId': i,
-         'label': label,
-         'anchorIdToValue': {i: val for i, val in enumerate(labeled_averages[label])},
-         'count': label_count[label]}
-        for i, label in enumerate(labels)]
+#    for d in unlabeled_docs:
+#        print(d['prediction'])
 
-    return_anchors = [
-        {'anchorId': i,
-         'anchorWords': anchors,
-         'topicWords': topic_summary[i]}
-        for i, anchors in enumerate(anchor_tokens)]
-
-    for d in unlabeled_docs:
-        print(d['prediction'])
-
-    return jsonify(anchors=return_anchors,
-                   labels=return_labels,
-                   unlabeledDocs=unlabeled_docs)
-
-# Maybe
-# POST - Something to do with getting more documents?
-# @app.route('', methods=['POST'])
-
-# Maybe
-# POST - Something about reshuffling unlabelable documents?
-# @app.route('', methods=['POST'])
-
-def normalize_logprobs(probs):
-    a = max(probs)
-    probs = np.exp(probs - a)
-    return probs/probs.sum()
+    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs)
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
     data = request.get_json(force=True)
-    anchor_tokens = data.get('anchor_tokens')
-    if not anchor_tokens:
-        anchor_tokens, anchor_vectors = gs_anchor_tokens, gs_anchor_vectors
-    else:
-        anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                     train_corpus, epsilon=ta_epsilon)
+
+    user_id = data.get('user_id')
+
+    print('Running Accuracy')
+    print('User Id:', user_id)
+    if user_id is None: return jsonify(accuracy=0.0)
+
+    user = users.get_user_data(user_id)
+    users.save_user(user_id)
+    labeled_ids = user['labeled_docs']
+
+    print('Retrieving corpus')
+    train_docs = [train_corpus.documents[docid].text for docid in labeled_ids]
+    train_targets = [train_corpus.documents[docid].metadata[USER_LABEL_ATTR] for docid in labeled_ids]
+
+    test_docs = [doc.text for doc in test_corpus.documents]
+    test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
+
+    train_targets = [-1 if t == 'R' else 1 for t in train_targets]
+    test_targets = [-1 if t == 'R' else 1 for t in test_targets]
+
+
+    print('Vectorizing')
+    tfv = TfidfVectorizer()
+    train_vectors = tfv.fit_transform(train_docs)
+    test_vectors = tfv.transform(test_docs)
+
+    vw = VWClassifier()
+
+    print('Training')
+    start = time.time()
+    model = vw.fit(train_vectors, train_targets)
+    print('***Time - Get Classifier:', time.time() - start)
 
     start = time.time()
-    C, topics = ankura.anchor.recover_topics(Q, anchor_vectors, epsilon=rt_epsilon, get_c=True)
-    print('***Time - recover_topics:', time.time()-start)
+    predictions = vw.predict(test_vectors)
+    print('***Time - Classify:', time.time() - start)
 
-    # Gensim assignment
-    start=time.time()
-    ankura.topic.gensim_assign(test_corpus, topics, theta_attr=THETA_ATTR)
-    print('***Time - gensim_assign:', time.time()-start, '-Could be optimized')
+    acc = accuracy_score(test_targets, predictions)
 
-    start = time.time()
-    topic_summary = ankura.topic.topic_summary(topics[:len(train_corpus.vocabulary)], train_corpus)
-    print('***Time - topic_summary:', time.time()-start)
-
-    start = time.time()
-    # OPTIMIZE This will be slower than necessary because we will be recounting all
-    # the documents that have a specific label every time. Look into changing
-    # how we use the prior_attr_name, or maybe manipulate the corpus outside of
-    # this function. More thought needs to be put into this first
-    clf = ankura.topic.free_classifier_dream(train_corpus,
-                                             attr_name=USER_LABEL_ATTR,
-                                             labeled_docs=labeled_ids, topics=topics,
-                                             C=C, labels=labels)
-                                             #prior_attr_name=PRIOR_ATTR)
-    print('***Time - Get Classifier:', time.time()-start, '-Could be optimized')
-
-
-    contingency = ankura.validate.Contingency()
-
-    start=time.time()
-    for doc in test_corpus.documents:
-        gold = doc.metadata[GOLD_ATTR_NAME]
-        pred = clf(doc)
-        contingency[gold, pred] += 1
-    print('***Time - Classify:', time.time()-start)
-    print('***Accuracy:', contingency.accuracy(),
-          f'on {len(test_corpus.documents)} test documents')
-    return jsonify(accuracy=contingency.accuracy())
-
-# with open('BESTAMZ.txt', 'r') as infile:
-#     AMZ_BEST = [line.strip().split(' ') for line in infile.readlines()]
+    print('***Accuracy:', acc)
+    return jsonify(accuracy=acc)
 
 @app.route('/api/addcorrect', methods=['POST'])
 def api_add_correct():
@@ -978,17 +793,6 @@ def api_add_correct():
     print(len(labeled_ids))
 
     return jsonify(labeled_count=len(labeled_ids))
-
-# @app.errorhandler(404)
-# def page_not_found(e):
-#     # Rickrolled
-#     rollers = [
-#                'https://en.wikipedia.org/wiki/Rick_Astley',
-#                'https://youtu.be/dQw4w9WgXcQ?t=43',
-#                'https://youtu.be/lXMskKTw3Bc?t=24'
-#               ]
-#     roll = random.choice(rollers)
-#     return redirect(roll)
 
 if __name__ =="__main__":
     app.run(debug=DEBUG, host='0.0.0.0', port=PORT)
