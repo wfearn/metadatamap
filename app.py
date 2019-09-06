@@ -667,11 +667,11 @@ def api_update():
 
     def get_highlights(doc):
         highlights = []
-        for tok_loc in doc.tokens:
-            t = train_corpus.vocabulary[tok_loc.token]
-            if t in highlight_dict:
-                highlights.append((tok_loc.loc,
-                                   labels[highlight_dict[t]]))
+        doc_ngrams = np.squeeze(tfidfv.inverse_transform(tfidfv.transform([doc.text])))
+        for doc_ngram in doc_ngrams:
+            if doc_ngram in highlight_dict:
+                highlights.append((f'{doc_ngram} ',
+                                   labels[highlight_dict[doc_ngram]]))
         return highlights
 
     unlabeled_docs = []
