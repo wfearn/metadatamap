@@ -591,6 +591,23 @@ var app = new Vue({
         Vue.set(this.unlabeledDocs[i], 'userLabel', this.unlabeledDocs[i].trueLabel+'1');
       }
     },
+    convertToRegex: function(ngrams) {
+        notaletter = '[^a-zA-Z]'
+
+        var regexBeginning = '(^|\\b)(';
+        var fullRegex = regexBeginning;
+
+        for(i = 0; i < ngrams.length; i++) {
+            fullRegex += ngrams[i];
+            if(i < (ngrams.length - 1)) {
+                fullRegex += `${notaletter}+`;
+            }
+        }
+
+        fullRegex += ')($|\\b)';
+
+        return fullRegex;
+    },
     getDocHtml: function(doc){
   //    console.log('Getting HTML');
       var html = doc.text;
@@ -600,10 +617,13 @@ var app = new Vue({
       var a;
       var b;
       for (var i = 0; i < doc.highlights.length; i++){
-          ngram = doc.highlights[i][0];
-          label = doc.highlights[i][1];
-          html_tagged = `<span class="rounded" style="background-color: ${this.colors[label]}">${ngram}</span>`;
-          html = html.replace(ngram, html_tagged);
+          var ngram = doc.highlights[i][0];
+          var label = doc.highlights[i][1];
+          var ngrams_regex = this.convertToRegex(ngram.split(' '));
+          var doc_label = this.colors[label];
+
+          var re = new RegExp(ngrams_regex, 'g');
+          html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
 
       }
 
