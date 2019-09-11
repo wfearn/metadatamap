@@ -137,6 +137,7 @@ def parse_args():
     parser.add_argument('-c', '--clean', action='store_true')
     parser.add_argument('-l', '--loss', default='logistic', type=str, choices=['logistic', 'hinge'], required=False)
     parser.add_argument('-n', '--ngrams', default=1, type=int, choices=set(range(5)), required=False)
+    parser.add_argument('-s', '--seed', default=86, type=int, required=False)
     return parser.parse_args()
 
 
@@ -670,7 +671,7 @@ def api_update():
         doc_ngrams = np.squeeze(tfidfv.inverse_transform(tfidfv.transform([doc.text])))
         for doc_ngram in doc_ngrams:
             if doc_ngram in highlight_dict:
-                highlights.append((f'{doc_ngram} ',
+                highlights.append((f'{doc_ngram}',
                                    labels[highlight_dict[doc_ngram]]))
         return highlights
 
