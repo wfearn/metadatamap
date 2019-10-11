@@ -1,5 +1,6 @@
-import ankura
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect
+from collections import namedtuple
+import re
 import numpy as np
 import random
 import json
@@ -12,7 +13,8 @@ import contextlib
 import random
 import string
 import pickle
-from sklearn.feature_extraction.text import TfidfVectorizer
+from functools import lru_cache
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import cross_validate, ShuffleSplit
 from sklearn.metrics import accuracy_score, make_scorer
 from vowpalwabbit.sklearn_vw import VWClassifier
@@ -38,7 +40,7 @@ PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs to show per iteration on the web
 #UNLABELED_COUNT = 10
-UNLABELED_COUNT = 25
+UNLABELED_COUNT = 5
 
 # Seed used in the shuffle
 SHUFFLE_SEED = None #8448
@@ -46,103 +48,93 @@ SHUFFLE_SEED = None #8448
 # Number of labels in our data
 LABELS_COUNT = 2
 
-# Param for harmonic mean (In tandem_anchors)
-ta_epsilon = 1e-15
-
-# Epsilon for recover topics
-rt_epsilon = 1e-5
-
-# percentage of words to highlight per round (top 10%)
-PERCENT_HIGHLIGHT = .1
-
 # Name of the user_label (for metadata on each document)
 USER_LABEL_ATTR = 'user_label'
+
+PERCENT_HIGHLIGHT = .3
 
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-NUM_TOPICS = 10
-PRELABELED_SIZE = 25
-LABEL_WEIGHT = 1
+PRELABELED_SIZE = 500
 USER_ID_LENGTH = 5
-
-# Does NOT change pickle name.
-# Changing these params requires making a clean version
-# (run program and include the -c or --clean argument)
-smoothing = 1e-4
 
 SCORING_DICT = {
                     'accuracy': make_scorer(accuracy_score)
                }
-#smoothing = 0
 
+Corpus = namedtuple('Corpus', 'documents vocabulary metadata')
+Document = namedtuple('Document', 'text tokens metadata')
+Token = namedtuple('Token', 'token loc')
 
-# if PRELABELED_SIZE < LABELS_COUNT:
-#     raise ValueError("prelabled_size cannot be less than LABELS_COUNT")
+NOPUNCT = str.maketrans('', '', string.punctuation)
+GOLD_ATTR_NAME = 'party'
+url_find = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
+user_file = 'users_final.json'
+tweet_file = 'tweets.json'
 
+def get_twitter_corpus():
+    user_dict = dict()
+    with open(user_file, 'r') as f:
+        user_text = f.readlines()
 
-#SELECTED_ANCHOR_TOKENS = [
-#    ['energy', 'oil', 'production'],
-#    ['security', 'national'],
-#    ['health', 'care', 'support'],
-#    ['poor', 'care', 'people'],
-#    ['republican', 'republicans'],
-#    ['health', 'care', 'bad'],
-#    ['pension', 'benefit', 'support'],
-#    ['medicare', 'spending'],
-#    ['people', 'vote'],
-#    ['energy', 'companies'],
-#    ['iraq', 'war'],
-#    ['president', 'administration'],
-#    ['support', 'families', 'american', 'tax'],
-#    ['children', 'child'],
-#    ['border', 'immigration'],
-#    ['prices', 'gas', 'oil', 'energy', 'bill'],
-#    ['small', 'business'],
-#    ['osha', 'workers'],
-#    ['social', 'security', 'massive'],
-#    ['retirement', 'plan', 'benefit'],
-#    ['tax', 'relief'],
-#    ['economy'],
-#    ['rules', 'committee'],
-#    ['water'],
-#    ['united', 'states'],
-#    ['housing',],
-#    ['defense', 'spending'],
-#    ['sexual', 'children'],
-#    ['congress'],
-#    ['tax', 'cut'],
-#    ['retirement', 'pension', 'workers'],
-#    ['911', 'terrorists'],
-#    ['iraq', 'people'],
-#    ['democrats', 'minority'],
-#    ['family']
-#]
+    for line in user_text:
+        u = json.loads(line)
+        user_dict[u['id']] = u['party']
+
+    with open(tweet_file, 'r') as f:
+        tweet_text = f.readlines()
+
+    documents = list()
+    vocabulary = dict()
+    metadata = dict()
+
+    for line in tweet_text:
+
+        tweet = json.loads(line)
+        uid = tweet['user_id']
+
+        party = user_dict[uid]
+        if party == 'Independent': continue
+
+        text = tweet['text']
+        #text = url_find.sub('URL', text)
+        #processed_text = text.translate(NOPUNCT)
+
+        tokens = list()
+
+        for word in text.split():
+            if word not in vocabulary:
+                vocabulary[word] = len(vocabulary)
+
+            tokens.append(Token(vocabulary[word], (0, 0)))
+
+        doc_metadata = dict()
+        doc_metadata[GOLD_ATTR_NAME] = 'D' if party == 'Democratic' else 'R'
+
+        d = Document(text, tokens, doc_metadata)
+        documents.append(d)
+
+    c = Corpus(documents, vocabulary, metadata)
+
+    return c
 
 def parse_args():
     class CustomFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
         pass
     parser=argparse.ArgumentParser(
-        description='Used for hosting tbuie with a given dataset',
-        epilog=('See https://github.com/byu-aml-lab/tbuie\n' +
-                '  and https://github.com/byu-aml-lab/ankura/tree/ankura2/ankura\n' +
-                '  for source and dependencies\n \n'),
+        description='Used for hosting a human-document classification interface with a given dataset',
         formatter_class=CustomFormatter)
-    parser.add_argument('dataset', metavar='dataset',
-                        choices=['yelp', 'tripadvisor', 'amazon', 'congress'],
-                        help='The name of a dataset to use in this instance of tbuie')
-    parser.add_argument('port', nargs='?', default=5000, type=int,
-                        help='Port to be used in hosting the webpage')
+    parser.add_argument('port', nargs='?', default=5000, type=int, help='Port to be used in hosting the webpage')
     parser.add_argument('-c', '--clean', action='store_true')
     parser.add_argument('-l', '--loss', default='logistic', type=str, choices=['logistic', 'hinge'], required=False)
     parser.add_argument('-n', '--ngrams', default=1, type=int, choices=set(range(5)), required=False)
-    parser.add_argument('-s', '--seed', default=86, type=int, required=False)
+    parser.add_argument('-s', '--seed', default=14, type=int, required=False)
     return parser.parse_args()
 
 
 args = parse_args()
-DATASET_NAME = args.dataset
 PORT = args.port
 clean = args.clean
 lossfn = args.loss
@@ -151,37 +143,24 @@ ngrams = args.ngrams
 
 # Set the attr_name for the true label
 # 'binary_rating' contains 'negative' and 'positive' for yelp, amz, and TA
-GOLD_ATTR_NAME = 'binary_rating'
+LABELS = ['D', 'R']
+DATASET_NAME = 'congress'
+corpus = get_twitter_corpus()
 
-if DATASET_NAME == 'yelp':
-    corpus = ankura.corpus.yelp()
-    LABELS = ['negative', 'positive']
-elif DATASET_NAME == 'tripadvisor':
-    corpus = ankura.corpus.tripadvisor()
-    LABELS = ['negative', 'positive']
-elif DATASET_NAME == 'amazon':
-    corpus = ankura.corpus.amazon()
-    LABELS = ['negative', 'positive']
-elif DATASET_NAME == 'congress':
-    corpus = ankura.corpus.congress()
-    LABELS = ['D', 'R']
-    GOLD_ATTR_NAME = 'party'
+rng = random.Random(args.seed)
 
 # Set seed and shuffle corpus documents if SHUFFLE_SEED
 # Was implemented in case we were doing fully semi-supervised; if there is a
 #   train/test split, that will shuffle the corpus.
-if SHUFFLE_SEED:
-    random.seed(SHUFFLE_SEED)
-    random.shuffle(corpus.documents)
 
 # Place to save pickle files
-PICKLE_FOLDER_BASE = 'PickledFiles'
+PICKLE_FOLDER_BASE = 'pickled_files'
 
-subfolder = f'K{NUM_TOPICS}_prelabeled{PRELABELED_SIZE}_lw{LABEL_WEIGHT}'
+subfolder = f'prelabeled_{PRELABELED_SIZE}'
 PICKLE_FOLDER = os.path.join(PICKLE_FOLDER_BASE, DATASET_NAME, subfolder)
 os.makedirs(PICKLE_FOLDER, exist_ok=True)
 
-filename = (f'corpus_SemiSup.pickle')
+filename = (f'corpus.pickle')
 corpus_filename = os.path.join(PICKLE_FOLDER, filename)
 
 # Checks to see if on second stage initializaiton for Flask
@@ -193,13 +172,29 @@ if clean: # If clean, remove file and remake
     with contextlib.suppress(FileNotFoundError):
         os.remove(corpus_filename)
 
-@ankura.util.pickle_cache(corpus_filename)
+#@lru_cache(maxsize=2)
 def load_initial_data():
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
     # Split to labeled and unlabeled (80-20)
-    (train_ids, train_corpus), (test_ids, test_corpus) = ankura.pipeline.train_test_split(corpus, return_ids=True)
+    ss = ShuffleSplit(n_splits=1, test_size=1000, random_state=args.seed)
+
+    republican_documents = [d for d in corpus.documents if d.metadata['party'] == 'R']
+    democratic_documents = [d for d in corpus.documents if d.metadata['party'] == 'D']
+
+    democratic_documents.extend(republican_documents[:len(democratic_documents)])
+
+    train_ids = list()
+    test_ids = list()
+    for train_indices, test_indices in ss.split(democratic_documents):
+        train_ids = train_indices
+        test_ids = test_indices
+
+    train_corpus = Corpus([democratic_documents[t] for t in train_ids], corpus.vocabulary, corpus.metadata)
+    test_corpus = Corpus([democratic_documents[t] for t in test_ids], corpus.vocabulary, corpus.metadata)
+
+    #(train_ids, train_corpus), (test_ids, test_corpus) = ankura.pipeline.train_test_split(corpus, return_ids=True)
 
     # Must have at least one labeled for each label
     # TODO What does this do?
@@ -221,6 +216,13 @@ def load_initial_data():
         starting_labeled_labels = set(train_corpus.documents[i].metadata[GOLD_ATTR_NAME] for i in starting_labeled_ids)
         # TODO
         break
+
+    c = Counter()
+
+    for doc in train_corpus.documents:
+        c.update([doc.metadata[GOLD_ATTR_NAME]])
+
+    print('Distribution:', c)
 
     return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
 
@@ -273,14 +275,9 @@ class UserList:
                 'labeled_docs': labeled_docs,
                 'web_unlabeled_ids': set(),
                 'unlabeled_ids': unlabeled_ids,
-                #'Q': Q,
-                #'D': D,
-                #'anchor_tokens': gs_anchor_tokens.copy(),
-                #'anchor_tokens': SELECTED_ANCHOR_TOKENS,
                 'update_time': time.time(),
                 'update_num': 0,
                 'corpus_file': corpus_file,
-                #'original_QD_file': QD_file,
                 'user_dir': user_dir,
                 'fc_acc': None,
                 'lr_acc': None,
@@ -387,9 +384,6 @@ class UserList:
             print(user_id)
         print('***')
 
-
-
-
 (labels, train_ids, train_corpus, test_ids, test_corpus, STARTING_LABELED_IDS) = load_initial_data()
 del corpus
 
@@ -399,11 +393,11 @@ for doc_id in STARTING_LABELED_IDS:
     doc.metadata[USER_LABEL_ATTR] = doc.metadata[GOLD_ATTR_NAME]
     doc.metadata['Prelabeled'] = True
 
-@app.route('/')
 @app.route('/index')
 def index():
     return send_from_directory('.','index.html')
 
+@app.route('/')
 @app.route('/index2')
 def index2():
     return send_from_directory('.', 'index2.html')
@@ -415,83 +409,6 @@ def index3():
 @app.route('/answers')
 def answers():
     return send_from_directory('.', 'answers.html')
-
-
-def get_lr_acc(user_id):
-    from sklearn.linear_model import LogisticRegression
-    user = users.get_user_data(user_id)
-    if not user:
-        return 0
-    # if user['lr_acc'] is not None:
-    #     return user['lr_acc']
-    labeled_docs = user['labeled_docs']
-    for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
-
-    labeled_ids = set(labeled_docs)
-
-    train_docs = [train_corpus.documents[docid].text for docid in labeled_ids]
-    train_targets = [train_corpus.documents[docid].metadata[USER_LABEL_ATTR] for docid in labeled_ids]
-
-    test_docs = [doc.text for doc in test_corpus.documents]
-    test_targets = [doc.metadata[USER_LABEL_ATTR] for doc in test_corpus.documents]
-
-    train_docs.extend(test_docs)
-    train_targets.extend(test_targets)
-
-    tfv = TfidfVectorizer()
-    tfv.fit_transform(train_docs)
-
-    ss = ShuffleSplit(n_splits=5, test_size=len(test_targets), random_state=0)
-    lr = LogisticRegression()
-
-    results = cross_validate(lr, train_docs, train_targets, cv=ss, scoring=SCORING_DICT)
-
-    acc = np.mean(results['test_accuracy'])
-
-    user['lr_acc'] = acc
-
-    print('Logistic Regression Accuracy for user', user_id, ':', acc)
-
-    return acc
-
-
-def get_vw_acc(user_id):
-    user = users.get_user_data(user_id)
-    if not user:
-        return 0
-
-    labeled_docs = user['labeled_docs']
-    for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
-
-    labeled_ids = set(labeled_docs)
-
-    train_docs = [train_corpus.documents[docid].text for docid in labeled_ids]
-    train_targets = [train_corpus.documents[docid].metadata[USER_LABEL_ATTR] for docid in labeled_ids]
-
-    test_docs = [doc.text for doc in test_corpus.documents]
-    test_targets = [doc.metadata[USER_LABEL_ATTR] for doc in test_corpus.documents]
-
-    train_docs.extend(test_docs)
-    train_targets.extend(test_targets)
-
-    train_targets = [-1 if t == 0 else 1 for t in train_targets]
-
-    tfv = TfidfVectorizer()
-    tfv.fit_transform(train_docs)
-
-    ss = ShuffleSplit(n_splits=5, test_size=len(test_targets), random_state=0)
-    vw = VWClassifier()
-
-    results = cross_validate(vw, train_docs, train_targets, cv=ss, scoring=SCORING_DICT)
-
-    acc = np.mean(results['test_accuracy'])
-
-    user['vw_acc'] = acc
-
-    return acc
-
 
 @app.route('/api/allaccuracy')
 def api_allaccuracy(fresh=False):
@@ -533,13 +450,7 @@ def api_getuserdata(user_id):
     user = users.get_user_data(user_id)
     web_unlabeled_ids = user['web_unlabeled_ids']
     labeled_docs = user['labeled_docs']
-#    print('labeled_docs', labeled_docs)
     unlabeled_ids = user['unlabeled_ids']
-    Q = user['Q']
-    D = user['D']
-    anchor_tokens = user['anchor_tokens']
-    anchor_vectors = ankura.anchor.tandem_anchors(anchor_tokens, Q,
-                                                  train_corpus, epsilon=ta_epsilon)
 
 
     for doc_id, label in labeled_docs.items():
@@ -591,14 +502,15 @@ def api_update():
     labeled_docs = user['labeled_docs']
     unlabeled_ids = user['unlabeled_ids']
 
+
     # Write the log file
     write_to_logfile(data.get('log_text'), user, user_id)
     users.print_user_ids()
 
-    # TODO: Get rid of anchors entirely
-    #anchor_tokens = SELECTED_ANCHOR_TOKENS
-
     newly_labeled_docs = data.get('labeled_docs')
+
+    print('Newly Labeled Docs Length:', len(newly_labeled_docs))
+    print('Labeled Docs:', labeled_docs)
 
     # Label docs onto user
     for doc in newly_labeled_docs:
@@ -611,7 +523,8 @@ def api_update():
 
     # Remove elements without creating new object
     web_unlabeled_ids.clear()
-    web_unlabeled_ids.update(random.sample(unlabeled_ids, UNLABELED_COUNT))
+    web_unlabeled_ids.update(rng.sample(unlabeled_ids, UNLABELED_COUNT))
+    print('New Unlabeled Ids:', web_unlabeled_ids)
 
     newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
     labeled_ids = set(labeled_docs).union(newly_labeled_doc_ids)
@@ -619,7 +532,7 @@ def api_update():
 
     corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in labeled_ids])
 
-    tfidfv = TfidfVectorizer(ngram_range=(ngrams, ngrams))
+    tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
 
     start = time.time()
     X = tfidfv.fit_transform(corpus_text)
@@ -634,13 +547,27 @@ def api_update():
     vw.fit(X, y)
     print('***Time - Train:', time.time() - start)
 
+    test_docs = [doc.text for doc in test_corpus.documents]
+    print('Test Doc Length:', len(test_docs))
+
+    test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
+    test_targets = [1 if t == 'R' else -1 for t in test_targets]
+
+    test_X = tfidfv.transform(test_docs)
+    test_predictions = vw.predict(test_X)
+
+    accuracy = int(100 * accuracy_score(test_targets, test_predictions))
+
+    print('Accuracy', accuracy)
+
     # PREPARE TO SEND OBJECTS BACK
 
     unlabeled_docs = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
-    u_X = tfidfv.transform(unlabeled_docs)
-    inverse = tfidfv.inverse_transform(u_X)
+    #u_X = tfidfv.transform(unlabeled_docs)
+    #inverse = tfidfv.inverse_transform(u_X)
+    web_tokens = list(set(' '.join(unlabeled_docs).split()))
 
-    web_tokens = list(set({ng for arr in inverse for ng in arr}))
+    #web_tokens = list(set({ng for arr in inverse for ng in arr}))
 
     token_vectors = tfidfv.transform(web_tokens)
 
@@ -668,11 +595,11 @@ def api_update():
 
     def get_highlights(doc):
         highlights = []
-        doc_ngrams = np.squeeze(tfidfv.inverse_transform(tfidfv.transform([doc.text])))
-        for doc_ngram in doc_ngrams:
-            if doc_ngram in highlight_dict:
-                highlights.append((f'{doc_ngram}',
-                                   labels[highlight_dict[doc_ngram]]))
+        words = doc.text.split()
+        for word in words:
+            if word in highlight_dict:
+                highlights.append((f'{word}',
+                                   labels[highlight_dict[word]]))
         return highlights
 
     unlabeled_docs = []
@@ -687,6 +614,8 @@ def api_update():
 
         rdif = prediction_scaler.transform([[abs(predict_logprobs)]])
         con = prediction_scaler.transform([[abs(predict_logprobs)]])
+
+        hls = get_highlights(train_corpus.documents[doc_id])
 
         unlabeled_docs.append(
           {'docId': doc_id,
@@ -722,7 +651,7 @@ def api_update():
 #    for d in unlabeled_docs:
 #        print(d['prediction'])
 
-    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs)
+    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, modelAccuracy=accuracy)
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
@@ -750,7 +679,7 @@ def api_accuracy():
 
 
     print('Vectorizing')
-    tfv = TfidfVectorizer()
+    tfv = CountVectorizer()
     train_vectors = tfv.fit_transform(train_docs)
     test_vectors = tfv.transform(test_docs)
 
@@ -770,30 +699,6 @@ def api_accuracy():
     print('***Accuracy:', acc)
     return jsonify(accuracy=acc)
 
-@app.route('/api/addcorrect', methods=['POST'])
-def api_add_correct():
-    global Q, D
-
-    data = request.form
-    n = int(data.get('n'))
-    newly_labeled_doc_ids = set()
-
-    for i in range(n):
-        doc_id = unlabeled_ids.pop()
-        newly_labeled_doc_ids.add(doc_id)
-        labeled_ids.add(doc_id)
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = (
-            train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME])
-
-    start = time.time()
-    Q = ankura.anchor.quick_Q(Q, train_corpus, GOLD_ATTR_NAME, labeled_ids,
-                newly_labeled_doc_ids, labels,
-                D, label_weight=LABEL_WEIGHT, smoothing=smoothing)
-    print('***Time - quick_Q:', time.time()-start)
-
-    print(len(labeled_ids))
-
-    return jsonify(labeled_count=len(labeled_ids))
 
 if __name__ =="__main__":
     app.run(debug=DEBUG, host='0.0.0.0', port=PORT)
