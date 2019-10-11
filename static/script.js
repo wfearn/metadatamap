@@ -41,6 +41,7 @@ var app = new Vue({
     inputUncertainty: Math.random() >= 0.5,
     perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
+    modelAccuracy: 0,
     logText: '',
     startDate: null,
     timer: null,
@@ -48,7 +49,7 @@ var app = new Vue({
     time: 0, // initially, time is 0
     paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
     timeWarning: false, // track whether the user should see the time warning alert
-    firstPage: true, // track which page of modal the user is viewing
+    modalState: 0,
     secondPage: false,
     started: false, // track whether the user has started the task
     finished: false, // track whether user has finished the task
@@ -56,10 +57,10 @@ var app = new Vue({
     inputProvided: false, // track whether the user provided input on the last round
     clickedSurvey: false, // track whether the user has clicked the survey link
     finishedSurvey: false // track whether the user has proceeded to the task after completing the survey
-    },
+  },
   components: {},
   mounted: function () {
-    this.startTask();
+
   }, //End mounted
   computed: {
     docsByLabel: function() {
@@ -221,24 +222,10 @@ var app = new Vue({
         this.unlabeledDocs = response.data.unlabeledDocs;
 
         // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
-        var numCorrect = 0;
-        this.totalDocs += this.unlabeledDocs.length;
-        for (var i = 0; i < this.unlabeledDocs.length; i++) {
-          let d = this.unlabeledDocs[i];
-          if (d.trueLabel === d.prediction.label) {
-            numCorrect += 1;
-            this.numCorrect += 1;
-          }
-        }
 
-        // determine curr accuracy and total accuracy
-        var currAccuracy = numCorrect / this.unlabeledDocs.length;
-        var totalAccuracy = this.numCorrect / this.totalDocs;
+        this.modelAccuracy = response.data.modelAccuracy
 
-        console.log('Current Accuracy', currAccuracy)
-        console.log('Overall Accuracy', totalAccuracy)
-
-        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currAccuracy,' + currAccuracy + ',totalAccuracy,' + totalAccuracy + '\n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currentAccuracy,' + this.modelAccuracy + '\n');
 
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
         this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
@@ -330,20 +317,20 @@ var app = new Vue({
       return count;
     },
     closeModal: function(){
+
     //  console.log('closing the modal!');
       if (this.started) {
         this.timeWarning = false;
         this.paused = false;
-        this.showModal=false;
+        this.showModal = false;
         this.refreshed = false;
         this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
       }
     },
     openModal: function() {
       this.paused = true;
-      this.showModal=true;
-      this.firstPage=true;
-      this.secondPage = false;
+      this.showModal = true;
+      this.modalState = 0;
     },
     toggleModal: function(){
       if(this.showModal){
@@ -592,7 +579,8 @@ var app = new Vue({
       }
     },
     convertToRegex: function(ngrams) {
-        notaletter = '[^a-zA-Z]'
+        anything = '[^a-zA-Z]+'
+        //anything = '.*?'
 
         var regexBeginning = '(^|\\b)(';
         var fullRegex = regexBeginning;
@@ -600,7 +588,7 @@ var app = new Vue({
         for(i = 0; i < ngrams.length; i++) {
             fullRegex += ngrams[i];
             if(i < (ngrams.length - 1)) {
-                fullRegex += `${notaletter}+`;
+                fullRegex += `${anything}`;
             }
         }
 
@@ -678,7 +666,7 @@ var app = new Vue({
       return new Date();
     },
     startTask: function() {
-  //    console.log('starting the task!');
+      console.log('starting the task!');
       this.startDate = new Date();
 
       // include the below to hide the tutorial
@@ -711,9 +699,11 @@ var app = new Vue({
           this.openModal();
         }
       }, 1000);
+
       this.showModal = false;
       this.started = true;
       this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+      this.toggleModal();
       // Event listener to close the modal on Esc
       document.addEventListener("keydown", (e) => {
         if (this.showModal && e.keyCode == 27) {
