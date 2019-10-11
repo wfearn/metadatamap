@@ -182,7 +182,7 @@ def load_initial_data():
 
     print('***Splitting labeled/unlabeled and test...')
     # Split to labeled and unlabeled (80-20)
-    ss = ShuffleSplit(n_splits=1, test_size=1000, random_state=args.seed)
+    ss = ShuffleSplit(n_splits=1, test_size=2000, random_state=args.seed)
 
     republican_documents = [d for d in corpus.documents if d.metadata['party'] == 'R']
     democratic_documents = [d for d in corpus.documents if d.metadata['party'] == 'D']
