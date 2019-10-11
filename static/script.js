@@ -41,7 +41,7 @@ var app = new Vue({
     inputUncertainty: Math.random() >= 0.5,
     perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
-    modelAccuracy: 0,
+    correctDocumentDelta: 0,
     logText: '',
     startDate: null,
     timer: null,
@@ -223,9 +223,9 @@ var app = new Vue({
 
         // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
 
-        this.modelAccuracy = response.data.modelAccuracy
+        this.correctDocumentDelta = response.data.correctDocumentDelta
 
-        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currentAccuracy,' + this.modelAccuracy + '\n');
+        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
 
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
         this.unlabeledDocs = this.shuffle(this.unlabeledDocs);

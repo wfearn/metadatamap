@@ -44,8 +44,9 @@ PERCENT_HIGHLIGHT = .3
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-PRELABELED_SIZE = 500
+PRELABELED_SIZE = 5000
 USER_ID_LENGTH = 5
+BASELINE_CORRECT_DOCUMENTS = 0
 
 SCORING_DICT = {
                     'accuracy': make_scorer(accuracy_score)
@@ -76,13 +77,11 @@ def pickle_cache(pickle_filename):
         def wrapper():
             if os.path.isfile(pickle_filename):
                 with open(pickle_filename, 'rb') as f:
-                    print('Cached, loading from cache')
                     results = pickle.load(f)
                 return results
 
             results = fn()
             with open(pickle_filename, 'wb') as f:
-                print('Not cached, loading into cache')
                 pickle.dump(results, f)
             return results
 
@@ -487,6 +486,7 @@ def api_update():
 
     global ngrams
     global lossfn
+    global BASELINE_CORRECT_DOCUMENTS
 
     # Data is expected to come back in this form:
     # data = {anchor_tokens: [[token_str,..],...]
@@ -502,6 +502,29 @@ def api_update():
     labeled_docs = user['labeled_docs']
     unlabeled_ids = user['unlabeled_ids']
 
+    if not BASELINE_CORRECT_DOCUMENTS:
+        corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in set(labeled_docs)])
+        y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in set(labeled_docs)]
+
+        tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
+        X = tfidfv.fit_transform(corpus_text)
+
+        vw = VWClassifier(loss_function=lossfn)
+
+        vw.fit(X, y)
+
+        test_docs = [doc.text for doc in test_corpus.documents]
+
+        test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
+        test_targets = [1 if t == 'R' else -1 for t in test_targets]
+
+        test_X = tfidfv.transform(test_docs)
+        test_predictions = vw.predict(test_X)
+
+        results = [1 if i == j else 0 for i, j in zip(test_targets, test_predictions)]
+        BASELINE_CORRECT_DOCUMENTS = np.sum(results)
+        print('BASELINE CORRECT:', BASELINE_CORRECT_DOCUMENTS)
+
 
     # Write the log file
     write_to_logfile(data.get('log_text'), user, user_id)
@@ -510,7 +533,6 @@ def api_update():
     newly_labeled_docs = data.get('labeled_docs')
 
     print('Newly Labeled Docs Length:', len(newly_labeled_docs))
-    print('Labeled Docs:', labeled_docs)
 
     # Label docs onto user
     for doc in newly_labeled_docs:
@@ -541,7 +563,7 @@ def api_update():
 
     y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in labeled_ids]
 
-    vw = VWClassifier(loss_function=lossfn, invert_hash='output.txt')
+    vw = VWClassifier(loss_function=lossfn)
 
     start = time.time()
     vw.fit(X, y)
@@ -556,9 +578,10 @@ def api_update():
     test_X = tfidfv.transform(test_docs)
     test_predictions = vw.predict(test_X)
 
-    accuracy = int(100 * accuracy_score(test_targets, test_predictions))
+    results = [1 if i == j else 0 for i, j in zip(test_targets, test_predictions)]
+    num_correct = np.sum(results)
 
-    print('Accuracy', accuracy)
+    print('Number of correct documents', num_correct)
 
     # PREPARE TO SEND OBJECTS BACK
 
@@ -651,7 +674,7 @@ def api_update():
 #    for d in unlabeled_docs:
 #        print(d['prediction'])
 
-    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, modelAccuracy=accuracy)
+    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=str(num_correct - BASELINE_CORRECT_DOCUMENTS))
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
