@@ -28,17 +28,9 @@ DEBUG = False
 #TODO: Add in selectable features such as loss function, unigrams, bigrams, etc.
 
 # Attribute names:
-# Token topics
-Z_ATTR = 'z' # UNUSED
-
-# Document topics
-THETA_ATTR = 'theta'
-
 
 # Number of unlabled docs to show per iteration on the web
 UNLABELED_COUNT = 5
-
-# Seed used in the shuffle
 
 # Number of labels in our data
 LABELS_COUNT = 2
@@ -46,6 +38,7 @@ LABELS_COUNT = 2
 # Name of the user_label (for metadata on each document)
 USER_LABEL_ATTR = 'user_label'
 
+# Percentage of documents to highlight
 PERCENT_HIGHLIGHT = .3
 
 # Parameters that affect the naming of the pickle (changing these will rename
@@ -477,13 +470,8 @@ def api_getuserdata(user_id):
                          for k, v in doc.metadata.items()
                          if type(v) != np.ndarray}
         d['metadata']['correct'] = (d['metadata'][USER_LABEL_ATTR] == d['metadata'][GOLD_ATTR_NAME])
-        try:
-            d.pop(THETA_ATTR)
-        except KeyError:
-            pass
         d['metadata']['docNum'] = i
         ret_docs.append(d)
-        # print(d['metadata'])
 
     return jsonify(documents=ret_docs)
 
