@@ -34,15 +34,11 @@ Z_ATTR = 'z' # UNUSED
 # Document topics
 THETA_ATTR = 'theta'
 
-# Prior attr
-PRIOR_ATTR = 'lambda' # UNUSED
 
 # Number of unlabled docs to show per iteration on the web
-#UNLABELED_COUNT = 10
 UNLABELED_COUNT = 5
 
 # Seed used in the shuffle
-SHUFFLE_SEED = None #8448
 
 # Number of labels in our data
 LABELS_COUNT = 2
@@ -70,8 +66,17 @@ NOPUNCT = str.maketrans('', '', string.punctuation)
 GOLD_ATTR_NAME = 'party'
 url_find = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
+LABELS = ['D', 'R']
+DATASET_NAME = 'twitter'
+PICKLE_FOLDER_BASE = 'pickled_files'
+subfolder = f'prelabeled_{PRELABELED_SIZE}'
+PICKLE_FOLDER = os.path.join(PICKLE_FOLDER_BASE, DATASET_NAME, subfolder)
+os.makedirs(PICKLE_FOLDER, exist_ok=True)
+
 user_file = 'users_final.json'
 tweet_file = 'tweets.json'
+filename = (f'corpus.pickle')
+corpus_filename = os.path.join(PICKLE_FOLDER, filename)
 
 def pickle_cache(pickle_filename):
     def decorator(fn):
@@ -92,7 +97,7 @@ def pickle_cache(pickle_filename):
 
     return decorator
 
-@pickle_cache('corpus.pickle')
+@pickle_cache(corpus_filename)
 def get_twitter_corpus():
     user_dict = dict()
     with open(user_file, 'r') as f:
@@ -118,8 +123,7 @@ def get_twitter_corpus():
         if party == 'Independent': continue
 
         text = tweet['text']
-        #text = url_find.sub('URL', text)
-        #processed_text = text.translate(NOPUNCT)
+        text = url_find.sub('&lt;URL_TOKEN&gt;', text)
 
         tokens = list()
 
@@ -162,22 +166,12 @@ ngrams = args.ngrams
 
 # Set the attr_name for the true label
 # 'binary_rating' contains 'negative' and 'positive' for yelp, amz, and TA
-LABELS = ['D', 'R']
-DATASET_NAME = 'congress'
 corpus = get_twitter_corpus()
 
 rng = random.Random(args.seed)
 
-# Set seed and shuffle corpus documents if SHUFFLE_SEED
-# Was implemented in case we were doing fully semi-supervised; if there is a
-#   train/test split, that will shuffle the corpus.
-
 # Place to save pickle files
-PICKLE_FOLDER_BASE = 'pickled_files'
 
-subfolder = f'prelabeled_{PRELABELED_SIZE}'
-PICKLE_FOLDER = os.path.join(PICKLE_FOLDER_BASE, DATASET_NAME, subfolder)
-os.makedirs(PICKLE_FOLDER, exist_ok=True)
 
 filename = (f'corpus.pickle')
 corpus_filename = os.path.join(PICKLE_FOLDER, filename)
