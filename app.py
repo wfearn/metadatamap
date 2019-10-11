@@ -13,7 +13,6 @@ import contextlib
 import random
 import string
 import pickle
-from functools import lru_cache
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import cross_validate, ShuffleSplit
 from sklearn.metrics import accuracy_score, make_scorer
@@ -74,6 +73,26 @@ url_find = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-
 user_file = 'users_final.json'
 tweet_file = 'tweets.json'
 
+def pickle_cache(pickle_filename):
+    def decorator(fn):
+        def wrapper():
+            if os.path.isfile(pickle_filename):
+                with open(pickle_filename, 'rb') as f:
+                    print('Cached, loading from cache')
+                    results = pickle.load(f)
+                return results
+
+            results = fn()
+            with open(pickle_filename, 'wb') as f:
+                print('Not cached, loading into cache')
+                pickle.dump(results, f)
+            return results
+
+        return wrapper
+
+    return decorator
+
+@pickle_cache('corpus.pickle')
 def get_twitter_corpus():
     user_dict = dict()
     with open(user_file, 'r') as f:
@@ -172,7 +191,6 @@ if clean: # If clean, remove file and remake
     with contextlib.suppress(FileNotFoundError):
         os.remove(corpus_filename)
 
-#@lru_cache(maxsize=2)
 def load_initial_data():
     print('***Loading initial data...')
 
