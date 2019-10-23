@@ -1,4 +1,3 @@
-
 function hexToRgb(hex) {
   var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
@@ -29,6 +28,12 @@ var app = new Vue({
     autocompleteResults: [],
     userId: '',
     inputId: '',
+    sliderValue: 0,
+    sliderData: {
+          '0' : 'Input Ignored By Model',
+         '50' : 'Suggest Input To Model',
+        '100' : 'Override Model',
+    },
     showAnswers: false,
     showAnchorInfo: false,
     canEditAnchors: false,
@@ -58,7 +63,9 @@ var app = new Vue({
     clickedSurvey: false, // track whether the user has clicked the survey link
     finishedSurvey: false // track whether the user has proceeded to the task after completing the survey
   },
-  components: {},
+  components: {
+      VueSlider: window['vue-slider-component']
+  },
   mounted: function () {
 
   }, //End mounted
@@ -110,15 +117,19 @@ var app = new Vue({
         }
       }
     },
-    getVocab: function(){
+    sliderChange: function() {
+        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.userId + '||' + this.sliderValue + '\n');
+
+    },
+    getVocab: function() {
       axios.get('/api/vocab').then(response => {
         this.vocab = response.data.vocab;
       }).catch(error => {
         console.error('error in /api/vocab', error)
       });
     },
-    getIdData: function(id){
-      if (id === ''){
+    getIdData: function(id) {
+      if (id === '') {
         alert('That user id was not found');
         return;
       }
@@ -214,12 +225,14 @@ var app = new Vue({
 
         // updates the log text on call to update
         log_text: this.logText,
+        desired_adherence: this.sliderValue,
       }).then(response => {
         this.updateData = response.data;
         this.anchors = response.data.anchors;
 
         // new set of unlabeled documents
         this.unlabeledDocs = response.data.unlabeledDocs;
+        console.log('Slider Value is:' +  this.sliderValue);
 
         // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
 
@@ -240,7 +253,7 @@ var app = new Vue({
         }
 
         for (var i = 0; i < this.unlabeledDocs.length; i++) {
-          Vue.set(this.unlabeledDocs[i], 'open', false);
+          Vue.set(this.unlabeledDocs[i], 'open', true);
         }
 
         // pop up the modal

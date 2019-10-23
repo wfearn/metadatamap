@@ -6,19 +6,29 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="static/styles/teaming.css"/>
     <link rel="stylesheet" href="static/styles/modal.css"/>
-    <title>Debate Labeling Task</title>
+    <link rel="stylesheet" href="static/styles/default.css">
+    <title>Tweet Labeling Task</title>
   </head>
   <body>
 
     <div id="app">
       <div class="header">
       <div>
-        <!--<strong class="inline large">Label Debates</strong> -->
+        <div style="margin-left: 700px; margin-right: 50px; margin-bottom: 30px;">
+          <vue-slider
+                  v-model="sliderValue"
+                  :adsorb="true"
+                  :marks="sliderData"
+                  :drag-on-click="true"
+                  :contained="true"
+                  @drag-end="sliderChange">
+          </vue-slider>
+        </div>
         <strong class="inline"> # With your help, the model has labeled {{ correctDocumentDelta }} additional documents correctly.</strong>
         <strong class="right inline user-id">USER ID: {{ userId }} </strong>
       </div>
       <div>
-        <strong> # Debates You've Labeled: {{ labeledCount }} </strong>
+        <strong> # Tweets You've Labeled: {{ labeledCount }} </strong>
         <strong id="timer-box"
              class="right time-remaining"
              title="task time remaining">
@@ -29,7 +39,7 @@
         <button class="save-button"
                 v-on:click="sendUpdate"
                 title="save input and get new set of debates">
-          {{ perceivedControl ? "Save Assigned Labels to Override the Model" : "Save Suggested Labels to Update the Model" }} and Get Another Set of Debates
+          {{ perceivedControl ? "Save Assigned Labels to Override the Model" : "Save Suggested Labels to Update the Model" }} and Get Another Set of Tweets
         </button>
         <button v-on:click='toggleModal()' class="right" title="show instructions">View Instructions</button>
 
@@ -54,8 +64,8 @@
         -->
         <div v-for="doc in unlabeledDocs"
              class="doc-container"
-             v-bind:class="doc.open ? 'doc-container-expanded' : 'doc-container-collapsed'">
-          <div class="expand-button-area">
+             v-bind:class="doc.open ? 'doc-container-expanded' : 'doc-container-expanded'">
+          <!--<div class="expand-button-area">
             <button class="expand-button"
                     v-on:click="toggleDocOpen(doc)">
               <span v-if="doc.open">
@@ -65,10 +75,10 @@
               +
               </span>
             </button>
-          </div>
+          </div> -->
           <div class="title">
             <div class="vertical-align">
-              Debate </br>
+              Tweet </br>
               #{{ pad(doc.docId, 6) }}
             </div>
           </div>
@@ -269,7 +279,7 @@
                   </ul>
                 </li>
                 <li>You can {{ perceivedControl ? "override the system's " : 'suggest' }} labels for any of these speeches with whether you think the speaker is republican or democrat by clicking the radio buttons. Click again to clear the label.</li>
-                <li>At any point, click the “Save Labels to Update Model and Get Another Set of Debates” button.
+                <li>At any point, click the “Save Labels to Update Model and Get Another Set of Tweets” button.
                   <ul>
                     <li>The system updates the model by {{ perceivedControl ? 'replacing the previously learned republican and democratic words in those debates with the political party labels you assign' : 'taking the political party labels you suggest into account with the previously learned republican and democratic words in those debates'}}.</li>
                     <li>The system uses the updated model to predict the political party for five new debates randomly chosen from the large set.</li>
@@ -304,7 +314,7 @@
               </br>
               <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div>
               </br>
-              <div>Remember, the goal is to work with the system to train a model that can accurately distinguish between republican and democrat speakers. You will have 20 minutes for this task. <span class="bold">Every time you click to “Save and Get Another Set of Debates”, the model will learn from your labels as described above and present another set of five randomly chosen speeches with the new predictions.</span> When time is up, the final, updated model will predict the labels for the entire set of debate speeches. You will receive up to a $5 bonus for how many of these speeches are correctly labeled by the final model. You can revisit these instructions at any time by clicking the “View Instructions” button.
+              <div>Remember, the goal is to work with the system to train a model that can accurately distinguish between republican and democrat speakers. You will have 20 minutes for this task. <span class="bold">Every time you click to “Save and Get Another Set of Tweets”, the model will learn from your labels as described above and present another set of five randomly chosen speeches with the new predictions.</span> When time is up, the final, updated model will predict the labels for the entire set of debate speeches. You will receive up to a $5 bonus for how many of these speeches are correctly labeled by the final model. You can revisit these instructions at any time by clicking the “View Instructions” button.
               </div>
             </span>
           </div> <!-- Modal body -->
@@ -356,6 +366,7 @@
     <script src="https://unpkg.com/vue"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="static/styles/vue-slider-component.umd.min.js"></script>
     <script src="static/script.js"></script>
   </body>
 </html>
