@@ -115,6 +115,11 @@ def get_twitter_corpus():
         if party == 'Independent': continue
 
         text = tweet['text']
+
+        if 'RT' in text:
+            print('Retweet:', text)
+            continue
+
         text = url_find.sub('&lt;URL_TOKEN&gt;', text)
 
         tokens = list()
@@ -234,7 +239,7 @@ class UserList:
     """List of user data in memory on the server"""
     def __init__(self, user_base_dir='UserData', timeout=20, zfill=3):
         # Directory to save user info
-        self.user_base_dir= os.path.join(PICKLE_FOLDER, user_base_dir)
+        self.user_base_dir = os.path.join(PICKLE_FOLDER, user_base_dir)
         os.makedirs(self.user_base_dir, exist_ok=True)
         self.zfill = zfill
 
@@ -514,6 +519,7 @@ def api_update():
         vw.fit(X, y)
 
         test_docs = [doc.text for doc in test_corpus.documents]
+        print('100 Docs:', test_docs[:100])
 
         test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
         test_targets = [1 if t == 'R' else -1 for t in test_targets]
@@ -531,8 +537,6 @@ def api_update():
     users.print_user_ids()
 
     newly_labeled_docs = data.get('labeled_docs')
-
-    print('Newly Labeled Docs Length:', len(newly_labeled_docs))
 
     # Label docs onto user
     for doc in newly_labeled_docs:
@@ -586,11 +590,7 @@ def api_update():
     # PREPARE TO SEND OBJECTS BACK
 
     unlabeled_docs = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
-    #u_X = tfidfv.transform(unlabeled_docs)
-    #inverse = tfidfv.inverse_transform(u_X)
     web_tokens = list(set(' '.join(unlabeled_docs).split()))
-
-    #web_tokens = list(set({ng for arr in inverse for ng in arr}))
 
     token_vectors = tfidfv.transform(web_tokens)
 
