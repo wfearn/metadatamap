@@ -31,7 +31,7 @@ DEBUG = False
 # Attribute names:
 
 # Number of unlabled docs to show per iteration on the web
-UNLABELED_COUNT = 5
+UNLABELED_COUNT = 10
 
 # Number of labels in our data
 LABELS_COUNT = 2
