@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect
+import datetime
 from collections import namedtuple
 import re
 import numpy as np
@@ -44,7 +45,7 @@ PERCENT_HIGHLIGHT = .3
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-PRELABELED_SIZE = 5000
+PRELABELED_SIZE = 2000
 USER_ID_LENGTH = 5
 BASELINE_CORRECT_DOCUMENTS = 0
 
@@ -58,6 +59,8 @@ Token = namedtuple('Token', 'token loc')
 
 NOPUNCT = str.maketrans('', '', string.punctuation)
 GOLD_ATTR_NAME = 'party'
+TWEET_ID = 'tweet_id'
+DATE_CREATED = 'created_date'
 url_find = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
 LABELS = ['D', 'R']
@@ -132,8 +135,10 @@ def get_twitter_corpus():
 
         doc_metadata = dict()
         doc_metadata[GOLD_ATTR_NAME] = 'D' if party == 'Democratic' else 'R'
+        doc_metadata[TWEET_ID] = tweet['id']
+        doc_metadata[DATE_CREATED] = str(datetime.datetime.fromtimestamp(tweet['created_at'])).split(' ')[0]
 
-        d = Document(text, tokens, doc_metadata)
+        d = Document(f'{text} <b>Tweeted {doc_metadata[DATE_CREATED]}</b>', tokens, doc_metadata)
         documents.append(d)
 
     c = Corpus(documents, vocabulary, metadata)
