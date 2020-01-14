@@ -1,4 +1,6 @@
 numpy
 flask
+scikit-learn
+vowpalwabbit
 
 #ankura (not sure how to add this)
