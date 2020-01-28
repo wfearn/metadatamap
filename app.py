@@ -18,6 +18,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import cross_validate, ShuffleSplit
 from sklearn.metrics import accuracy_score, make_scorer
 from vowpalwabbit.sklearn_vw import VWClassifier
+from vowpalwabbit import pyvw
 from sklearn.preprocessing import MinMaxScaler, minmax_scale
 
 # Init flask app
@@ -513,15 +514,31 @@ def api_update():
     unlabeled_ids = user['unlabeled_ids']
 
     if not BASELINE_CORRECT_DOCUMENTS:
-        corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in set(labeled_docs)])
+        corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(labeled_docs)])
         y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in set(labeled_docs)]
 
-        tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
-        X = tfidfv.fit_transform(corpus_text)
+        #tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
+        #X = tfidfv.fit_transform(corpus_text)
 
-        vw = VWClassifier(loss_function=lossfn)
+        #vw = VWClassifier(loss_function=lossfn)
 
-        vw.fit(X, y)
+        #vw.fit(X, y)
+
+        vw = pyvw.vw(quiet=True)
+
+        #TODO: Make this nicer
+        for i, train_doc in enumerate(corpus_text):
+
+            ex = vw.example(f'{y[i]} 1 |{train_doc}')
+            ex.learn()
+            vw.finish_example(ex)
+
+        for i, train_doc in enumerate(corpus_text):
+
+            ex = vw.example(f'{y[i]} 1 |{train_doc}')
+            ex.learn()
+            vw.finish_example(ex)
+
 
         test_docs = [doc.text for doc in test_corpus.documents]
         print('100 Docs:', test_docs[:100])
