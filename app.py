@@ -49,6 +49,7 @@ PERCENT_HIGHLIGHT = .3
 PRELABELED_SIZE = 2000
 USER_ID_LENGTH = 5
 BASELINE_CORRECT_DOCUMENTS = 0
+vw = None
 
 SCORING_DICT = {
                     'accuracy': make_scorer(accuracy_score)
@@ -491,6 +492,14 @@ def write_to_logfile(text, user, uid):
         with open(log_filename, 'w') as outfile:
             outfile.write(text)
 
+def train_vw(vw_model, data, y):
+    for i, train_doc in enumerate(data):
+        cleaned_train = train_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+
+        ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
+        ex.learn()
+        vw_model.finish_example(ex)
+
 @app.route('/api/update', methods=['POST'])
 def api_update():
     data = request.get_json()
@@ -498,6 +507,7 @@ def api_update():
     global ngrams
     global lossfn
     global BASELINE_CORRECT_DOCUMENTS
+    global vw
 
     # Data is expected to come back in this form:
     # data = {anchor_tokens: [[token_str,..],...]
@@ -527,31 +537,26 @@ def api_update():
         vw = pyvw.vw(quiet=True)
 
         #TODO: Make this nicer
-        for i, train_doc in enumerate(corpus_text):
-
-            ex = vw.example(f'{y[i]} 1 |{train_doc}')
-            ex.learn()
-            vw.finish_example(ex)
-
-        for i, train_doc in enumerate(corpus_text):
-
-            ex = vw.example(f'{y[i]} 1 |{train_doc}')
-            ex.learn()
-            vw.finish_example(ex)
-
+        train_vw(vw, corpus_text, y)
+        train_vw(vw, corpus_text, y)
 
         test_docs = [doc.text for doc in test_corpus.documents]
-        print('100 Docs:', test_docs[:100])
 
         test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
         test_targets = [1 if t == 'R' else -1 for t in test_targets]
+        results = int(0)
 
-        test_X = tfidfv.transform(test_docs)
-        test_predictions = vw.predict(test_X)
+        for i, test_doc in enumerate(test_docs):
+            cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+            test_target = test_targets[i]
+            ex = vw.example(f'{test_target} 1 | {cleaned_test}')
+            prediction = ex.get_updated_prediction()
+            prediction = -1 if prediction < 0 else 1
+            results += 1 if prediction == test_target else 0
 
-        results = [1 if i == j else 0 for i, j in zip(test_targets, test_predictions)]
-        BASELINE_CORRECT_DOCUMENTS = np.sum(results)
+        BASELINE_CORRECT_DOCUMENTS = results
         print('BASELINE CORRECT:', BASELINE_CORRECT_DOCUMENTS)
+        print('Percent correct:', results / len(test_targets))
 
 
     # Write the log file
