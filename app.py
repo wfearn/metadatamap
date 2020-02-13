@@ -551,6 +551,8 @@ def api_update():
             test_target = test_targets[i]
             ex = vw.example(f'{test_target} 1 | {cleaned_test}')
             prediction = ex.get_updated_prediction()
+            vw.finish_example(ex)
+
             prediction = -1 if prediction < 0 else 1
             results += 1 if prediction == test_target else 0
 
@@ -584,20 +586,11 @@ def api_update():
 
 
     corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in labeled_ids])
-
-    tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
-
-    start = time.time()
-    X = tfidfv.fit_transform(corpus_text)
-    print('Features:', tfidfv.get_feature_names()[:10])
-    print('***Time - Vectorize:', time.time() - start)
-
     y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in labeled_ids]
 
-    vw = VWClassifier(loss_function=lossfn)
 
     start = time.time()
-    vw.fit(X, y)
+    train_vw(vw, corpus_text, y)
     print('***Time - Train:', time.time() - start)
 
     test_docs = [doc.text for doc in test_corpus.documents]
@@ -606,32 +599,32 @@ def api_update():
     test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
     test_targets = [1 if t == 'R' else -1 for t in test_targets]
 
-    test_X = tfidfv.transform(test_docs)
-    test_predictions = vw.predict(test_X)
+    for i, test_doc in enumerate(test_docs):
+        cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        test_target = test_targets[i]
+        ex = vw.example(f'{test_target} 1 | {cleaned_test}')
+        prediction = ex.get_updated_prediction()
+        vw.finish_example(ex)
 
-    results = [1 if i == j else 0 for i, j in zip(test_targets, test_predictions)]
-    num_correct = np.sum(results)
+        prediction = -1 if prediction < 0 else 1
+        results += 1 if prediction == test_target else 0
 
-    print('Number of correct documents', num_correct)
+    print('Number of correct documents', results)
 
     # PREPARE TO SEND OBJECTS BACK
 
     unlabeled_docs = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
     web_tokens = list(set(' '.join(unlabeled_docs).split()))
-
-    token_vectors = tfidfv.transform(web_tokens)
-
-    predictions = np.abs(vw.decision_function(token_vectors))
-    prediction_scaler = MinMaxScaler(feature_range=(0, 1))
-    prediction_scaler.fit(np.asarray([predictions]).reshape(-1, 1))
-
     token_data = list()
-    for i in range(len(web_tokens)):
-        decision = vw.decision_function(token_vectors[i])[0]
 
-        prob = prediction_scaler.transform([[abs(decision)]])
+    for i, token in enumerate(web_tokens):
+        cleaned_token = token.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        ex = vw.example(f'1 1 | {token}')
+        prediction = -1 if ex.get_updated_prediction() < 0 else 1
+        prob = ex.get_prob()
+        vw.finish_example(ex)
 
-        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(np.squeeze(prob)), 'decision' : decision})
+        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : prediction})
 
     token_data.sort(key=lambda d: d['probs'], reverse=True)
 
@@ -645,7 +638,7 @@ def api_update():
 
     def get_highlights(doc):
         highlights = []
-        words = doc.text.split()
+        words = doc.split()
         for word in words:
             if word in highlight_dict:
                 highlights.append((f'{word}',
@@ -654,31 +647,33 @@ def api_update():
 
     unlabeled_docs = []
 
-    new_text = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
-    predictions = vw.decision_function(tfidfv.transform(new_text))
-
     for i, doc_id in enumerate(web_unlabeled_ids):
-        predict_logprobs = predictions[i]
-        i_label = 0 if predict_logprobs < 0 else 1
+        new_text = train_corpus.documents[doc_id].text
+
+        cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        ex = vw.example(f'{test_target} 1 | {cleaned_test}')
+        prediction = ex.get_updated_prediction()
+        con = ex.get_prob()
+        vw.finish_example(ex)
+
+        i_label = 0 if prediction < 0 else 1
         predict_label = labels[i_label]
 
-        rdif = prediction_scaler.transform([[abs(predict_logprobs)]])
-        con = prediction_scaler.transform([[abs(predict_logprobs)]])
-
-        hls = get_highlights(train_corpus.documents[doc_id])
+        hls = get_highlights(new_text)
 
         unlabeled_docs.append(
-          {'docId': doc_id,
-           'text': new_text[i],
-           'tokens': new_text[i].split(),
-           'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
-           'prediction': {
-                          'label': predict_label,
-                          'relativeDif': rdif[0][0],
-                          'confidence': con[0][0]
-                          }, # THIS IS WRONG
-           'highlights': get_highlights(train_corpus.documents[doc_id])
-           })
+           {
+               'docId': doc_id,
+               'text': new_text,
+               'tokens': new_text.split(),
+               'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
+               'prediction': {
+                              'label': predict_label,
+                              'confidence': con
+                              }, # THIS IS WRONG
+               'highlights': get_highlights(train_corpus.documents[doc_id])
+           }
+         )
 
     labels_dict = {label: i for i, label in enumerate(labels)}
     # A bit of a complex sort, but gets the job done
