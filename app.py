@@ -599,6 +599,8 @@ def api_update():
     test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
     test_targets = [1 if t == 'R' else -1 for t in test_targets]
 
+    results = int(0)
+
     for i, test_doc in enumerate(test_docs):
         cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
         test_target = test_targets[i]
