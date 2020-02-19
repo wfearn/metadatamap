@@ -653,7 +653,10 @@ def api_update():
         cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
         ex = vw.example(f'{test_target} 1 | {cleaned_test}')
         prediction = ex.get_updated_prediction()
+
         con = ex.get_prob()
+        rdif = ex.get_prob()
+
         vw.finish_example(ex)
 
         i_label = 0 if prediction < 0 else 1
@@ -669,14 +672,16 @@ def api_update():
                'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
                'prediction': {
                               'label': predict_label,
-                              'confidence': con
+                              'confidence': con,
+                              'relativeDif': rdif
                               }, # THIS IS WRONG
-               'highlights': get_highlights(train_corpus.documents[doc_id])
+               'highlights': get_highlights(train_corpus.documents[doc_id].text)
            }
          )
 
     labels_dict = {label: i for i, label in enumerate(labels)}
     # A bit of a complex sort, but gets the job done
+    #TODO I don't know what this is doing and need to fix it to make sure it is behaving appropriately
     doc_sort = lambda doc: (labels_dict[doc['prediction']['label']],
                             (-1)**(labels_dict[doc['prediction']['label']] + 1)
                                 * doc['prediction']['relativeDif'])
@@ -696,7 +701,7 @@ def api_update():
 #    for d in unlabeled_docs:
 #        print(d['prediction'])
 
-    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=str(num_correct - BASELINE_CORRECT_DOCUMENTS))
+    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=0)
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
