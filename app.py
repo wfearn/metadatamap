@@ -50,6 +50,14 @@ PRELABELED_SIZE = 2000
 USER_ID_LENGTH = 5
 BASELINE_CORRECT_DOCUMENTS = 0
 vw = None
+vw_model_name = 'model.vw'
+default_importance = 1
+desired_adherence_values = np.linspace(0, 1, num=7)
+possibly_label = .5
+probably_label = 1
+
+republican_label = 1
+democrat_label = -1
 
 SCORING_DICT = {
                     'accuracy': make_scorer(accuracy_score)
@@ -500,6 +508,50 @@ def train_vw(vw_model, data, y):
         ex.learn()
         vw_model.finish_example(ex)
 
+def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
+
+    print('\tinput uncertainty:', input_uncertainty)
+    new_vw = pyvw.vw(quiet=True, i=vw_model_name)
+
+    document_importance = default_importance + desired_adherence * input_uncertainty
+    print('\tdocument importance:', document_importance)
+
+    doc_ex = new_vw.example(f'{label} {document_importance} | {doc}')
+    print('\tdocument pre-prediction confidence:', doc_ex.get_prob())
+    print('\tdocument pre-predicton', new_vw.predict(doc_ex))
+    new_vw.learn(doc_ex)
+    prediction_confidence = doc_ex.get_prob()
+    print('\tprediction_confidence:', prediction_confidence, end='\n\n')
+    print('\tprediction:', new_vw.predict(doc_ex))
+
+    new_vw.finish()
+
+    return prediction_confidence
+
+def get_expected_future_predictions(doc):
+    print('inside future predictions function')
+    future_predictions = dict()
+
+    future_predictions['democrat'] = dict()
+    future_predictions['republican'] = dict()
+    future_predictions['democrat']['possibly'] = list()
+    future_predictions['democrat']['probably'] = list()
+    future_predictions['republican']['possibly'] = list()
+    future_predictions['republican']['probably'] = list()
+
+    for value in desired_adherence_values:
+        print('Desired Adherence:', value)
+        future_predictions['democrat']['possibly'].append(get_expected_prediction(doc, value, democrat_label, possibly_label))
+        future_predictions['democrat']['probably'].append(get_expected_prediction(doc, value, democrat_label, probably_label))
+
+        future_predictions['republican']['possibly'].append(get_expected_prediction(doc, value, republican_label, possibly_label))
+        future_predictions['republican']['probably'].append(get_expected_prediction(doc, value, republican_label, probably_label))
+
+    print('Finished future predictions function')
+    return future_predictions
+
+
+
 @app.route('/api/update', methods=['POST'])
 def api_update():
     data = request.get_json()
@@ -534,7 +586,7 @@ def api_update():
 
         #vw.fit(X, y)
 
-        vw = pyvw.vw(quiet=True)
+        vw = pyvw.vw(quiet=True, f=vw_model_name)
 
         #TODO: Make this nicer
         train_vw(vw, corpus_text, y)
@@ -621,7 +673,7 @@ def api_update():
 
     for i, token in enumerate(web_tokens):
         cleaned_token = token.replace(':', ' ').replace('|', '').replace('\n', ' ')
-        ex = vw.example(f'1 1 | {token}')
+        ex = vw.example(f'1 {default_importance} | {token}')
         prediction = -1 if ex.get_updated_prediction() < 0 else 1
         prob = ex.get_prob()
         vw.finish_example(ex)
@@ -653,7 +705,7 @@ def api_update():
         new_text = train_corpus.documents[doc_id].text
 
         cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
-        ex = vw.example(f'{test_target} 1 | {cleaned_test}')
+        ex = vw.example(f'{test_target} {default_importance} | {cleaned_test}')
         prediction = ex.get_updated_prediction()
 
         con = ex.get_prob()
@@ -666,6 +718,8 @@ def api_update():
 
         hls = get_highlights(new_text)
 
+        expected_future_predictions = get_expected_future_predictions(cleaned_test)
+
         unlabeled_docs.append(
            {
                'docId': doc_id,
@@ -677,7 +731,8 @@ def api_update():
                               'confidence': con,
                               'relativeDif': rdif
                               }, # THIS IS WRONG
-               'highlights': get_highlights(train_corpus.documents[doc_id].text)
+               'highlights': get_highlights(train_corpus.documents[doc_id].text),
+               'expected_predictions' : expected_future_predictions
            }
          )
 
@@ -699,9 +754,6 @@ def api_update():
         label_count[label] += 1
 
     return_labels = [{'labelId': i, 'label': label, 'count': label_count[label]} for i, label in enumerate(labels)]
-
-#    for d in unlabeled_docs:
-#        print(d['prediction'])
 
     return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=0)
 
