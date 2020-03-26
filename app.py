@@ -49,8 +49,8 @@ PERCENT_HIGHLIGHT = .3
 PRELABELED_SIZE = 2000
 USER_ID_LENGTH = 5
 BASELINE_CORRECT_DOCUMENTS = 0
-vw = None
 vw_model_name = 'model.vw'
+vw = pyvw.vw(quiet=True, f=vw_model_name)
 default_importance = 1
 desired_adherence_values = np.linspace(0, 1, num=7)
 possibly_label = .5
@@ -198,6 +198,7 @@ if clean: # If clean, remove file and remake
         os.remove(corpus_filename)
 
 def load_initial_data():
+    global vw
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
@@ -247,6 +248,13 @@ def load_initial_data():
         c.update([doc.metadata[GOLD_ATTR_NAME]])
 
     print('Distribution:', c)
+
+    print('Pre training model')
+    corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(starting_labeled_ids)])
+    y = [1 if train_corpus.documents[doc_id].metadata['party'] == 'R' else -1 for doc_id in set(starting_labeled_ids)]
+
+    train_vw(vw, corpus_text, y)
+    train_vw(vw, corpus_text, y)
 
     return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
 
@@ -408,6 +416,14 @@ class UserList:
             print(user_id)
         print('***')
 
+def train_vw(vw_model, data, y):
+    for i, train_doc in enumerate(data):
+        cleaned_train = train_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+
+        ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
+        ex.learn()
+        vw_model.finish_example(ex)
+
 (labels, train_ids, train_corpus, test_ids, test_corpus, STARTING_LABELED_IDS) = load_initial_data()
 del corpus
 
@@ -500,13 +516,6 @@ def write_to_logfile(text, user, uid):
         with open(log_filename, 'w') as outfile:
             outfile.write(text)
 
-def train_vw(vw_model, data, y):
-    for i, train_doc in enumerate(data):
-        cleaned_train = train_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
-
-        ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
-        ex.learn()
-        vw_model.finish_example(ex)
 
 def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
 
@@ -521,8 +530,9 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
     print('\tdocument pre-predicton', new_vw.predict(doc_ex))
     new_vw.learn(doc_ex)
     prediction_confidence = doc_ex.get_prob()
-    print('\tprediction_confidence:', prediction_confidence, end='\n\n')
+    print('\tdocument post-train confidence:', prediction_confidence)
     print('\tprediction:', new_vw.predict(doc_ex))
+    print('\tlabel:', label, end='\n\n')
 
     new_vw.finish()
 
@@ -575,7 +585,7 @@ def api_update():
     labeled_docs = user['labeled_docs']
     unlabeled_ids = user['unlabeled_ids']
 
-    if not BASELINE_CORRECT_DOCUMENTS:
+    if BASELINE_CORRECT_DOCUMENTS == 0:
         corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(labeled_docs)])
         y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in set(labeled_docs)]
 
@@ -586,7 +596,6 @@ def api_update():
 
         #vw.fit(X, y)
 
-        vw = pyvw.vw(quiet=True, f=vw_model_name)
 
         #TODO: Make this nicer
         train_vw(vw, corpus_text, y)
