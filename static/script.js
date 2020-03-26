@@ -29,11 +29,7 @@ var app = new Vue({
     userId: '',
     inputId: '',
     sliderValue: 0,
-    sliderData: {
-          '0' : 'Input Ignored By Model',
-         '50' : 'Suggest Input To Model',
-        '100' : 'Override Model',
-    },
+    sliderData: [1, 2, 3, 4, 5, 6, 7],
     showAnswers: false,
     showAnchorInfo: false,
     canEditAnchors: false,
@@ -89,6 +85,8 @@ var app = new Vue({
   }, //End computed
   watch: {}, //End watch
   methods: {
+
+
     // determine which slider image to put in instructions given the perceived control condition
     getSliderUrl: function() {
       if (this.perceivedControl) {
@@ -134,12 +132,14 @@ var app = new Vue({
         return;
       }
       axios.get('/api/checkuserid/'+id).then(response => {
+		this.logText += (response);
         this.checked = response.data.hasId;
         if (response.data.hasId){
           this.userId = id;
           this.sendUpdate();
         }
         else{
+		  this.logText += ("The user id was not found");
           alert('That user id was not found');
         }
       }).catch(error => {
@@ -157,6 +157,7 @@ var app = new Vue({
         // console.log(error);
       });
     },
+
     sendUpdate: function(){
       if (this.finished){
         return;
@@ -266,12 +267,14 @@ var app = new Vue({
       });
 
     },//end sendUpdate function
+
     getAccuracy: function(){
       this.loading = true;
 
       axios.post('/api/accuracy', {
           user_id: this.userId
       }).then(response => {
+		this.logText += (response);
         if(response.data.accuracy) {
           console.log('current accuracy',  response.data.accuracy)
           this.accuracy = response.data.accuracy;
@@ -611,7 +614,8 @@ var app = new Vue({
     },
     getDocHtml: function(doc){
   //    console.log('Getting HTML');
-      var html = doc.text;
+      var htmltext = doc.text;
+	  var html = htmltext.replace("&lt;URL_TOKEN&gt;", "");
       var prev = 0
       var loc;
       var label;
@@ -678,6 +682,24 @@ var app = new Vue({
     getCurrTimeStamp: function () {
       return new Date();
     },
+
+	getDemConfidence: function (doc) {
+		dcon = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1- doc.prediction.confidence) * 100);
+		return dcon;
+    },
+
+	getRepConfidence: function (doc) {
+		rcon = Math.round(doc.prediction.label == "R" ? doc.prediction.confidence * 100 : (1- doc.prediction.confidence) * 100);
+		return rcon;
+    },
+
+	updateWidth: function (doc) {
+		w = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1- doc.prediction.confidence) * 100);
+		//styleobject = ;
+		return "width:" + w + "%;"
+    },
+
+
     startTask: function() {
       console.log('starting the task!');
       this.startDate = new Date();
@@ -686,7 +708,7 @@ var app = new Vue({
        this.getNewUser();
       // INITIAL UPDATE
       // comment out the below to hide the tutorial
-    //  this.sendUpdate();
+	    this.sendUpdate();
       this.finished = false;
       this.paused = false;
       this.time = this.totalTime;
@@ -726,6 +748,9 @@ var app = new Vue({
 
       //this.maxTopic = this.findMaxTopic()
     }
+
+
+
 
   }, //End methods
 });
