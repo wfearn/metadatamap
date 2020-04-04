@@ -551,7 +551,7 @@ def get_expected_future_predictions(doc):
     future_predictions['republican']['probably'] = list()
 
     for value in desired_adherence_values:
-        print('Desired Adherence:', value)
+        #print('Desired Adherence:', value)
         future_predictions['democrat']['possibly'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, possibly_label))
         future_predictions['democrat']['probably'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, probably_label))
 
@@ -629,7 +629,7 @@ def api_update():
         cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
         test_target = test_targets[i]
         ex = vw.example(f'{test_target} 1 | {cleaned_test}')
-        prediction = ex.get_updated_prediction()
+        prediction = vw.predict(ex)
         vw.finish_example(ex)
 
         prediction = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
@@ -648,11 +648,12 @@ def api_update():
 
         # use a label of 1 because algorithm doesn't read it when its just predicting
         ex = vw.example(f'1 {default_importance} | {token}')
-        prediction = DEMOCRATIC_LABEL if ex.get_updated_prediction() < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
-        prob = ex.get_updated_prediction()
+        prediction = vw.predict(ex)
+        word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
+        prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
         vw.finish_example(ex)
 
-        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : prediction})
+        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
 
     token_data.sort(key=lambda d: d['probs'], reverse=True)
 
@@ -680,14 +681,14 @@ def api_update():
 
         cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
         ex = vw.example(f'{test_target} {default_importance} | {cleaned_test}')
-        prediction = ex.get_updated_prediction()
+        prediction = vw.predict(ex)
 
-        con = vw.predict(ex)
+        con = prediction
         rdif = con
 
         vw.finish_example(ex)
 
-        i_label = 0 if prediction < 0 else 1
+        i_label = 0 if prediction < .5 else 1
         predict_label = labels[i_label]
 
         hls = get_highlights(new_text)
