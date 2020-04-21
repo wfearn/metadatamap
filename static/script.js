@@ -648,11 +648,13 @@ var app = new Vue({
 
     getConfidenceWord: function(doc){
       // TODO: need a better way to set this threshold..
-      return doc.prediction.confidence < .95 ? 'Possibly' : 'Probably';
+      confidence = doc.prediction.confidence
+      return confidence < .90 && confidence > .10 ? 'Possibly' : 'Probably';
     },
 
     getConfidenceColor: function(doc) {
-      if (doc.prediction.confidence < .95) {
+        confidence = doc.prediction.confidence
+      if (confidence < .90 && confidence > .10) {
         return this.lightenDarkenColor(this.colors[doc.prediction.label], -40);
       } else {
         return this.colors[doc.prediction.label];
