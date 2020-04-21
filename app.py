@@ -50,8 +50,7 @@ PRELABELED_SIZE = 500
 USER_ID_LENGTH = 5
 
 vw_model_name = 'model.vw'
-vw = None
-
+vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic')
 default_importance = 1
 desired_adherence_values = np.linspace(0, 1, num=7)
 possibly_label = .5
@@ -201,10 +200,6 @@ if clean: # If clean, remove file and remake
 
 def load_initial_data():
     global vw
-
-    print('***Initializing vw model...')
-    initialize_vw_model()
-
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
@@ -422,17 +417,9 @@ class UserList:
             print(user_id)
         print('***')
 
-def initialize_vw_model():
-    global vw
-    vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic')
-
-
-def clean_vowpal_text(text):
-    return text.replace(':', ' ').replace('|', '').replace('\n', ' ')
-
 def train_vw(vw_model, data, y):
     for i, train_doc in enumerate(data):
-        cleaned_train = clean_vowpal_text(train_doc)
+        cleaned_train = train_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
 
         ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
         ex.learn()
@@ -553,6 +540,7 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
     return prediction_confidence
 
 def get_expected_future_predictions(doc):
+    print('inside future predictions function')
     future_predictions = dict()
 
     future_predictions['democrat'] = dict()
@@ -570,6 +558,7 @@ def get_expected_future_predictions(doc):
         future_predictions['republican']['possibly'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, possibly_label))
         future_predictions['republican']['probably'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, probably_label))
 
+    print('Finished future predictions function')
     return future_predictions
 
 
@@ -640,7 +629,7 @@ def api_update():
     results = int(0)
 
     for i, test_doc in enumerate(test_docs):
-        cleaned_test = clean_vowpal_text(test_doc)
+        cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
         test_target = test_targets[i]
         ex = vw.example(f'{test_target} 1 | {cleaned_test}')
         prediction = vw.predict(ex)
@@ -658,10 +647,10 @@ def api_update():
     token_data = list()
 
     for i, token in enumerate(web_tokens):
-        cleaned_token = clean_vowpal_text(token)
+        cleaned_token = token.replace(':', ' ').replace('|', '').replace('\n', ' ')
 
         # use a label of 1 because algorithm doesn't read it when its just predicting
-        ex = vw.example(f'1 {default_importance} | {cleaned_token}')
+        ex = vw.example(f'1 {default_importance} | {token}')
         prediction = vw.predict(ex)
         word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
         prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
@@ -693,7 +682,7 @@ def api_update():
     for i, doc_id in enumerate(web_unlabeled_ids):
         new_text = train_corpus.documents[doc_id].text
 
-        cleaned_test = clean_vowpal_text(new_text)
+        cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
         ex = vw.example(f'{test_target} {default_importance} | {cleaned_test}')
         prediction = vw.predict(ex)
 
