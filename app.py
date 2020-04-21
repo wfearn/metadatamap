@@ -18,6 +18,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import cross_validate, ShuffleSplit
 from sklearn.metrics import accuracy_score, make_scorer
 from vowpalwabbit.sklearn_vw import VWClassifier
+from vowpalwabbit import pyvw
 from sklearn.preprocessing import MinMaxScaler, minmax_scale
 
 # Init flask app
@@ -47,7 +48,17 @@ PERCENT_HIGHLIGHT = .3
 #  exist)
 PRELABELED_SIZE = 2000
 USER_ID_LENGTH = 5
-BASELINE_CORRECT_DOCUMENTS = 0
+
+vw_model_name = 'model.vw'
+vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic')
+default_importance = 1
+desired_adherence_values = np.linspace(0, 1, num=7)
+possibly_label = .5
+probably_label = 1
+
+REPUBLICAN_LABEL = 1
+DEMOCRATIC_LABEL = -1
+DEMOCRATIC_CUTOFF = 0.5
 
 SCORING_DICT = {
                     'accuracy': make_scorer(accuracy_score)
@@ -120,7 +131,7 @@ def get_twitter_corpus():
         text = tweet['text']
 
         if 'RT' in text:
-            print('Retweet:', text)
+            #print('Retweet:', text)
             continue
 
         text = url_find.sub('&lt;URL_TOKEN&gt;', text)
@@ -188,6 +199,7 @@ if clean: # If clean, remove file and remake
         os.remove(corpus_filename)
 
 def load_initial_data():
+    global vw
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
@@ -236,7 +248,14 @@ def load_initial_data():
     for doc in train_corpus.documents:
         c.update([doc.metadata[GOLD_ATTR_NAME]])
 
-    print('Distribution:', c)
+    #print('Distribution:', c)
+
+    print('Initializing model')
+    corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(starting_labeled_ids)])
+    y = [1 if train_corpus.documents[doc_id].metadata['party'] == 'R' else -1 for doc_id in set(starting_labeled_ids)]
+
+    train_vw(vw, corpus_text, y)
+    train_vw(vw, corpus_text, y)
 
     return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
 
@@ -398,6 +417,14 @@ class UserList:
             print(user_id)
         print('***')
 
+def train_vw(vw_model, data, y):
+    for i, train_doc in enumerate(data):
+        cleaned_train = train_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+
+        ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
+        ex.learn()
+        vw_model.finish_example(ex)
+
 (labels, train_ids, train_corpus, test_ids, test_corpus, STARTING_LABELED_IDS) = load_initial_data()
 del corpus
 
@@ -490,13 +517,60 @@ def write_to_logfile(text, user, uid):
         with open(log_filename, 'w') as outfile:
             outfile.write(text)
 
+
+def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
+
+    #print('\tinput uncertainty:', input_uncertainty)
+    new_vw = pyvw.vw(quiet=True, i=vw_model_name, loss_function='logistic', link='logistic')
+
+    document_importance = default_importance + desired_adherence * input_uncertainty
+    #print('\tdocument importance:', document_importance)
+
+    doc_ex = new_vw.example(f'{label} {document_importance} | {doc}')
+    #print('\tdocument pre-prediction confidence:', doc_ex.get_prob())
+    #print('\tdocument pre-predicton', new_vw.predict(doc_ex))
+    new_vw.learn(doc_ex)
+    prediction_confidence = new_vw.predict(doc_ex)
+    #print('\tdocument post-train confidence:', prediction_confidence)
+    #print('\tprediction:', new_vw.predict(doc_ex))
+    #print('\tlabel:', label, end='\n\n')
+
+    new_vw.finish()
+
+    return prediction_confidence
+
+def get_expected_future_predictions(doc):
+    print('inside future predictions function')
+    future_predictions = dict()
+
+    future_predictions['democrat'] = dict()
+    future_predictions['republican'] = dict()
+    future_predictions['democrat']['possibly'] = list()
+    future_predictions['democrat']['probably'] = list()
+    future_predictions['republican']['possibly'] = list()
+    future_predictions['republican']['probably'] = list()
+
+    for value in desired_adherence_values:
+        #print('Desired Adherence:', value)
+        future_predictions['democrat']['possibly'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, possibly_label))
+        future_predictions['democrat']['probably'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, probably_label))
+
+        future_predictions['republican']['possibly'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, possibly_label))
+        future_predictions['republican']['probably'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, probably_label))
+
+    print('Finished future predictions function')
+    return future_predictions
+
+
+
 @app.route('/api/update', methods=['POST'])
 def api_update():
+    print('Calling Update')
     data = request.get_json()
 
     global ngrams
     global lossfn
-    global BASELINE_CORRECT_DOCUMENTS
+    global vw
 
     # Data is expected to come back in this form:
     # data = {anchor_tokens: [[token_str,..],...]
@@ -511,30 +585,6 @@ def api_update():
     web_unlabeled_ids = user['web_unlabeled_ids']
     labeled_docs = user['labeled_docs']
     unlabeled_ids = user['unlabeled_ids']
-
-    if not BASELINE_CORRECT_DOCUMENTS:
-        corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in set(labeled_docs)])
-        y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in set(labeled_docs)]
-
-        tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
-        X = tfidfv.fit_transform(corpus_text)
-
-        vw = VWClassifier(loss_function=lossfn)
-
-        vw.fit(X, y)
-
-        test_docs = [doc.text for doc in test_corpus.documents]
-        print('100 Docs:', test_docs[:100])
-
-        test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
-        test_targets = [1 if t == 'R' else -1 for t in test_targets]
-
-        test_X = tfidfv.transform(test_docs)
-        test_predictions = vw.predict(test_X)
-
-        results = [1 if i == j else 0 for i, j in zip(test_targets, test_predictions)]
-        BASELINE_CORRECT_DOCUMENTS = np.sum(results)
-        print('BASELINE CORRECT:', BASELINE_CORRECT_DOCUMENTS)
 
 
     # Write the log file
@@ -555,67 +605,61 @@ def api_update():
     # Remove elements without creating new object
     web_unlabeled_ids.clear()
     web_unlabeled_ids.update(rng.sample(unlabeled_ids, UNLABELED_COUNT))
-    print('New Unlabeled Ids:', web_unlabeled_ids)
 
     newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
     labeled_ids = set(labeled_docs).union(newly_labeled_doc_ids)
 
-
     corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in labeled_ids])
+    y = [REPUBLICAN_LABEL if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else DEMOCRATIC_LABEL for doc_id in labeled_ids]
 
-    tfidfv = CountVectorizer(ngram_range=(1, ngrams), stop_words='english')
-
+    # I should add function wrappers to do this timing so its cleaner
     start = time.time()
-    X = tfidfv.fit_transform(corpus_text)
-    print('Features:', tfidfv.get_feature_names()[:10])
-    print('***Time - Vectorize:', time.time() - start)
-
-    y = [1 if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else -1 for doc_id in labeled_ids]
-
-    vw = VWClassifier(loss_function=lossfn)
-
-    start = time.time()
-    vw.fit(X, y)
+    train_vw(vw, corpus_text, y)
     print('***Time - Train:', time.time() - start)
 
     test_docs = [doc.text for doc in test_corpus.documents]
     print('Test Doc Length:', len(test_docs))
 
     test_targets = [doc.metadata[GOLD_ATTR_NAME] for doc in test_corpus.documents]
-    test_targets = [1 if t == 'R' else -1 for t in test_targets]
+    test_targets = [REPUBLICAN_LABEL if t == 'R' else DEMOCRATIC_LABEL for t in test_targets]
 
-    test_X = tfidfv.transform(test_docs)
-    test_predictions = vw.predict(test_X)
+    results = int(0)
 
-    results = [1 if i == j else 0 for i, j in zip(test_targets, test_predictions)]
-    num_correct = np.sum(results)
+    for i, test_doc in enumerate(test_docs):
+        cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        test_target = test_targets[i]
+        ex = vw.example(f'{test_target} 1 | {cleaned_test}')
+        prediction = vw.predict(ex)
+        vw.finish_example(ex)
 
-    print('Number of correct documents', num_correct)
+        prediction = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
+        results += 1 if prediction == test_target else 0
+
+    print('Number of correct documents', results)
 
     # PREPARE TO SEND OBJECTS BACK
 
     unlabeled_docs = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
     web_tokens = list(set(' '.join(unlabeled_docs).split()))
-
-    token_vectors = tfidfv.transform(web_tokens)
-
-    predictions = np.abs(vw.decision_function(token_vectors))
-    prediction_scaler = MinMaxScaler(feature_range=(0, 1))
-    prediction_scaler.fit(np.asarray([predictions]).reshape(-1, 1))
-
     token_data = list()
-    for i in range(len(web_tokens)):
-        decision = vw.decision_function(token_vectors[i])[0]
 
-        prob = prediction_scaler.transform([[abs(decision)]])
+    for i, token in enumerate(web_tokens):
+        cleaned_token = token.replace(':', ' ').replace('|', '').replace('\n', ' ')
 
-        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(np.squeeze(prob)), 'decision' : decision})
+        # use a label of 1 because algorithm doesn't read it when its just predicting
+        ex = vw.example(f'1 {default_importance} | {token}')
+        prediction = vw.predict(ex)
+        word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
+        prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
+        vw.finish_example(ex)
+
+        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
 
     token_data.sort(key=lambda d: d['probs'], reverse=True)
 
     for i, t in enumerate(token_data):
         if i > 20: break
-        print('Token:', t['token'], 'Decision:', t['decision'])
+        #print('Token:', t['token'], 'Decision:', t['decision'])
 
     # 1 for R (Republican) and 0 for Democrat (D)
     highlight_dict = {d['token']: 0 if d['decision'] < 0 else 1
@@ -623,7 +667,7 @@ def api_update():
 
     def get_highlights(doc):
         highlights = []
-        words = doc.text.split()
+        words = doc.split()
         for word in words:
             if word in highlight_dict:
                 highlights.append((f'{word}',
@@ -632,34 +676,44 @@ def api_update():
 
     unlabeled_docs = []
 
-    new_text = [train_corpus.documents[doc_id].text for doc_id in web_unlabeled_ids]
-    predictions = vw.decision_function(tfidfv.transform(new_text))
-
     for i, doc_id in enumerate(web_unlabeled_ids):
-        predict_logprobs = predictions[i]
-        i_label = 0 if predict_logprobs < 0 else 1
+        new_text = train_corpus.documents[doc_id].text
+
+        cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        ex = vw.example(f'{test_target} {default_importance} | {cleaned_test}')
+        prediction = vw.predict(ex)
+
+        con = prediction
+        rdif = con
+
+        vw.finish_example(ex)
+
+        i_label = 0 if prediction < .5 else 1
         predict_label = labels[i_label]
 
-        rdif = prediction_scaler.transform([[abs(predict_logprobs)]])
-        con = prediction_scaler.transform([[abs(predict_logprobs)]])
+        hls = get_highlights(new_text)
 
-        hls = get_highlights(train_corpus.documents[doc_id])
+        expected_future_predictions = get_expected_future_predictions(cleaned_test)
 
         unlabeled_docs.append(
-          {'docId': doc_id,
-           'text': new_text[i],
-           'tokens': new_text[i].split(),
-           'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
-           'prediction': {
-                          'label': predict_label,
-                          'relativeDif': rdif[0][0],
-                          'confidence': con[0][0]
-                          }, # THIS IS WRONG
-           'highlights': get_highlights(train_corpus.documents[doc_id])
-           })
+           {
+               'docId': doc_id,
+               'text': new_text,
+               'tokens': new_text.split(),
+               'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
+               'prediction': {
+                              'label': predict_label,
+                              'confidence': con,
+                              'relativeDif': rdif
+                              }, # THIS IS WRONG
+               'highlights': get_highlights(train_corpus.documents[doc_id].text),
+               'expected_predictions' : expected_future_predictions
+           }
+         )
 
     labels_dict = {label: i for i, label in enumerate(labels)}
     # A bit of a complex sort, but gets the job done
+    #TODO I don't know what this is doing and need to fix it to make sure it is behaving appropriately
     doc_sort = lambda doc: (labels_dict[doc['prediction']['label']],
                             (-1)**(labels_dict[doc['prediction']['label']] + 1)
                                 * doc['prediction']['relativeDif'])
@@ -676,10 +730,7 @@ def api_update():
 
     return_labels = [{'labelId': i, 'label': label, 'count': label_count[label]} for i, label in enumerate(labels)]
 
-#    for d in unlabeled_docs:
-#        print(d['prediction'])
-
-    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=str(num_correct - BASELINE_CORRECT_DOCUMENTS))
+    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=0)
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
@@ -687,15 +738,15 @@ def api_accuracy():
 
     user_id = data.get('user_id')
 
-    print('Running Accuracy')
-    print('User Id:', user_id)
+    #print('Running Accuracy')
+    #print('User Id:', user_id)
     if user_id is None: return jsonify(accuracy=0.0)
 
     user = users.get_user_data(user_id)
     users.save_user(user_id)
     labeled_ids = user['labeled_docs']
 
-    print('Retrieving corpus')
+    #print('Retrieving corpus')
     train_docs = [train_corpus.documents[docid].text for docid in labeled_ids]
     train_targets = [train_corpus.documents[docid].metadata[USER_LABEL_ATTR] for docid in labeled_ids]
 
@@ -706,25 +757,25 @@ def api_accuracy():
     test_targets = [-1 if t == 'R' else 1 for t in test_targets]
 
 
-    print('Vectorizing')
+    #print('Vectorizing')
     tfv = CountVectorizer()
     train_vectors = tfv.fit_transform(train_docs)
     test_vectors = tfv.transform(test_docs)
 
     vw = VWClassifier()
 
-    print('Training')
+    #print('Training')
     start = time.time()
     model = vw.fit(train_vectors, train_targets)
-    print('***Time - Get Classifier:', time.time() - start)
+    #print('***Time - Get Classifier:', time.time() - start)
 
     start = time.time()
     predictions = vw.predict(test_vectors)
-    print('***Time - Classify:', time.time() - start)
+    #print('***Time - Classify:', time.time() - start)
 
     acc = accuracy_score(test_targets, predictions)
 
-    print('***Accuracy:', acc)
+    #print('***Accuracy:', acc)
     return jsonify(accuracy=acc)
 
 
