@@ -540,7 +540,6 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
     return prediction_confidence
 
 def get_expected_future_predictions(doc):
-    print('inside future predictions function')
     future_predictions = dict()
 
     future_predictions['democrat'] = dict()
@@ -558,7 +557,6 @@ def get_expected_future_predictions(doc):
         future_predictions['republican']['possibly'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, possibly_label))
         future_predictions['republican']['probably'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, probably_label))
 
-    print('Finished future predictions function')
     return future_predictions
 
 
