@@ -46,11 +46,12 @@ PERCENT_HIGHLIGHT = .3
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
 #  exist)
-PRELABELED_SIZE = 2000
+PRELABELED_SIZE = 500
 USER_ID_LENGTH = 5
 
 vw_model_name = 'model.vw'
-vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic')
+vw = None
+
 default_importance = 1
 desired_adherence_values = np.linspace(0, 1, num=7)
 possibly_label = .5
@@ -149,7 +150,7 @@ def get_twitter_corpus():
         doc_metadata[TWEET_ID] = tweet['id']
         doc_metadata[DATE_CREATED] = str(datetime.datetime.fromtimestamp(tweet['created_at'])).split(' ')[0]
 
-        d = Document(f'{text} <b>Tweeted {doc_metadata[DATE_CREATED]}</b>', tokens, doc_metadata)
+        d = Document(f'{text}', tokens, doc_metadata)
         documents.append(d)
 
     c = Corpus(documents, vocabulary, metadata)
@@ -200,6 +201,10 @@ if clean: # If clean, remove file and remake
 
 def load_initial_data():
     global vw
+
+    print('***Initializing vw model...')
+    initialize_vw_model()
+
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
@@ -417,9 +422,17 @@ class UserList:
             print(user_id)
         print('***')
 
+def initialize_vw_model():
+    global vw
+    vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic')
+
+
+def clean_vowpal_text(text):
+    return text.replace(':', ' ').replace('|', '').replace('\n', ' ')
+
 def train_vw(vw_model, data, y):
     for i, train_doc in enumerate(data):
-        cleaned_train = train_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        cleaned_train = clean_vowpal_text(train_doc)
 
         ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
         ex.learn()
@@ -615,6 +628,9 @@ def api_update():
     train_vw(vw, corpus_text, y)
     print('***Time - Train:', time.time() - start)
 
+    vw.finish()
+    initialize_vw_model()
+
     test_docs = [doc.text for doc in test_corpus.documents]
     print('Test Doc Length:', len(test_docs))
 
@@ -624,7 +640,7 @@ def api_update():
     results = int(0)
 
     for i, test_doc in enumerate(test_docs):
-        cleaned_test = test_doc.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        cleaned_test = clean_vowpal_text(test_doc)
         test_target = test_targets[i]
         ex = vw.example(f'{test_target} 1 | {cleaned_test}')
         prediction = vw.predict(ex)
@@ -642,10 +658,10 @@ def api_update():
     token_data = list()
 
     for i, token in enumerate(web_tokens):
-        cleaned_token = token.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        cleaned_token = clean_vowpal_text(token)
 
         # use a label of 1 because algorithm doesn't read it when its just predicting
-        ex = vw.example(f'1 {default_importance} | {token}')
+        ex = vw.example(f'1 {default_importance} | {cleaned_token}')
         prediction = vw.predict(ex)
         word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
         prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
@@ -677,7 +693,7 @@ def api_update():
     for i, doc_id in enumerate(web_unlabeled_ids):
         new_text = train_corpus.documents[doc_id].text
 
-        cleaned_test = new_text.replace(':', ' ').replace('|', '').replace('\n', ' ')
+        cleaned_test = clean_vowpal_text(new_text)
         ex = vw.example(f'{test_target} {default_importance} | {cleaned_test}')
         prediction = vw.predict(ex)
 

@@ -592,6 +592,10 @@ var app = new Vue({
       }
     },
     convertToRegex: function(ngrams) {
+        if (ngrams.length === 0) {
+            return '';
+        }
+
         anything = '[^a-zA-Z]+'
         //anything = '.*?'
 
@@ -599,7 +603,8 @@ var app = new Vue({
         var fullRegex = regexBeginning;
 
         for(i = 0; i < ngrams.length; i++) {
-            fullRegex += ngrams[i];
+            ngram = ngrams[i].replace(/()/g, "");
+            fullRegex += ngram;
             if(i < (ngrams.length - 1)) {
                 fullRegex += `${anything}`;
             }
