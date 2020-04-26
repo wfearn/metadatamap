@@ -39,7 +39,7 @@
           <strong>Specify how the system</strong>
           <br>
           <strong>should treat your input labels</strong>
-        <div>
+        </div>
         <div class="adherence-slider-holder">
           <strong>ignore</strong>
           <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true" @drag-end="sliderChange">
@@ -57,6 +57,7 @@
       <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
     </div>
     </div>
+  </div>
 
     <div id="doc-list" v-if="isMounted">
       <div v-for="doc in unlabeledDocs" class="doc-container"

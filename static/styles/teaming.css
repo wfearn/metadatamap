@@ -181,6 +181,15 @@ input[type="radio"] {
 
 .toolbar {
   border-bottom: solid 2px black;
+  padding-bottom: 10px;
+}
+
+.sub-toolbar {
+  padding-top: 10px;
+}
+
+.adherence-instructions-holder, .adherence-slider-holder, .save-labels-button-holder {
+  display: inline-block;
 }
 /*
 .rating {
