@@ -65,10 +65,12 @@ button {
 
 .rating-label.dem {
   text-align:right;
+  margin-right: 2px;
 }
 
 .rating-label.rep {
   text-align:left;
+  margin-left: 2px;
 }
 
 
@@ -236,8 +238,7 @@ input[type="radio"] {
 
 .projected-label {
   font-style: italic;
-  float: right;
-  margin-right: 25px;
+  position: absolute;
 }
 
 
