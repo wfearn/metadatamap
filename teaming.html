@@ -78,7 +78,7 @@
         </div>
 
         <div class="rating">
-          <div class="dem">
+          <div class="rating-label dem">
             Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
             <!-- <div class="vertical-align large-label">
                 Model Prediction:
@@ -88,7 +88,7 @@
             <div class="rating-blue" :style="updateWidth(doc)"></div>
           </div>
 
-          <div class="rep">
+          <div class="rating-label rep">
             Rep <span style="color: #9e9999;">({{getRepConfidence(doc)}}%)</span>
           </div>
 
@@ -98,8 +98,6 @@
         </div>
 
         <div class="projected" v-if="doc.updated">
-          <div class="projected-label">*projected classification</div>
-
           <div class="dem">
             Dem <span style="color: #9e9999;">({{getUpdatedDemConfidence(doc)}}%) </span>
           </div>
@@ -110,6 +108,8 @@
             Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
           </div>
         </div>
+        <div class="projected-label">*projected classification</div>
+
 
         <div class="radio">
           <span v-if="showAnswers">
@@ -117,9 +117,9 @@
           </span>
           <div class="radio-container">
             <div>
-              <strong class="vertical-align large-label">
+              <div class="vertical-align large-label input-label">
                 Your label:
-              </strong>
+              </div>
             </div>
             <button class="radio-selection" v-on:click="labelDoc(doc, labels[0].label+'1')"
               v-bind:style="{'background-color': colors[labels[0].label]}">
