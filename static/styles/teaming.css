@@ -200,8 +200,7 @@ input[type="radio"] {
 
 .adherence-slider {
   z-index:0;
-  min-width: 575px;
-  max-width: 575px;
+  width: 400px;
 }
 
 .adherence-label {
@@ -214,7 +213,7 @@ input[type="radio"] {
 }
 
 .adherence-label.override {
-  left: 585px;
+  left: 400px;
 }
 
 
