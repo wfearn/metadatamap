@@ -49,21 +49,25 @@ button {
   width: 75%;
 }
 
+.input-label {
+  font-weight: bold;
+}
+
 .doc-container {
   border: 1px solid black;
   padding: 20px;
-  /*was previously 5 px*/
 }
 
 .doc-container > div {
   font-size: 16px;
+  text-align: center;
 }
 
-.doc-container > div.dem {
+.rating-label.dem {
   text-align:right;
 }
 
-.doc-container > div.rep {
+.rating-label.rep {
   text-align:left;
 }
 
@@ -232,6 +236,8 @@ input[type="radio"] {
 
 .projected-label {
   font-style: italic;
+  float: right;
+  margin-right: 25px;
 }
 
 
