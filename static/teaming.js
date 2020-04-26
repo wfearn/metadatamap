@@ -194,7 +194,6 @@ var app = new Vue({
          * Method to register a new user for the task; returns the userId 
          */
         getNewUser: function () {
-            console.log('get new user');
             axios.post('/api/adduser').then(response => {
                 this.userId = response.data.userId;
                 logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
@@ -212,12 +211,6 @@ var app = new Vue({
                 return;
             }
             logString = this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,'
-            //  this.logText += ;
-            // Data is expected to be sent to server in this form:
-            // data = {anchor_tokens: [[token_str,..],...]
-            //         labeled_docs: [{doc_id: number
-            //                         user_label: label},...]
-            //        }
             this.loading = true;
             var curLabeledDocs = this.unlabeledDocs.filter(
                 doc => doc.hasOwnProperty('userLabel'))
