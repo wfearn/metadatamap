@@ -459,9 +459,13 @@ var app = new Vue({
         deleteLabel: function (doc) {
             Vue.delete(doc, 'userLabel');
         },
-        pad: function(num, size){
+        pad: function (num, size) {
             return ('000000' + num).substr(-size);
-          },
+        },
+        updateWidth: function (doc) {
+            w = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
+            return "width:" + w + "%;"
+        },
         labelDoc: function (doc, label) {
             if (doc.hasOwnProperty('userLabel')) {
                 if (doc.userLabel === label) {
@@ -507,7 +511,7 @@ var app = new Vue({
                 return -1;
             } else {
                 return this.totalTime - this.time;
-            } 
+            }
         },
         getCurrTimeStamp: function () {
             return new Date();
