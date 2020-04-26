@@ -4,8 +4,9 @@ body {
   */
   font-family: 'Roboto';
   /*padding: 20px 5px 50px 5px;*/
-  background: black;
+  background: lightblue;
   padding: 0px;
+  margin: 0px;
 }
 
 #app {
@@ -194,11 +195,14 @@ input[type="radio"] {
 }
 
 .adherence-instructions-holder {
-  width: 25%;
+  width: 275px;
+  margin-right: 10px;
 }
 
 .adherence-slider-holder {
   width: 300px;
+  position: relative;
+  top: -25px;
 }
 
 .adherence-slider {
@@ -211,7 +215,7 @@ input[type="radio"] {
 }
 
 .adherence-label.ignore {
-  left: -10px;
+  float: left;
 }
 
 .adherence-label.override {
@@ -220,7 +224,7 @@ input[type="radio"] {
 
 
 .save-labels-button-holder{
-  width: 20%;
+  float: right;
 }
 /*
 .rating {
