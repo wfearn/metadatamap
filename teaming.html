@@ -16,46 +16,47 @@
   <div id="app">
     <div class="header">
       <div class="toolbar">
-      <button v-on:click='toggleModal()' title="show instructions"
-        style="background-color: #5a8cd6 !important; color: #ffffff !important;">View Instructions</button>
-      <br><br>
-      <div>
-        USER ID: {{ userId }}
-        <strong style="margin-left: 285px;"> GOAL: review and label as many tweets as possible </strong>
-        <span class="right inline user-id">number labeled: {{ labeledCount }} </span>
-      </div>
-      <div>
-
-        <span id="timer-box" class="time-remaining" title="task time remaining">
-          Time Remaining: {{ prettyTime }}
-        </span>
-       <!--<span class="right inline">number improved: {{ correctDocumentDelta }}</span>-->
-
-      </div>
-    </div>
-    <div class="sub-toolbar">
-      <div class="adherence-row">
-        <div class="adherence-instructions-holder">
-          <strong>Specify how the system</strong>
-          <br>
-          <strong>should treat your input labels</strong>
+        <button v-on:click='toggleModal()' title="show instructions"
+          style="background-color: #5a8cd6 !important; color: #ffffff !important;">View Instructions</button>
+        <br><br>
+        <div>
+          USER ID: {{ userId }}
+          <strong style="margin-left: 285px;"> GOAL: review and label as many tweets as possible </strong>
+          <span class="right inline user-id">number labeled: {{ labeledCount }} </span>
         </div>
-        <div class="adherence-slider-holder">
-          <strong>ignore</strong>
-          <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true" @drag-end="sliderChange">
-          </vue-slider>
-          <strong>override</strong>
-        </div>
-        <div class="save-labels-button-holder">
-          <button title="save input and get new set of debates" class="right save-button"
-          style="background-color: rgb(90, 140, 214) !important; color: rgb(255, 255, 255) !important; width: 140px !important; ">
-          Save labels and get new tweets </button>
+        <div>
+
+          <span id="timer-box" class="time-remaining" title="task time remaining">
+            Time Remaining: {{ prettyTime }}
+          </span>
+          <!--<span class="right inline">number improved: {{ correctDocumentDelta }}</span>-->
+
         </div>
       </div>
-      <!-- <button v-on:click='labelAllCorrect'>Cheat</button> -->
+      <div class="sub-toolbar">
+        <div class="adherence-row">
+          <div class="adherence-instructions-holder">
+            <strong>Specify how the system</strong>
+            <br>
+            <strong>should treat your input labels</strong>
+          </div>
+          <div class="adherence-slider-holder">
+            <strong>ignore</strong>
+            <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true"
+              @drag-end="sliderChange">
+            </vue-slider>
+            <strong>override</strong>
+          </div>
+          <div class="save-labels-button-holder">
+            <button title="save input and get new set of debates" class="right save-button"
+              style="background-color: rgb(90, 140, 214) !important; color: rgb(255, 255, 255) !important; width: 140px !important; ">
+              Save labels and get new tweets </button>
+          </div>
+        </div>
+        <!-- <button v-on:click='labelAllCorrect'>Cheat</button> -->
 
-      <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
-    </div>
+        <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
+      </div>
     </div>
 
     <div id="doc-list" v-if="isMounted">
@@ -248,8 +249,8 @@
                   similar slider to tell the model how to incorporate your input. </strong>
               </div>
               </br>
-             <!-- <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div> -->
-             SHOW SLIDER EXAMPLE HERE
+              <!-- <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div> -->
+              SHOW SLIDER EXAMPLE HERE
               </br>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
@@ -353,9 +354,8 @@
   </div> <!-- End Vue App -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
   <script src="https://unpkg.com/vue"></script>
-  <!-- <script src="https://cdn.jsdelivr.net/npm/vue"></script> -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-  <script src="static/styles/vue-slider-component.umd.min.js"></script>
+  <script src="static/vue-slider-component.umd.min.js"></script>
   <script src="static/teaming.js"></script>
 </body>
 
