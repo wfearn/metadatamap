@@ -3,14 +3,14 @@ body {
   font-family: 'Arvo';
   */
   font-family: 'Roboto';
-  padding: 20px 5px 50px 5px;
-  background: #f3f3f3;
+  /*padding: 20px 5px 50px 5px;*/
+  background: black;
 }
 
 #app {
-  max-width:1150px;
-  min-width: 850px;
-  overflow-x: scroll;
+  background: #f3f3f3;
+  width: 850px;
+  overflow-x: none;
   margin: auto;
 }
 
