@@ -191,6 +191,18 @@ input[type="radio"] {
 .adherence-instructions-holder, .adherence-slider-holder, .save-labels-button-holder {
   display: inline-block;
 }
+
+.adherence-instructions-holder {
+  width: 25%;
+}
+
+.adherence-slider-holder {
+  width: 50%;
+}
+
+.save-labels-button-holder{
+  width: 25%;
+}
 /*
 .rating {
   background: hotpink;

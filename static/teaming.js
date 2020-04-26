@@ -466,6 +466,22 @@ var app = new Vue({
             if (label === 'D') return 'Dem';
             if (label === 'R') return 'Rep';
         },
+        /**
+         * Method to distinguish possibly vs. probably dem and republican colors
+         * @param {*} color 
+         * @param {*} val 
+         */
+        lightenDarkenColor: function(color, val){
+            if (typeof(color) === 'string'){
+              var rgb = hexToRgb(color);
+              rgb = [rgb.r, rgb.g, rgb.b];
+            }
+            for (var i=0; i<3; i++){
+              rgb[i] -= val;
+              rgb[i] = Math.min(255, Math.max(0, rgb[i]));
+            }
+            return '#' + (rgb[2] | rgb[1]<<8 | rgb[0]<<16).toString(16);
+          },
         updateWidth: function (doc) {
             w = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
             return "width:" + w + "%;"
