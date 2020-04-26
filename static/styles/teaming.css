@@ -11,8 +11,8 @@ body {
 
 #app {
   background: #f3f3f3;
-  width: 850px;
-  overflow-x: none;
+  width: 925px;
+  overflow-x: scroll;
   margin: auto;
   height: 100%;
   padding: 10px;
@@ -56,9 +56,18 @@ button {
 }
 
 .doc-container > div {
-  text-align: center;
   font-size: 16px;
 }
+
+.doc-container > div.dem {
+  text-align:right;
+}
+
+.doc-container > div.rep {
+  text-align:left;
+}
+
+
 .doc-header > div {
   font-size: 24px;
   z-index:100;
@@ -85,7 +94,7 @@ button {
   grid-template-areas:
         "title  doctext  radio radio"
         "empty rating projected projected";
-  grid-gap: 32px;
+  grid-gap: 10px;
   /*was previously 10px*/
   /*background-color: #2196f3;*/
 }
@@ -123,7 +132,6 @@ button {
 }
 .radio {
   grid-area: radio;
-  margin-left: 10px;
   /*background: gold;*/
 }
 .model-prediction {
@@ -137,7 +145,7 @@ button {
 }
 .radio-selection{
   /*background-color: #999;*/
-  width: 95px;
+  width: 75px;
 }
 .doc-text {
   grid-area: doctext;
