@@ -441,7 +441,7 @@ def index():
 @app.route('/')
 @app.route('/index2')
 def index2():
-    return send_from_directory('.', 'index2.html')
+    return send_from_directory('.', 'teaming.html')
 
 @app.route('/index3')
 def index3():

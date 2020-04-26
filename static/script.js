@@ -778,9 +778,8 @@ var app = new Vue({
     numCorrect: 0, // track the total number of correctly predicted documents the user was exposed to
     totalDocs: 0, // track the total number of predicted documents the user was exposed to
     // TODO: currently randomly choosing these conditions, but need to ensure that we get equal numbers in all conditions, so instead should use server to track how many participants of each condition
-    // if perceived control is true, that means it's the assign condition; if input uncertainty is true, that means it's the four option condition
+    // if input uncertainty is true, that means it's the four option condition
     inputUncertainty: Math.random() >= 0.5,
-    perceivedControl: Math.random() >= 0.5,
     labeledCount: 0,
     correctDocumentDelta: 0,
     logText: '',
@@ -826,18 +825,8 @@ var app = new Vue({
   watch: {}, //End watch
   methods: {
 
-
-    // determine which slider image to put in instructions given the perceived control condition
-    getSliderUrl: function() {
-      if (this.perceivedControl) {
-        return '/static/images/spectrum-assign.png';
-      } else {
-        return '/static/images/spectrum-suggest.png';
-      }
-    },
     // determine which tool screenshot to provide given the condition
     getScreenshotUrl: function() {
-      if (this.perceivedControl) {
         if (this.inputUncertainty) {
           // assign and four options
           return '/static/images/assign-four-screenshot.png'
@@ -845,18 +834,11 @@ var app = new Vue({
           // assign and two options
           return '/static/images/assign-two-screenshot.png'
         }
-      } else {
-        if (this.inputUncertainty) {
-          // suggest and four options
-          return '/static/images/suggest-four-screenshot.png'
-        } else {
-          // suggest and two options
-          return '/static/images/suggest-two-screenshot.png'
-        }
-      }
     },
     sliderChange: function() {
-        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.userId + '||' + this.sliderValue + '\n');
+        logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.userId + '||' + this.sliderValue + '\n');
+        this.logText += logString;
+        console.log('LOGGED:', logString);
 
     },
     getVocab: function() {
@@ -867,12 +849,16 @@ var app = new Vue({
       });
     },
     getIdData: function(id) {
+      console.log('get id data', id);
       if (id === '') {
         alert('That user id was not found');
         return;
       }
       axios.get('/api/checkuserid/'+id).then(response => {
-		this.logText += (response);
+        logString = (response);
+        
+    this.logText += logString;
+    console.log('LOGGED:', logString);
         this.checked = response.data.hasId;
         if (response.data.hasId){
           this.userId = id;
@@ -887,9 +873,12 @@ var app = new Vue({
       });
     },
     getNewUser: function(){
+      console.log('get new user');
       axios.post('/api/adduser').then(response => {
         this.userId = response.data.userId;
-          this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+          logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n')
+          this.logText += logString;
+          console.log('LOGGED:', logString);
           // include the below to hide the tutorial
          this.sendUpdate();
       }).catch(error => {
@@ -902,7 +891,8 @@ var app = new Vue({
       if (this.finished){
         return;
       }
-      this.logText += this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,';
+      logString = this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,'
+    //  this.logText += ;
     // Data is expected to be sent to server in this form:
     // data = {anchor_tokens: [[token_str,..],...]
     //         labeled_docs: [{doc_id: number
@@ -914,7 +904,7 @@ var app = new Vue({
                          .map(doc => ({doc_id: doc.docId,
                                        user_label: doc.userLabel.slice(0, -1)}));
       this.labeledCount += curLabeledDocs.length;
-      this.logText += curLabeledDocs.length + ',total,' + this.labeledCount + '||';
+      logString += curLabeledDocs.length + ',total,' + this.labeledCount + '||';
 
       if (curLabeledDocs.length > 0) {
         this.inputProvided = true;
@@ -954,11 +944,13 @@ var app = new Vue({
         }
 
         // doc id, true label, system label, system label confidence, user label, highlights
-        this.logText += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',highlights,' + d.highlights.length + ',D,' + numD + ',R,' + numR + ';');
+        logString += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',highlights,' + d.highlights.length + ',D,' + numD + ',R,' + numR + ';');
       }
       // number of correct labels, number of incorrect labels (for the user)
-      this.logText += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
-      this.logText += '\n';
+      logString += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
+      logString += '\n';
+      this.logText += logString;
+      console.log('LOGGED:', logString);
 
       axios.post('/api/update', {
         labeled_docs: curLabeledDocs,
@@ -979,7 +971,9 @@ var app = new Vue({
 
         this.correctDocumentDelta = response.data.correctDocumentDelta
 
-        this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
+        logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
+        this.logText += logString;
+        console.log('LOGGED:', logString);
 
         // AMR 5/24: shuffle the order randomly (needed for teaming study)
         this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
