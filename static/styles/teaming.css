@@ -5,6 +5,7 @@ body {
   font-family: 'Roboto';
   /*padding: 20px 5px 50px 5px;*/
   background: black;
+  padding: 0px;
 }
 
 #app {
@@ -12,6 +13,8 @@ body {
   width: 850px;
   overflow-x: none;
   margin: auto;
+  height: 100%;
+  padding: 10px;
 }
 
 #doc-list {
@@ -195,7 +198,7 @@ input[type="radio"] {
 }
 
 .adherence-slider-holder {
-  width: 50%;
+  width: 300px;
 }
 
 .adherence-slider {
