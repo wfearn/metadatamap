@@ -101,7 +101,6 @@ var app = new Vue({
 
         },
         startTask: function () {
-            console.log('starting the task!');
             this.startDate = new Date();
 
             // get a new user
@@ -146,10 +145,12 @@ var app = new Vue({
 
             this.showModal = false;
             this.started = true;
-            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||' + this.inputUncertainty + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
-            this.toggleModal();
+
+            // close the modal
+            //this.toggleModal();
 
             // Event listener to close the modal on Esc
             document.addEventListener("keydown", (e) => {
@@ -292,7 +293,8 @@ var app = new Vue({
 
                 this.correctDocumentDelta = response.data.correctDocumentDelta
 
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_DEBATES||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_ITEMS||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '||');
+                logString += response.data + '\n';
                 this.logText += logString;
                 console.log('LOGGED:', logString);
 
