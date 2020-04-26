@@ -24,7 +24,7 @@ button {
   */
   font-size: 16px;
   cursor:pointer;
-  border-radius: 5px;
+  border-radius: 6px;
 }
 
 .vertical-align {
@@ -38,7 +38,7 @@ button {
 }
 
 .large-label {
-  font-size: 24px;
+  font-size: 16px;
 }
 
 .instructions{
@@ -47,7 +47,8 @@ button {
 
 .doc-container {
   border: 1px solid black;
-  padding: 5px;
+  padding: 20px;
+  /*was previously 5 px*/
 }
 
 .doc-container > div {
@@ -75,12 +76,13 @@ button {
 
 .doc-container-expanded {
   display: grid;
-  grid-template-columns: .5fr 1fr 2fr 5fr;
+  grid-template-columns: .5fr 3.5f 2.5fr 2fr;
   grid-template-rows: auto;
   grid-template-areas:
-        "expand  title   rating  radio"
-        "doctext doctext doctext doctext";
-  grid-gap: 10px;
+        "title  doctext  radio radio"
+        "empty rating projected projected";
+  grid-gap: 32px;
+  /*was previously 10px*/
   /*background-color: #2196f3;*/
 }
 
@@ -102,11 +104,18 @@ button {
   grid-area: title;
   /*background: tomato;*/
 }
+
 .rating {
   grid-area: rating;
   /*background: lightgreen;*/
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.projected{
+	grid-area: projected;
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
 }
 .radio {
   grid-area: radio;
@@ -118,7 +127,7 @@ button {
 }
 .radio-container {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(9, .5fr);
   grid-row: auto auto;
   grid-gap: 2px;
 }
@@ -152,6 +161,26 @@ input[type="radio"] {
 }
 .large{
   font-size: 20px;
+}
+
+.ratingBar{
+	background-color:#f38e93;
+	height:24px;
+	border-radius:3px;
+}
+
+.rating-blue{
+	background-color:#a8a8fd!important;
+	height:24px;
+	border-radius:3px;
+}
+
+.adherence-slider {
+  z-index:1;
+}
+
+.toolbar {
+  border-bottom: solid 2px black;
 }
 /*
 .rating {
