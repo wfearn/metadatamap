@@ -24,7 +24,7 @@
         <strong style="margin-left: 285px;"> GOAL: review and label as many tweets as possible </strong>
         <span class="right inline user-id">number labeled: {{ labeledCount }} </span>
       </div>
-      <div style="margin-bottom: 30px;">
+      <div>
 
         <span id="timer-box" class="time-remaining" title="task time remaining">
           Time Remaining: {{ prettyTime }}
@@ -34,28 +34,22 @@
       </div>
     </div>
     <div class="sub-toolbar">
-      <div>
-        <strong>Specify how the system </strong><br>
-        <strong>should treat your input labels</strong>
-        <strong style="margin-left: 110px;">ignore</strong>
-        <strong style="margin-left: 490px;">override</strong>
-        <button title="save input and get new set of debates" class="right save-button"
-          style="background-color: rgb(90, 140, 214) !important; color: rgb(255, 255, 255) !important; width: 140px !important; ">
-          Save labels and get new tweets </button>
-
-        <div style="margin-left: 300px; margin-right: 300px; margin-bottom: 50px;">
-          <!-- <vue-slider
-                  v-model="sliderValue"
-                  :adsorb="true"
-				  :marks="sliderData"
-                  :drag-on-click="true"
-                  :contained="true"
-                  @drag-end="sliderChange">
-          </vue-slider> -->
-          <!-- ADHERENCE SLIDER -->
+      <div class="adherence-row">
+        <div class="adherence-instructions-holder">
+          <strong>Specify how the system</strong>
+          <br>
+          <strong>should treat your input labels</strong>
+        <div>
+        <div class="adherence-slider-holder">
+          <strong>ignore</strong>
           <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true" @drag-end="sliderChange">
           </vue-slider>
-
+          <strong>override</strong>
+        </div>
+        <div class="save-labels-button-holder">
+          <button title="save input and get new set of debates" class="right save-button"
+          style="background-color: rgb(90, 140, 214) !important; color: rgb(255, 255, 255) !important; width: 140px !important; ">
+          Save labels and get new tweets </button>
         </div>
       </div>
       <!-- <button v-on:click='labelAllCorrect'>Cheat</button> -->

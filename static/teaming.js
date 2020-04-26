@@ -293,10 +293,11 @@ var app = new Vue({
 
                 this.correctDocumentDelta = response.data.correctDocumentDelta
 
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_ITEMS||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '||');
-                logString += response.data + '\n';
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_ITEMS||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
+                //logString += response.data ;
                 this.logText += logString;
                 console.log('LOGGED:', logString);
+                console.log(response.data);
 
                 // AMR 5/24: shuffle the order randomly (needed for teaming study)
                 this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
@@ -463,6 +464,14 @@ var app = new Vue({
         },
         pad: function (num, size) {
             return ('000000' + num).substr(-size);
+        },
+        /**
+         * Method to convert the backend label into human readable abbreviation
+         * @param {} label 
+         */
+        expandLabel: function (label) {
+            if (label === 'D') return 'Dem';
+            if (label === 'R') return 'Rep';
         },
         updateWidth: function (doc) {
             w = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
