@@ -43,7 +43,11 @@
           <div class="adherence-slider-holder">
             <span class="adherence-label ignore">ignore</span>
             <span class="adherence-label override">override</span>
-            <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true"
+            <vue-slider class="adherence-slider" 
+              v-model="sliderValue" 
+              :adsorb="true" 
+              :data="sliderData" 
+              :marks="true"
               @drag-end="sliderChange">
             </vue-slider>
           </div>
