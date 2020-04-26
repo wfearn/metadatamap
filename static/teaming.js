@@ -41,6 +41,7 @@ var app = new Vue({
         labeledCount: 0,
         correctDocumentDelta: 0,
         logText: '',
+        firstUpdate: true, // track whether its the first load of data (treated differently then later saves)
         startDate: null,
         timer: null,
         totalTime: 20 * 60 * 1000, // total time is 20 minutes
@@ -94,8 +95,9 @@ var app = new Vue({
                 return '/static/images/assign-two-screenshot.png'
             }
         },
+        // TODO: this only fires on certain slider changes
         sliderChange: function () {
-            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.userId + '||' + this.sliderValue + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
 
@@ -115,7 +117,7 @@ var app = new Vue({
 
             // two minutes remaining warning
             this.twoMinute = setTimeout(() => {
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_WARNING \n')
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_WARNING \n')
                 this.logText += logString;
                 console.log('LOGGED:', logString);
                 // show in modal and pause task time
@@ -131,7 +133,7 @@ var app = new Vue({
                     }
                 } else {
                     clearInterval(this.timer);
-                    logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_UP \n')
+                    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_UP \n')
                     this.logText += logString;
                     console.log("LOGGED:", logString);
                     // send final update
@@ -145,7 +147,7 @@ var app = new Vue({
 
             this.showModal = false;
             this.started = true;
-            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||' + this.inputUncertainty + '||' + this.sliderValue + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||' + this.inputUncertainty + '||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
 
@@ -196,7 +198,7 @@ var app = new Vue({
         getNewUser: function () {
             axios.post('/api/adduser').then(response => {
                 this.userId = response.data.userId;
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
                 this.logText += logString;
                 console.log('LOGGED:', logString);
                 // include the below to hide the tutorial
@@ -206,11 +208,23 @@ var app = new Vue({
             });
         },
 
+        save: function() {
+            logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||CLICKED_SAVE\n';
+            this.logText += logString;
+            console.log("LOGGED:", logString);
+            this.sendUpdate();
+        },
+
         sendUpdate: function () {
             if (this.finished) {
                 return;
             }
-            logString = this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,'
+            if (this.firstUpdate) {
+                logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||FIRST_UPDATE||labeled,'
+
+            } else {
+                logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,'
+            }
             this.loading = true;
             var curLabeledDocs = this.unlabeledDocs.filter(
                 doc => doc.hasOwnProperty('userLabel'))
@@ -285,7 +299,7 @@ var app = new Vue({
 
                 this.correctDocumentDelta = response.data.correctDocumentDelta
 
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||NEW_ITEMS||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||NEW_ITEMS||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
                 //logString += response.data ;
                 this.logText += logString;
                 console.log('LOGGED:', logString);
@@ -307,9 +321,13 @@ var app = new Vue({
                     Vue.set(this.unlabeledDocs[i], 'open', true);
                 }
 
-                // pop up the modal
-                this.refreshed = true;
-                this.openModal();
+                // pop up the modal (but not on first update)
+                if (!this.firstUpdate) {
+                    this.refreshed = true;
+                    this.openModal();
+                } else {
+                    this.firstUpdate = false;
+                }
                 // TODO: check the current system accuracy
                 //this.getAccuracy();
             }).catch(error => {
@@ -382,7 +400,7 @@ var app = new Vue({
                 this.paused = false;
                 this.showModal = false;
                 this.refreshed = false;
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
                 this.logText += logString;
                 console.log('LOGGED:', logString);
             }
@@ -391,7 +409,7 @@ var app = new Vue({
             this.paused = true;
             this.showModal = true;
             this.modalState = 0;
-            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
             this.logText += logString;
             console.log('LOGGED:', logString);
         },
@@ -490,7 +508,7 @@ var app = new Vue({
             if (doc.hasOwnProperty('userLabel')) {
                 if (doc.userLabel === label) {
                     this.deleteLabel(doc);
-                    logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId + '\n');
+                    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId + '\n');
                     this.logText += logString;
                     console.log('LOGGED:', logString);
                     return;
@@ -498,7 +516,7 @@ var app = new Vue({
             }
             Vue.set(doc, 'userLabel', label);
             // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
-            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
 
@@ -516,16 +534,6 @@ var app = new Vue({
             } else {
                 return this.colors[doc.prediction.label];
             }
-        },
-        toggleDocOpen: function (doc) {
-            if (doc.open) {
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_DOC||' + doc.docId + '\n');
-            } else {
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_DOC||' + doc.docId + '\n');
-            }
-            this.logText += logString;
-            console.log('LOGGED:', logString);
-            doc.open = !doc.open;
         },
         getExactTime: function () {
             return new Date() - this.startDate;

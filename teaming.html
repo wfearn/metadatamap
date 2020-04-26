@@ -50,7 +50,10 @@
             </vue-slider>
           </div>
           <div class="save-labels-button-holder">
-            <button title="save input and get new set of debates" class="right save-button"
+            <button 
+              v-on:click="save"
+              title="save input and get new set of debates" 
+              class="right save-button"
               style="background-color: rgb(90, 140, 214) !important; color: rgb(255, 255, 255) !important; width: 140px !important; ">
               Save labels and get new tweets </button>
           </div>
@@ -75,7 +78,7 @@
         </div>
 
         <div class="rating">
-          <div>
+          <div class="dem">
             Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
             <!-- <div class="vertical-align large-label">
                 Model Prediction:
@@ -85,7 +88,7 @@
             <div class="rating-blue" :style="updateWidth(doc)"></div>
           </div>
 
-          <div>
+          <div class="rep">
             Rep <span style="color: #9e9999;">({{getRepConfidence(doc)}}%)</span>
           </div>
 
@@ -95,16 +98,17 @@
         </div>
 
         <div class="projected" v-if="doc.updated">
-          <div>
+          <div class="projected-label">*projected classification</div>
+
+          <div class="dem">
             Dem <span style="color: #9e9999;">({{getUpdatedDemConfidence(doc)}}%) </span>
           </div>
           <div class="ratingBar">
             <div class="rating-blue" :style="updateWidth(doc)"></div>
           </div>
-          <div>
+          <div class="rep">
             Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
           </div>
-          <div class="projected-label">*projected classification</div>
         </div>
 
         <div class="radio">
