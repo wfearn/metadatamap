@@ -215,11 +215,15 @@ input[type="radio"] {
 }
 
 .adherence-label.ignore {
-  float: left;
+  left: 0px;
 }
 
 .adherence-label.override {
   float: right;
+}
+
+.projected-label {
+  font-style: italic;
 }
 
 

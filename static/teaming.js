@@ -26,7 +26,7 @@ var app = new Vue({
         autocompleteResults: [],
         userId: '',
         inputId: '',
-        sliderValue: 0,
+        sliderValue: 3, // init the slider to the middle
         sliderData: [1, 2, 3, 4, 5, 6, 7],
         showAnswers: false,
         showAnchorInfo: false,
@@ -145,7 +145,7 @@ var app = new Vue({
 
             this.showModal = false;
             this.started = true;
-            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||' + this.inputUncertainty + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||' + this.inputUncertainty + '||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
 
@@ -280,7 +280,6 @@ var app = new Vue({
 
                 // new set of unlabeled documents
                 this.unlabeledDocs = response.data.unlabeledDocs;
-                console.log('Slider Value is:' + this.sliderValue);
 
                 // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
 
@@ -377,6 +376,7 @@ var app = new Vue({
             }
         },
         closeModal: function () {
+            // if the task has started we want to log that the instructions were closed
             if (this.started) {
                 this.timeWarning = false;
                 this.paused = false;
@@ -391,14 +391,14 @@ var app = new Vue({
             this.paused = true;
             this.showModal = true;
             this.modalState = 0;
+            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
+            this.logText += logString;
+            console.log('LOGGED:', logString);
         },
         toggleModal: function () {
             if (this.showModal) {
                 this.closeModal()
             } else {
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
-                this.logText += logString;
-                console.log('LOGGED:', logString);
                 this.openModal()
             }
         },
@@ -501,6 +501,10 @@ var app = new Vue({
             logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
+
+            // get the expected prediction
+            //axio.get("get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
+            doc.updated = true;
         },
         getConfidenceWord: function (doc) {
             // TODO: need a better way to set this threshold..

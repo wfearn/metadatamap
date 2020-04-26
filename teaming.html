@@ -76,7 +76,7 @@
 
         <div class="rating">
           <div>
-            Dem <span style="color: #9e9999;">{{getDemConfidence(doc)}}% </span>
+            Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
             <!-- <div class="vertical-align large-label">
                 Model Prediction:
               </div> -->
@@ -86,7 +86,7 @@
           </div>
 
           <div>
-            Rep <span style="color: #9e9999;">{{getRepConfidence(doc)}}%</span>
+            Rep <span style="color: #9e9999;">({{getRepConfidence(doc)}}%)</span>
           </div>
 
           <!-- <div class="model-prediction rounded" v-bind:style="{'background-color': getConfidenceColor(doc)}">
@@ -94,17 +94,17 @@
             </div> -->
         </div>
 
-        <div class="projected">
+        <div class="projected" v-if="doc.updated">
           <div>
-            Dem <span style="color: #9e9999;">{{getDemConfidence(doc)}}% </span>
+            Dem <span style="color: #9e9999;">({{getUpdatedDemConfidence(doc)}}%) </span>
           </div>
           <div class="ratingBar">
             <div class="rating-blue" :style="updateWidth(doc)"></div>
           </div>
-
           <div>
-            Rep <span style="color: #9e9999;">{{getRepConfidence(doc)}}%</span>
+            Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
           </div>
+          <div class="projected-label">*projected classification</div>
         </div>
 
         <div class="radio">
@@ -113,9 +113,9 @@
           </span>
           <div class="radio-container">
             <div>
-              <div class="vertical-align large-label">
-                Your label
-              </div>
+              <strong class="vertical-align large-label">
+                Your label:
+              </strong>
             </div>
             <button class="radio-selection" v-on:click="labelDoc(doc, labels[0].label+'1')"
               v-bind:style="{'background-color': colors[labels[0].label]}">
