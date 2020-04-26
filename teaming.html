@@ -107,8 +107,8 @@
           <div class="rep">
             Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
           </div>
+          <div class="projected-label">*projected classification</div>
         </div>
-        <div class="projected-label">*projected classification</div>
 
 
         <div class="radio">
@@ -186,13 +186,13 @@
             <!-- REFRESH CONFIRMATION MODAL -->
             <span v-if="refreshed && !finished">
               The system has:
-              <ol>
-                <li v-if="inputProvided"><span class="bold">Updated the model by incorporating your provided labels (if
-                    any) as you told it to using the slider</span>.
+              <ul>
+                <li v-if="inputProvided">Updated the model by incorporating your provided labels (if
+                    any) as you told it to using the slider.
                 </li>
                 <li>Selected five new tweets at random and predicted labels for those tweets.
                 </li>
-              </ol>
+              </ul>
             </span>
             <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
