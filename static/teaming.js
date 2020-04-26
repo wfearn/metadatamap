@@ -60,7 +60,6 @@ var app = new Vue({
         VueSlider: window['vue-slider-component']
     },
     mounted: function () {
-        console.log('app mounted');
         // get a new user
         this.getNewUser();
     }, //End mounted
@@ -117,7 +116,9 @@ var app = new Vue({
 
             // two minutes remaining warning
             this.twoMinute = setTimeout(() => {
-                this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_WARNING \n');
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_WARNING \n')
+                this.logText += logString;
+                console.log('LOGGED:', logString);
                 // show in modal and pause task time
                 this.timeWarning = true;
                 this.openModal();
@@ -131,7 +132,9 @@ var app = new Vue({
                     }
                 } else {
                     clearInterval(this.timer);
-                    this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_UP \n');
+                    logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||TIME_UP \n')
+                    this.logText += logString;
+                    console.log("LOGGED:", logString);
                     // send final update
                     this.sendUpdate();
                     // set finished status to true
@@ -143,8 +146,11 @@ var app = new Vue({
 
             this.showModal = false;
             this.started = true;
-            this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n');
+            this.logText += logString;
+            console.log('LOGGED:', logString);
             this.toggleModal();
+
             // Event listener to close the modal on Esc
             document.addEventListener("keydown", (e) => {
                 if (this.showModal && e.keyCode == 27) {
@@ -183,18 +189,20 @@ var app = new Vue({
                 console.error('error in /api/checkuserid', error)
             });
         },
+        /**
+         * Method to register a new user for the task; returns the userId 
+         */
         getNewUser: function () {
             console.log('get new user');
             axios.post('/api/adduser').then(response => {
                 this.userId = response.data.userId;
-                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||c,' + this.perceivedControl + ',u,' + this.inputUncertainty + '\n')
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
                 this.logText += logString;
                 console.log('LOGGED:', logString);
                 // include the below to hide the tutorial
-                this.sendUpdate();
+                // this.sendUpdate();
             }).catch(error => {
                 console.error('error in /api/adduser', error);
-                // console.log(error);
             });
         },
 
@@ -378,7 +386,9 @@ var app = new Vue({
                 this.paused = false;
                 this.showModal = false;
                 this.refreshed = false;
-                this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
+                this.logText += logString;
+                console.log('LOGGED:', logString);
             }
         },
         openModal: function () {
@@ -390,7 +400,9 @@ var app = new Vue({
             if (this.showModal) {
                 this.closeModal()
             } else {
-                this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
+                this.logText += logString;
+                console.log('LOGGED:', logString);
                 this.openModal()
             }
         },
@@ -454,13 +466,17 @@ var app = new Vue({
             if (doc.hasOwnProperty('userLabel')) {
                 if (doc.userLabel === label) {
                     this.deleteLabel(doc);
-                    this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId + '\n');
+                    logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId + '\n');
+                    this.logText += logString;
+                    console.log('LOGGED:', logString);
                     return;
                 }
             }
             Vue.set(doc, 'userLabel', label);
             // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
-            this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
+            this.logText += logString;
+            console.log('LOGGED:', logString);
         },
         getConfidenceWord: function (doc) {
             // TODO: need a better way to set this threshold..
@@ -475,17 +491,23 @@ var app = new Vue({
         },
         toggleDocOpen: function (doc) {
             if (doc.open) {
-                this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_DOC||' + doc.docId + '\n');
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||CLOSE_DOC||' + doc.docId + '\n');
             } else {
-                this.logText += (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_DOC||' + doc.docId + '\n');
+                logString = (this.getCurrTimeStamp() + '||' + this.getActiveTime() + '||OPEN_DOC||' + doc.docId + '\n');
             }
+            this.logText += logString;
+            console.log('LOGGED:', logString);
             doc.open = !doc.open;
         },
         getExactTime: function () {
             return new Date() - this.startDate;
         },
         getActiveTime: function () {
-            return this.totalTime - this.time;
+            if (this.time === 0) {
+                return -1;
+            } else {
+                return this.totalTime - this.time;
+            } 
         },
         getCurrTimeStamp: function () {
             return new Date();
