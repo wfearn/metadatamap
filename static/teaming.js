@@ -447,6 +447,9 @@ var app = new Vue({
         deleteLabel: function (doc) {
             Vue.delete(doc, 'userLabel');
         },
+        pad: function(num, size){
+            return ('000000' + num).substr(-size);
+          },
         labelDoc: function (doc, label) {
             if (doc.hasOwnProperty('userLabel')) {
                 if (doc.userLabel === label) {
