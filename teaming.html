@@ -41,11 +41,11 @@
             <strong>should treat your input labels</strong>
           </div>
           <div class="adherence-slider-holder">
-            <strong>ignore</strong>
+            <span class="adherence-label ignore">ignore</span>
+            <span class="adherence-label override">override</span>
             <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true"
               @drag-end="sliderChange">
             </vue-slider>
-            <strong>override</strong>
           </div>
           <div class="save-labels-button-holder">
             <button title="save input and get new set of debates" class="right save-button"

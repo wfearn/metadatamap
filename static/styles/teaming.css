@@ -175,9 +175,7 @@ input[type="radio"] {
 	border-radius:3px;
 }
 
-.adherence-slider {
-  z-index:0;
-}
+
 
 .toolbar {
   border-bottom: solid 2px black;
@@ -200,8 +198,28 @@ input[type="radio"] {
   width: 50%;
 }
 
+.adherence-slider {
+  z-index:0;
+  min-width: 575px;
+  max-width: 575px;
+}
+
+.adherence-label {
+  font-weight: bold;
+  position: relative;
+}
+
+.adherence-label.ignore {
+  left: -10px;
+}
+
+.adherence-label.override {
+  left: 585px;
+}
+
+
 .save-labels-button-holder{
-  width: 25%;
+  width: 20%;
 }
 /*
 .rating {
