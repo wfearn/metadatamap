@@ -15,6 +15,7 @@
 
   <div id="app">
     <div class="header">
+      <div class="toolbar">
       <button v-on:click='toggleModal()' title="show instructions"
         style="background-color: #5a8cd6 !important; color: #ffffff !important;">View Instructions</button>
       <br><br>
@@ -28,13 +29,11 @@
         <span id="timer-box" class="time-remaining" title="task time remaining">
           Time Remaining: {{ prettyTime }}
         </span>
-        <span class="right inline">number improved: {{ correctDocumentDelta }}</span>
+       <!--<span class="right inline">number improved: {{ correctDocumentDelta }}</span>-->
 
       </div>
-      <br>
-      <div>
-
-      </div>
+    </div>
+    <div class="sub-toolbar">
       <div>
         <strong>Specify how the system </strong><br>
         <strong>should treat your input labels</strong>
@@ -53,47 +52,21 @@
                   :contained="true"
                   @drag-end="sliderChange">
           </vue-slider> -->
-
-          <vue-slider v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true" @drag-end="sliderChange">
+          <!-- ADHERENCE SLIDER -->
+          <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true" @drag-end="sliderChange">
           </vue-slider>
 
         </div>
-
       </div>
-
-
-
       <!-- <button v-on:click='labelAllCorrect'>Cheat</button> -->
 
       <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
-      </br>
-
+    </div>
     </div>
 
     <div id="doc-list" v-if="isMounted">
-      <!--
-        <div class="doc-container-collapsed doc-container doc-header">
-          <div class="expand-button-area"></div>
-          <div class="title">Doc Identifier</div>
-          <div class="rating">Model Prediction</div>
-          <div class="radio">
-            {{ perceivedControl ? "Assign Label" : "Suggest Label" }}
-          </div>
-        </div>
-        -->
       <div v-for="doc in unlabeledDocs" class="doc-container"
         v-bind:class="doc.open ? 'doc-container-expanded' : 'doc-container-expanded'">
-        <!--<div class="expand-button-area">
-            <button class="expand-button"
-                    v-on:click="toggleDocOpen(doc)">
-              <span v-if="doc.open">
-              -
-              </span>
-              <span v-else>
-              +
-              </span>
-            </button>
-          </div> -->
         <div class="title">
           <div class="vertical-align">
             Tweet </br>
@@ -101,7 +74,6 @@
           </div>
         </div>
         <div class="doc-text" v-if="doc.open">
-          <!-- {{ doc.text }} -->
           <div v-html="getDocHtml(doc)"></div>
         </div>
 
@@ -178,60 +150,6 @@
             </button>
           </div>
         </div>
-        <!--
-            <label>My label
-              <input style="display:block;"
-                     type="radio"
-                     id="something"
-                     value="hello"
-              \>
-            </label>
-            <label>
-              Label1
-              <input style="display:block;"
-                     type="radio"
-                     id="val1"
-                     name="val"
-                     value="hello"
-                     />
-            </label>
-            <label>
-              Label2
-              <input style="display:block;"
-                     type="radio"
-                     id="val2"
-                     name="val"
-                     value="hello"
-                     />
-            </label>
-            <label for="one">{{ expandLabel(labels[0].label) }}</label>
-            <input type="radio"
-                   id="one"
-                   v-bind:value="labels[0].label+'O'"
-                   v-model="doc.userLabel"/>
-            <input type="radio"
-                   id="one"
-                   v-if="inputUncertainty"
-                   v-bind:value="labels[0].label+'I'"
-                   v-model="doc.userLabel"/>
-            <input type="radio"
-                   id="two"
-                   v-if="inputUncertainty"
-                   v-bind:value="labels[1].label+'I'"
-                   v-model="doc.userLabel"/>
-            <input type="radio"
-                   id="two"
-                   v-bind:value="labels[1].label+'O'"
-                   v-model="doc.userLabel"/>
-            <label for="two">{{ expandLabel(labels[1].label) }}</label>
-            <span v-if="showAnswers">
-              {{ labels[1].label === doc.trueLabel ? '&#10004;' : '&#10005;' }}
-            </span>
-            -->
-
-
-
-
       </div>
     </div>
     <!--end doc-list-->
@@ -268,7 +186,8 @@
             <span v-if="refreshed && !finished">
               The system has:
               <ol>
-                <li v-if="inputProvided"><span class="bold">Updated the model by incorporating your provided labels (if any) as you told it to using the slider</span>.
+                <li v-if="inputProvided"><span class="bold">Updated the model by incorporating your provided labels (if
+                    any) as you told it to using the slider</span>.
                 </li>
                 <li>Selected five new tweets at random and predicted labels for those tweets.
                 </li>
@@ -386,7 +305,8 @@
                 told it to with the slider and present another set of five randomly chosen tweets with the new
                 predictions.
                 When time is up, the final version of the model will predict the labels for the remaining tweets, and
-                you and the model will be scored for how many are labeled correctly. <strong>The top 50% of participants will receive a $5 bonus.</strong>
+                you and the model will be scored for how many are labeled correctly. <strong>The top 50% of participants
+                  will receive a $5 bonus.</strong>
 
                 <br>
                 <br> You can revisit these instructions at any time by clicking the “View Instructions” button.
