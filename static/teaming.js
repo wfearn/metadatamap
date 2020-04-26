@@ -26,7 +26,7 @@ var app = new Vue({
         autocompleteResults: [],
         userId: '',
         inputId: '',
-        sliderValue: 3, // init the slider to the middle
+        sliderValue: 4, // init the slider to the middle
         sliderData: [1, 2, 3, 4, 5, 6, 7],
         showAnswers: false,
         showAnchorInfo: false,
@@ -541,12 +541,24 @@ var app = new Vue({
             return new Date();
         },
 
+        // TODO: update this
+        getUpdatedDemConfidence: function (doc) {
+            dcon = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
+            return dcon;
+        },
+
         getDemConfidence: function (doc) {
             dcon = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
             return dcon;
         },
 
         getRepConfidence: function (doc) {
+            rcon = Math.round(doc.prediction.label == "R" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
+            return rcon;
+        },
+
+        // TODO: update this
+        getUpdatedRepConfidence: function (doc) {
             rcon = Math.round(doc.prediction.label == "R" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
             return rcon;
         }
