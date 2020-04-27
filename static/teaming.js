@@ -508,8 +508,13 @@ var app = new Vue({
             }
             return '#' + (rgb[2] | rgb[1]<<8 | rgb[0]<<16).toString(16);
           },
+          /**
+           * computes the democrat bar width
+           * @param {} doc 
+           */
         updateWidth: function (doc) {
-            w = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
+            // TODO: confirm assumption that confidence always refers to republican percentage
+            w = Math.round((1 - doc.prediction.confidence) * 100);
             return "width:" + w + "%;"
         },
         labelDoc: function (doc, label) {
