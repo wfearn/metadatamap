@@ -46,7 +46,7 @@
               :adsorb="true" 
               :data="sliderData" 
               :marks="true"
-              @callback="sliderChange($event)">
+              onCallback="sliderChange($event)">
             </vue-slider>
           </div>
           <div class="save-labels-button-holder">
@@ -250,13 +250,12 @@
                   <li>The new Republican or Democrat labels that you provide for tweets</li>
                 </ol>
                 The slider below shows the range for how these two types of information can be combined to improve the
-                model, from (left) using only your labels (ignoring previously learned information) to (right) using
-                only the previously learned information (ignoring your labels). <strong> In this task, you will use a
+                model, from 1, using
+                only the previously learned information (ignoring your labels), to 7, using only your labels (ignoring previously learned information). 
+                <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
+                <strong> In this task, you will use a
                   similar slider to tell the model how to incorporate your input. </strong>
               </div>
-              </br>
-              <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
-              </br>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
