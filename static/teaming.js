@@ -291,7 +291,7 @@ var app = new Vue({
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||numDocsImproved,' + this.correctDocumentDelta + '||');
                 
                 // print info for each new item
-                for (var i=0; i<response.data.unlabledDocs.length; i++) {
+                for (var i=0; i<response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
                     logString += doc.docId + '##' + doc.text + '##';
                     for (var j=0; j<doc.highlights.length; j++) {
