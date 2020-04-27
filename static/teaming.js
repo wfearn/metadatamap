@@ -548,12 +548,12 @@ var app = new Vue({
             } else if (label === 'D2') {
                 // possibly dem
                 doc.projectedRep = Math.round(doc.expected_predictions.democrat.possibly[adherence-1] * 100);
-                doc.projectedDem = 100 - doc.projectedDem;
+                doc.projectedDem = 100 - doc.projectedRep;
 
             } else if (label === 'D1') {
                 // probably dem
                 doc.projectedRep = Math.round(doc.expected_predictions.democrat.probably[adherence-1] * 100);
-                doc.projectedDem = 100 - doc.projectedDem;
+                doc.projectedDem = 100 - doc.projectedRep;
 
             }
             doc.updated = true;
