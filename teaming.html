@@ -107,8 +107,9 @@
           <div class="rep">
             Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
           </div>
-          <div class="projected-label">*projected classification</div>
+        
         </div>
+        <div v-if="doc.updated" class="projected-label">*projected classification</div>
 
 
         <div class="radio">
@@ -202,9 +203,10 @@
               <br />
               Thank you for participating in the task. Please complete the following survey:
               <a href="https://forms.gle/2FcXQqyRgXYUjrtNA" target="_blank" v-if="inputUncertainty">post-task
-                survey</a>, with your assigned user id: {{userId}}
+                survey</a>
               <a href="https://forms.gle/xDCh5eMKu5epyUnq8" target="_blank" v-if="!inputUncertainty">post-task
-                survey</a>, with your assigned user id: {{userId}}
+                survey</a>
+              , with your assigned user id: {{userId}}
             </span>
             <!-- welcome MODAL -->
             <span v-if="!timeWarning && !finishedSurvey && !finished && !refreshed">
@@ -255,8 +257,7 @@
                   similar slider to tell the model how to incorporate your input. </strong>
               </div>
               </br>
-              <!-- <div class="image-holder"><img class="modal-image" :src="getSliderUrl()" /></div> -->
-              SHOW SLIDER EXAMPLE HERE
+              <div class="image-holder"><img class="modal-image" :src="/static/images/slider.png" /></div>
               </br>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
