@@ -103,8 +103,8 @@ var app = new Vue({
             logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
-            for (i=0; i<this.docs.length; i++) {
-                let doc = this.docs[i];
+            for (i=0; i<this.unlabeledDocs.length; i++) {
+                let doc = this.unlabeledDocs[i];
                 if (doc.hasOwnProperty('userLabel')) {
                     label = doc.userLabel;
                     this.computedProjectedClassification(doc, label, this.sliderValue);
@@ -535,22 +535,22 @@ var app = new Vue({
         computedProjectedClassification: function (doc, label, adherence) {
             if (label === 'R2') {
                 // possibly rep
-                doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence-1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
             } else if (label === 'R1') {
                 // probably rep
-                doc.projectedRep = Math.round(doc.expected_predictions.republican.probably[adherence] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.republican.probably[adherence-1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
             } else if (label === 'D2') {
                 // possibly dem
-                doc.projectedDem = Math.round(doc.expected_predictions.democrat.possibly[adherence] * 100);
+                doc.projectedDem = Math.round(doc.expected_predictions.democrat.possibly[adherence-1] * 100);
                 doc.projectedRep = 100 - doc.projectedDem;
 
             } else if (label === 'D1') {
                 // probably dem
-                doc.projectedDem = Math.round(doc.expected_predictions.democrat.probably[adherence] * 100);
+                doc.projectedDem = Math.round(doc.expected_predictions.democrat.probably[adherence-1] * 100);
                 doc.projectedRep = 100 - doc.projectedDem;
 
             }
