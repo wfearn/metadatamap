@@ -547,13 +547,13 @@ var app = new Vue({
 
             } else if (label === 'D2') {
                 // possibly dem
-                doc.projectedDem = Math.round(doc.expected_predictions.democrat.possibly[adherence-1] * 100);
-                doc.projectedRep = 100 - doc.projectedDem;
+                doc.projectedRep = Math.round(doc.expected_predictions.democrat.possibly[adherence-1] * 100);
+                doc.projectedDem = 100 - doc.projectedDem;
 
             } else if (label === 'D1') {
                 // probably dem
-                doc.projectedDem = Math.round(doc.expected_predictions.democrat.probably[adherence-1] * 100);
-                doc.projectedRep = 100 - doc.projectedDem;
+                doc.projectedRep = Math.round(doc.expected_predictions.democrat.probably[adherence-1] * 100);
+                doc.projectedDem = 100 - doc.projectedDem;
 
             }
             doc.updated = true;
@@ -583,25 +583,14 @@ var app = new Vue({
             return new Date();
         },
 
-        // TODO: update this
-        getUpdatedDemConfidence: function (doc) {
-            dcon = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
-            return dcon;
-        },
-
         getDemConfidence: function (doc) {
-            dcon = Math.round(doc.prediction.label == "D" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
+            // TODO: confirm that the doc.prediction.confidence is ALWAYS the % chance of being republican
+            dcon = Math.round((1 - doc.prediction.confidence) * 100);
             return dcon;
         },
 
         getRepConfidence: function (doc) {
-            rcon = Math.round(doc.prediction.label == "R" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
-            return rcon;
-        },
-
-        // TODO: update this
-        getUpdatedRepConfidence: function (doc) {
-            rcon = Math.round(doc.prediction.label == "R" ? doc.prediction.confidence * 100 : (1 - doc.prediction.confidence) * 100);
+            rcon = Math.round(doc.prediction.confidence * 100);
             return rcon;
         }
     }, //End methods
