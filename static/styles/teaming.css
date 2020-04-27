@@ -185,7 +185,8 @@ input[type="radio"] {
   width: 115px;
 	background-color:#f38e93;
 	height:24px;
-	border-radius:3px;
+  border-radius:3px;
+  margin-bottom: 10px;
 }
 
 .rating-blue{
@@ -240,6 +241,8 @@ input[type="radio"] {
 .projected-label {
   font-style: italic;
   position: absolute;
+  margin-top: 28px;
+  margin-left: 75px;
 }
 
 

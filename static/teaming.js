@@ -96,7 +96,8 @@ var app = new Vue({
             }
         },
         // TODO: this only fires on certain slider changes
-        sliderChange: function () {
+        sliderChange: function (ev) {
+            console.log('slider change', ev);
             logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
@@ -522,6 +523,8 @@ var app = new Vue({
 
             // get the expected prediction
             //axio.get("get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
+
+
             doc.updated = true;
         },
         getConfidenceWord: function (doc) {
