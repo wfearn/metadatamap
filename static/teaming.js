@@ -262,7 +262,7 @@ var app = new Vue({
                 }
 
                 // doc id, true label, system label, system label confidence, user label, highlights
-                logString += (d.docId + ',' (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ';');
+                logString += (d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ';');
             }
             // adherence, number of correct labels, number of incorrect labels (for the user)
             logString += "||adherence," + this.sliderValue + "correct," + correctLabels + ',incorrect,' + incorrectLabels;
@@ -296,7 +296,7 @@ var app = new Vue({
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
                     for (var j=0; j<doc.highlights.length; j++) {
                         highlight = doc.highlights[j];
-                        logString += highlight = ';';
+                        logString += highlight + ';';
                     } 
                     logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&conf," + doc.prediction.confidence + "%%";
                 }
