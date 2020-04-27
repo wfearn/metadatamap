@@ -523,8 +523,30 @@ var app = new Vue({
 
             // get the expected prediction
             //axio.get("get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
+            this.computedProjectedClassification(doc, label, this.sliderValue);            
+        },
+        computedProjectedClassification: function (doc, label, adherence) {
+            if (label === 'R1') {
+                // possibly rep
+                doc.projectedRep = Math.round(doc.expectedPredictions.republican.possibly[adherence] * 100);
+                doc.projectedDem = 100 - doc.projectedRep;
 
+            } else if (label === 'R2') {
+                // probably rep
+                doc.projectedRep = Math.round(doc.expectedPredictions.republican.probably[adherence] * 100);
+                doc.projectedDem = 100 - doc.projectedRep;
 
+            } else if (label === 'D1') {
+                // possibly dem
+                doc.projectedDem = Math.round(doc.expectedPredictions.democrat.possibly[adherence] * 100);
+                doc.projectedRep = 100 - doc.projectedDem;
+
+            } else if (label === 'D2') {
+                // probably dem
+                doc.projectedDem = Math.round(doc.expectedPredictions.democrat.probably[adherence] * 100);
+                doc.projectedRep = 100 - doc.projectedDem;
+
+            }
             doc.updated = true;
         },
         getConfidenceWord: function (doc) {
