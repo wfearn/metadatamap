@@ -262,7 +262,7 @@ var app = new Vue({
                 }
 
                 // doc id, true label, system label, system label confidence, user label, highlights
-                logString += ('doc,' + d.docId + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ';');
+                logString += (d.docId + ',' (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ';');
             }
             // number of correct labels, number of incorrect labels (for the user)
             logString += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
@@ -293,12 +293,12 @@ var app = new Vue({
                 // print info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
-                    logString += doc.docId + '##' + doc.text + '##';
+                    logString += doc.docId + "&&" + doc.text + "&&";
                     for (var j=0; j<doc.highlights.length; j++) {
                         highlight = doc.highlights[j];
-                        logString += highlight;
+                        logString += highlight = ';';
                     } 
-                    logString += '##' + doc.trueLabel + "##" + doc.prediction.label + '##' + doc.prediction.confidence + '%%';
+                    logString += "&&" + doc.trueLabel + "&&" + doc.prediction.label + "&&" + doc.prediction.confidence + "%%";
                 }
                 console.log(response.data);
 
