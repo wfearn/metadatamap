@@ -103,7 +103,14 @@ var app = new Vue({
             logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
-            // TODO: update the projections
+            for (i=0; i<this.docs.length; i++) {
+                let doc = this.docs[i];
+                if (doc.hasOwnProperty('userLabel')) {
+                    label = doc.userLabel;
+                    this.computedProjectedClassification(doc, label, this.sliderValue);
+                    // TODO: LOG THIS
+                }
+            }
 
         },
         startTask: function () {
