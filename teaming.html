@@ -99,13 +99,13 @@
 
         <div class="projected" v-if="doc.updated">
           <div class="rating-label dem">
-            Dem <span style="color: #9e9999;">({{getUpdatedDemConfidence(doc)}}%) </span>
+            Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
           </div>
           <div class="ratingBar">
             <div class="rating-blue" :style="updateWidth(doc)"></div>
           </div>
           <div class="rating-label rep">
-            Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
+            Rep <span style="color: #9e9999;">({{doc.projectedRep}}%)</span>
           </div>
           <div v-if="doc.updated" class="projected-label">*projected classification</div>
         </div>
