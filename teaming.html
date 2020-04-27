@@ -46,7 +46,7 @@
               :adsorb="true" 
               :data="sliderData" 
               :marks="true"
-              onCallback="sliderChange($event)">
+              @change="sliderChange($event)">
             </vue-slider>
           </div>
           <div class="save-labels-button-holder">
