@@ -95,12 +95,15 @@ var app = new Vue({
                 return '/static/images/assign-two-screenshot.png'
             }
         },
-        // TODO: this only fires on certain slider changes
+        /**
+         * Method fires when the slider is changed. 
+         * @param {*} ev 
+         */
         sliderChange: function (ev) {
-            console.log('slider change', ev);
             logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
+            // TODO: update the projections
 
         },
         startTask: function () {
@@ -258,23 +261,8 @@ var app = new Vue({
                     }
                 }
 
-                // determine how many R and D highlighted words
-                let numD = 0;
-                let numR = 0;
-                for (var j = 0; j < d.highlights.length; j++) {
-                    let h = d.highlights[j];
-
-                    if (h[1] === 'D') {
-                        numD += 1;
-
-                    } else {
-                        numR += 1;
-
-                    }
-                }
-
                 // doc id, true label, system label, system label confidence, user label, highlights
-                logString += ('doc,' + d.docId + ',true,' + d.trueLabel + ',pred,' + d.prediction.label + ',conf,' + d.prediction.confidence + ',user,' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',highlights,' + d.highlights.length + ',D,' + numD + ',R,' + numR + ';');
+                logString += ('doc,' + d.docId + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ';');
             }
             // number of correct labels, number of incorrect labels (for the user)
             logString += "||correct," + correctLabels + ',incorrect,' + incorrectLabels;
@@ -300,11 +288,23 @@ var app = new Vue({
 
                 this.correctDocumentDelta = response.data.correctDocumentDelta
 
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||NEW_ITEMS||' + this.userId + '||currentAccuracy,' + this.correctDocumentDelta + '\n');
-                //logString += response.data ;
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||numDocsImproved,' + this.correctDocumentDelta + '||');
+                
+                // print info for each new item
+                for (var i=0; i<response.data.unlabledDocs.length; i++) {
+                    doc = response.data.unlabeledDocs[i];
+                    logString += doc.docId + '##' + doc.text + '##';
+                    for (var j=0; j<doc.highlights.length; j++) {
+                        highlight = doc.highlights[j];
+                        logString += highlight;
+                    } 
+                    logString += '##' + doc.trueLabel + "##" + doc.prediction.label + '##' + doc.prediction.confidence + '%%';
+                }
+                console.log(response.data);
+
+
                 this.logText += logString;
                 console.log('LOGGED:', logString);
-                console.log(response.data);
 
                 // AMR 5/24: shuffle the order randomly (needed for teaming study)
                 this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
