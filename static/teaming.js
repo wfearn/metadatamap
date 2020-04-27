@@ -519,6 +519,7 @@ var app = new Vue({
                     logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId + '\n');
                     this.logText += logString;
                     console.log('LOGGED:', logString);
+                    doc.updated = false;
                     return;
                 }
             }
@@ -533,6 +534,7 @@ var app = new Vue({
             this.computedProjectedClassification(doc, label, this.sliderValue);            
         },
         computedProjectedClassification: function (doc, label, adherence) {
+            console.log('compute updated projection', doc, label, adherence);
             if (label === 'R2') {
                 // possibly rep
                 doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence-1] * 100);
