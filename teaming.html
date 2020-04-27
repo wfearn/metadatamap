@@ -46,7 +46,7 @@
               :adsorb="true" 
               :data="sliderData" 
               :marks="true"
-              @drag-end="sliderChange">
+              @callback="sliderChange($event)">
             </vue-slider>
           </div>
           <div class="save-labels-button-holder">
@@ -98,19 +98,17 @@
         </div>
 
         <div class="projected" v-if="doc.updated">
-          <div class="dem">
+          <div class="rating-label dem">
             Dem <span style="color: #9e9999;">({{getUpdatedDemConfidence(doc)}}%) </span>
           </div>
           <div class="ratingBar">
             <div class="rating-blue" :style="updateWidth(doc)"></div>
           </div>
-          <div class="rep">
+          <div class="rating-label rep">
             Rep <span style="color: #9e9999;">({{getUpdatedRepConfidence(doc)}}%)</span>
           </div>
-        
+          <div v-if="doc.updated" class="projected-label">*projected classification</div>
         </div>
-        <div v-if="doc.updated" class="projected-label">*projected classification</div>
-
 
         <div class="radio">
           <span v-if="showAnswers">
@@ -206,7 +204,7 @@
                 survey</a>
               <a href="https://forms.gle/xDCh5eMKu5epyUnq8" target="_blank" v-if="!inputUncertainty">post-task
                 survey</a>
-              , with your assigned user id: {{userId}}
+              , with your assigned user id: <span class="bold">{{userId}}</span>.
             </span>
             <!-- welcome MODAL -->
             <span v-if="!timeWarning && !finishedSurvey && !finished && !refreshed">
@@ -257,7 +255,7 @@
                   similar slider to tell the model how to incorporate your input. </strong>
               </div>
               </br>
-              <div class="image-holder"><img class="modal-image" src="/static/images/slider.png" /></div>
+              <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
               </br>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->

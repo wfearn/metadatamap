@@ -3,12 +3,18 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
 */
 .image-holder {
   width: 100%;
+  margin: auto;
 }
 
 .modal-image {
   width: 100%;
   max-width: 1000px;
   margin: auto;
+}
+
+.modal-image.slider {
+  width: 50%;
+  display: block;
 }
 
 .bold {
