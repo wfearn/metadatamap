@@ -533,24 +533,24 @@ var app = new Vue({
             this.computedProjectedClassification(doc, label, this.sliderValue);            
         },
         computedProjectedClassification: function (doc, label, adherence) {
-            if (label === 'R1') {
+            if (label === 'R2') {
                 // possibly rep
-                doc.projectedRep = Math.round(doc.expectedPredictions.republican.possibly[adherence] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
-            } else if (label === 'R2') {
+            } else if (label === 'R1') {
                 // probably rep
-                doc.projectedRep = Math.round(doc.expectedPredictions.republican.probably[adherence] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.republican.probably[adherence] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
-
-            } else if (label === 'D1') {
-                // possibly dem
-                doc.projectedDem = Math.round(doc.expectedPredictions.democrat.possibly[adherence] * 100);
-                doc.projectedRep = 100 - doc.projectedDem;
 
             } else if (label === 'D2') {
+                // possibly dem
+                doc.projectedDem = Math.round(doc.expected_predictions.democrat.possibly[adherence] * 100);
+                doc.projectedRep = 100 - doc.projectedDem;
+
+            } else if (label === 'D1') {
                 // probably dem
-                doc.projectedDem = Math.round(doc.expectedPredictions.democrat.probably[adherence] * 100);
+                doc.projectedDem = Math.round(doc.expected_predictions.democrat.probably[adherence] * 100);
                 doc.projectedRep = 100 - doc.projectedDem;
 
             }
