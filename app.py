@@ -452,9 +452,9 @@ def index():
     return send_from_directory('.','index.html')
 
 @app.route('/')
-@app.route('/index2')
-def index2():
-    return send_from_directory('.', 'index2.html')
+@app.route('/teaming')
+def teaming():
+    return send_from_directory('.', 'teaming.html')
 
 @app.route('/index3')
 def index3():
