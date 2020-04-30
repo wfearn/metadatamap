@@ -180,7 +180,6 @@ var app = new Vue({
             });
         },
         getIdData: function (id) {
-            console.log('get id data', id);
             if (id === '') {
                 alert('That user id was not found');
                 return;
@@ -307,8 +306,6 @@ var app = new Vue({
                     } 
                     logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&conf," + doc.prediction.confidence + "%%";
                 }
-                console.log(response.data);
-
 
                 this.logText += logString;
                 console.log('LOGGED:', logString);
@@ -352,7 +349,6 @@ var app = new Vue({
             }).then(response => {
                 this.logText += (response);
                 if (response.data.accuracy) {
-                    console.log('current accuracy', response.data.accuracy)
                     this.accuracy = response.data.accuracy;
                 }
 
@@ -539,7 +535,6 @@ var app = new Vue({
             this.computedProjectedClassification(doc, label, this.sliderValue);            
         },
         computedProjectedClassification: function (doc, label, adherence) {
-            console.log('compute updated projection', doc, label, adherence);
             if (label === 'R2') {
                 // possibly rep
                 doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence-1] * 100);
