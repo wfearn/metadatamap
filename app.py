@@ -650,6 +650,7 @@ def api_update():
         results += 1 if prediction == test_target else 0
 
     print('Number of correct documents', results)
+    model_accuracy = results / len(test_targets)
 
     # PREPARE TO SEND OBJECTS BACK
 
@@ -744,7 +745,7 @@ def api_update():
 
     return_labels = [{'labelId': i, 'label': label, 'count': label_count[label]} for i, label in enumerate(labels)]
 
-    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, correctDocumentDelta=0)
+    return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, modelAccuracy=model_accuracy)
 
 @app.route('/api/accuracy', methods=['POST'])
 def api_accuracy():
