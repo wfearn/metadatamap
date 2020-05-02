@@ -149,7 +149,7 @@ def get_twitter_corpus():
         doc_metadata[TWEET_ID] = tweet['id']
         doc_metadata[DATE_CREATED] = str(datetime.datetime.fromtimestamp(tweet['created_at'])).split(' ')[0]
 
-        d = Document(f'{text} <b>Tweeted {doc_metadata[DATE_CREATED]}</b>', tokens, doc_metadata)
+        d = Document(f'{text}', tokens, doc_metadata)
         documents.append(d)
 
     c = Corpus(documents, vocabulary, metadata)
