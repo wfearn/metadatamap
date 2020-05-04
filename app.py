@@ -424,7 +424,7 @@ class UserList:
 
 def initialize_vw_model():
     global vw
-    vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic')
+    vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic', i=vw_model_name)
 
 
 def clean_vowpal_text(text):
