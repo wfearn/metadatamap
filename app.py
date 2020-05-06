@@ -549,6 +549,7 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
     #print('\tlabel:', label, end='\n\n')
 
     new_vw.finish()
+    del new_vw
 
     return prediction_confidence
 
@@ -629,6 +630,7 @@ def api_update():
     print('***Time - Train:', time.time() - start)
 
     vw.finish()
+    del vw
     initialize_vw_model()
 
     test_docs = [doc.text for doc in test_corpus.documents]
