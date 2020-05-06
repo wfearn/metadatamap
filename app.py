@@ -53,7 +53,7 @@ vw_model_name = 'model.vw'
 vw = None
 
 default_importance = 1
-desired_adherence_values = np.linspace(0, 1, num=7)
+desired_adherence_values = np.linspace(-1, 5, num=7)
 possibly_label = .5
 probably_label = 1
 
