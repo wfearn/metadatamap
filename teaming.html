@@ -79,7 +79,7 @@
         </div>
 
         <div class="rating">
-          <div class="classification-label current-label">current classification</div>
+          <div class="classification-label current-label">current classification:</div>
           <div class="rating-label dem">
             Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
             <!-- <div class="vertical-align large-label">
@@ -102,7 +102,7 @@
         
         
         <div class="projected">
-          <div class="classification-label projected-label">projected classification</div>
+          <div class="classification-label projected-label">projected classification:</div>
           <div v-if="!doc.updated" class="projected-instructions">choose a label to change projection</div>
           <span v-if="doc.updated"> <div class="rating-label dem">
               Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
