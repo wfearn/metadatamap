@@ -157,6 +157,11 @@ button {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 }
+
+.rating, .projected {
+  margin-top: 10px;
+}
+
 .radio {
   grid-area: radio;
   /*background: gold;*/

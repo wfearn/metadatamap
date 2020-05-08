@@ -294,7 +294,7 @@ var app = new Vue({
 
                 this.correctDocumentDelta = response.data.correctDocumentDelta
 
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.modelAccuracy + '||numDocsImproved,' + this.correctDocumentDelta + '||');
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.data.modelAccuracy + '||numDocsImproved,' + this.correctDocumentDelta + '||');
                 
                 // print info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {
@@ -526,7 +526,7 @@ var app = new Vue({
             }
             Vue.set(doc, 'userLabel', label);
             // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + ',' + doc.trueLabel + ',' + doc.prediction.label + ',' + doc.prediction.confidence + ',' + label + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + '||' + label + '||true:' + doc.trueLabel + ',pred:' + doc.prediction.label + ',confRep:' + doc.prediction.confidence + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
 
@@ -535,6 +535,8 @@ var app = new Vue({
             this.computedProjectedClassification(doc, label, this.sliderValue);            
         },
         computedProjectedClassification: function (doc, label, adherence) {
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_PROJECTION||' + doc.docId + '||');
+
             if (label === 'R2') {
                 // possibly rep
                 doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence-1] * 100);
@@ -544,6 +546,7 @@ var app = new Vue({
                 // probably rep
                 doc.projectedRep = Math.round(doc.expected_predictions.republican.probably[adherence-1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
+
 
             } else if (label === 'D2') {
                 // possibly dem
@@ -556,6 +559,8 @@ var app = new Vue({
                 doc.projectedDem = 100 - doc.projectedRep;
 
             }
+            logString += ('confRep:' + doc.projectedRep + '\n');
+            console.log('LOGGED:', logString);
             doc.updated = true;
         },
         getConfidenceWord: function (doc) {
