@@ -32,6 +32,7 @@ body {
 .projected-instructions {
   position: absolute;
   font-style: italic;
+  margin-left: 50px;
 }
 
 .italic {
@@ -155,6 +156,7 @@ button {
 .radio {
   grid-area: radio;
   /*background: gold;*/
+  margin-bottom: 20px;
 }
 .model-prediction {
   padding-top: 10px;
@@ -177,7 +179,6 @@ button {
   max-width: 800px;
   min-width: 400px;
   margin: auto;
-  margin-bottom: 10px;
 }
 input[type="radio"] {
   height: 25px;
