@@ -24,6 +24,12 @@ body {
 
 .classification-label {
   font-weight: bold;
+  position:absolute;
+  margin-top: 90px;
+}
+
+.italic {
+  font-style: italic;
 }
 
 button {

@@ -78,7 +78,7 @@
           <div v-html="getDocHtml(doc)"></div>
         </div>
 
-        <div class="classification-label">current classification</div>
+        <div class="classification-label current-label">current classification</div>
         <div class="rating">
           <div class="rating-label dem">
             Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
@@ -99,10 +99,9 @@
             </div> -->
         </div>
 
-        <div class="classification-label">projected classification</div>
-        <div class="projected">
-          <span v-if="!doc.updated"><emph>choose a label to change projection</emph></span>
-          <span v-if="doc.updated">
+        <div class="classification-label projected-label">projected classification</div>
+        <div v-if="!doc.updated" class="projected-instructions">choose a label to change projection</div>
+        <div class="projected" v-if="doc.updated">
             <div class="rating-label dem">
               Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
             </div>
@@ -112,8 +111,6 @@
             <div class="rating-label rep">
               Rep <span style="color: #9e9999;">({{doc.projectedRep}}%)</span>
             </div>
-          </span>
-
         </div>
 
         <div class="radio">
@@ -245,7 +242,7 @@
             <!-- Instructions (1) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
             <span v-if="!timeWarning && modalState == 1 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, the initial model was trained on only a <emph>few</emph> labeled tweets, so it is not perfect and sometimes
+                Remember, the initial model was trained on only a <span class="italic">few</span> labeled tweets, so it is not perfect and sometimes
                 makes mistakes.
               </div>
               </br>
