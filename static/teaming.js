@@ -294,7 +294,7 @@ var app = new Vue({
 
                 this.correctDocumentDelta = response.data.correctDocumentDelta
 
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||numDocsImproved,' + this.correctDocumentDelta + '||');
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.modelAccuracy + '||numDocsImproved,' + this.correctDocumentDelta + '||');
                 
                 // print info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {

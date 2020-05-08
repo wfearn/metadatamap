@@ -29,10 +29,14 @@ body {
   margin-left: 100px;
 }
 
+.classification-label.projected-label {
+  margin-left: 50px;
+}
+
 .projected-instructions {
   position: absolute;
   font-style: italic;
-  margin-left: 50px;
+  margin-left: 25px;
 }
 
 .italic {
