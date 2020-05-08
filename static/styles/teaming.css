@@ -109,6 +109,7 @@ button {
   grid-template-rows: auto;
   grid-template-areas:
         "title  doctext  radio radio"
+        "current-label" "projected-label"
         "empty rating projected projected";
   grid-gap: 10px;
   /*was previously 10px*/
