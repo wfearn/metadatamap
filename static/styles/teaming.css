@@ -22,6 +22,10 @@ body {
   background-color: white;
 }
 
+.classification-label {
+  font-weight: bold;
+}
+
 button {
   /*
   font-family: 'Arvo';

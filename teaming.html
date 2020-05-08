@@ -15,7 +15,7 @@
 
   <div id="app">
     <!-- hide the app during the instructions -->
-    <div v-hide="showModal" class="header">
+    <div v-show="!showModal" class="header">
       <div class="toolbar">
         <button v-on:click='toggleModal()' title="show instructions"
           style="background-color: #5a8cd6 !important; color: #ffffff !important;">View Instructions</button>
@@ -78,8 +78,8 @@
           <div v-html="getDocHtml(doc)"></div>
         </div>
 
+        <div class="classification-label">current classification</div>
         <div class="rating">
-          <div class="classification-label">current classification</div>
           <div class="rating-label dem">
             Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
             <!-- <div class="vertical-align large-label">
@@ -99,9 +99,9 @@
             </div> -->
         </div>
 
+        <div class="classification-label">projected classification</div>
         <div class="projected">
-          <div class="classification-label">projected classification</div>
-          <span v-if="!doc.updated">choose a label to change projection</span>
+          <span v-if="!doc.updated"><emph>choose a label to change projection</emph></span>
           <span v-if="doc.updated">
             <div class="rating-label dem">
               Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
