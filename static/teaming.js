@@ -45,6 +45,7 @@ var app = new Vue({
         startDate: null,
         timer: null,
         totalTime: 20 * 60 * 1000, // total time is 20 minutes
+        taskTime: 0,
         time: 0, // initially, time is 0
         paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
         timeWarning: false, // track whether the user should see the time warning alert
@@ -75,7 +76,7 @@ var app = new Vue({
         },
 
         prettyTime: function () {
-            let seconds = parseInt(this.time / 1000);
+            let seconds = parseInt(this.taskTime / 1000);
             let remaining = ('0' + (seconds % 60)).slice(-2);
 
             return parseInt(seconds / 60) + ':' + remaining;
@@ -124,7 +125,7 @@ var app = new Vue({
             this.sendUpdate();
             this.finished = false;
             this.paused = false;
-            this.time = this.totalTime;
+            this.taskTime = this.totalTime;
 
             // two minutes remaining warning
             this.twoMinute = setTimeout(() => {
@@ -134,13 +135,14 @@ var app = new Vue({
                 // show in modal and pause task time
                 this.timeWarning = true;
                 this.openModal();
-            }, this.totalTime - 2 * 60 * 1000);
+            }, this.totalTime - (2 * 60 * 1000));
 
             // task timer
             this.timer = setInterval(() => {
-                if (this.time > 0) {
+                if (this.taskTime > 0) {
+                    // count down the timer unless the tool is paused
                     if (!this.paused) {
-                        this.time -= 1000;
+                        this.taskTime -= 1000;
                     }
                 } else {
                     clearInterval(this.timer);
@@ -578,10 +580,10 @@ var app = new Vue({
             return new Date() - this.startDate;
         },
         getActiveTime: function () {
-            if (this.time === 0) {
+            if (this.taskTime === 0) {
                 return -1;
             } else {
-                return this.totalTime - this.time;
+                return (this.totalTime - this.taskTime)/1000;
             }
         },
         getCurrTimeStamp: function () {
