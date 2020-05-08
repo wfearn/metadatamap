@@ -14,14 +14,15 @@
 <body>
 
   <div id="app">
-    <div class="header">
+    <!-- hide the app during the instructions -->
+    <div v-hide="showModal" class="header">
       <div class="toolbar">
         <button v-on:click='toggleModal()' title="show instructions"
           style="background-color: #5a8cd6 !important; color: #ffffff !important;">View Instructions</button>
         <br><br>
         <div>
           USER ID: {{ userId }}
-          <strong style="margin-left: 200px;"> GOAL: review and label as many tweets as possible </strong>
+          <strong style="margin-left: 200px;"> GOAL: review and label as many tweets as possible to help train the model </strong>
           <span class="right inline user-id">number labeled: {{ labeledCount }} </span>
         </div>
         <div>
@@ -78,6 +79,7 @@
         </div>
 
         <div class="rating">
+          <div class="classification-label">current classification</div>
           <div class="rating-label dem">
             Dem <span style="color: #9e9999;">({{getDemConfidence(doc)}}%) </span>
             <!-- <div class="vertical-align large-label">
@@ -97,17 +99,21 @@
             </div> -->
         </div>
 
-        <div class="projected" v-if="doc.updated">
-          <div class="rating-label dem">
-            Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
-          </div>
-          <div class="ratingBar">
-            <div class="rating-blue" :style="{width:doc.projectedDem + '%'}"></div>
-          </div>
-          <div class="rating-label rep">
-            Rep <span style="color: #9e9999;">({{doc.projectedRep}}%)</span>
-          </div>
-          <div v-if="doc.updated" class="projected-label">*projected classification</div>
+        <div class="projected">
+          <div class="classification-label">projected classification</div>
+          <span v-if="!doc.updated">choose a label to change projection</span>
+          <span v-if="doc.updated">
+            <div class="rating-label dem">
+              Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
+            </div>
+            <div class="ratingBar">
+              <div class="rating-blue" :style="{width:doc.projectedDem + '%'}"></div>
+            </div>
+            <div class="rating-label rep">
+              Rep <span style="color: #9e9999;">({{doc.projectedRep}}%)</span>
+            </div>
+          </span>
+
         </div>
 
         <div class="radio">
@@ -192,6 +198,7 @@
                 <li>Selected five new tweets at random and predicted labels for those tweets.
                 </li>
               </ul>
+              Don't forget that you can adjust how the model incorporates your input using the adherence slider.
             </span>
             <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
@@ -238,22 +245,26 @@
             <!-- Instructions (1) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
             <span v-if="!timeWarning && modalState == 1 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, the initial model was trained on only a few labeled tweets, so it is not perfect and sometimes
+                Remember, the initial model was trained on only a <emph>few</emph> labeled tweets, so it is not perfect and sometimes
                 makes mistakes.
               </div>
               </br>
               <div>
                 The model learns from two types of information:
                 <ol>
-                  <li>The words and other information it has already learned are useful for distinguishing between
+                  <li><strong>previously learned information:</strong> the words in tweets that it has learned are useful for distinguishing between
                     political parties
-                  <li>The new Republican or Democrat labels that you provide for tweets</li>
+                  <li><strong>Your new labels:</strong> the new Republican or Democrat labels that you provide for tweets</li>
                 </ol>
-                The slider below shows the range for how these two types of information can be combined to improve the
-                model, from 1, using
-                only the previously learned information (ignoring your labels), to 7, using only your labels (ignoring previously learned information). 
+                The "adherence slider" below lets you tell the model how to combine these two types of information during training:
+                <ol>
+                  <li><strong>Ignore:</strong> use
+                    only the previously learned information (ignoring your labels)</li>
+                  <li><strong>Override:</strong> use only your labels (ignoring previously learned information)</li>
+                </ol>
                 <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
-                <strong> In this task, you will use a
+                In this example, we've set the slider to tell the model to train with a balance of prior information it's learned and the new labels we give.
+                <strong> During the task, you will use a
                   similar slider to tell the model how to incorporate your input. </strong>
               </div>
             </span>
@@ -274,18 +285,18 @@
                   </li>
                   <li>You can label any of these tweets, by clicking the radio buttons to indicate whether you think the
                     politician is Republican or Democrat. Click again to clear your label.</li>
-                  <li>At any point, you can adjust the slider to tell the model how to incorporate your labels when it
+                  <li>At any point, you can adjust the adherence slider to tell the model how to incorporate your labels when it
                     updates. </li>
                   <li> When you specify labels or adjust the slider, the model will show how it might update its
                     prediction based on your input. </li>
-                  <li>At any point, click the “Update Model and Get Another Set of Tweets” button. The system then:</li>
+                  <li>At any point, click the “Save Labels and Get New Tweets” button. The system then:</li>
                   <ul>
                     <li>Updates the model with your labels</li>
                     <li>Selects a new set of five random tweets and shows you the model predictions for those tweets
                     </li>
                   </ul>
                   </li>
-                  <li>Hint: you do not need to wait until you've labeled all five debates to save your labels and get
+                  <li>Hint: you do not need to wait until you've labeled all five tweets to save your labels and get
                     another set. This means that if you’re not sure about any or all of the tweets, you can easily move
                     on and get 5 new ones.</li>
                   <li>Repeat this process until the 20 minute timer is up</li>
@@ -299,13 +310,12 @@
             <!-- INSTRUCTIONS (3) MODAL -->
             <span v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, your goal is to train the model so it can accurately distinguish between Republican and
+                Remember, your goal is to review and correctly label as many tweets as possible to train the model so it can accurately distinguish between Republican and
                 Democrat tweets. You will have 20 minutes for this task.
                 Every time you click to “Save labels and get new tweets”, the model will incorporate your labels as you
                 told it to with the slider and present another set of five randomly chosen tweets with the new
                 predictions.
-                When time is up, the final version of the model will predict the labels for the remaining tweets, and
-                you and the model will be scored for how many are labeled correctly. <strong>The top 50% of participants
+               <strong>The top 50% of participants with the highest quality models at the end of the task
                   will receive a $5 bonus.</strong>
 
                 <br>
@@ -316,7 +326,7 @@
           <div class="modal-footer">
             <button class="modal-button" v-if="clickedSurvey && !finishedSurvey && !finished && !refreshed"
               v-on:click="finishedSurvey = true">
-              proceed to instructions
+              continue to task
             </button>
             <button class="modal-button"
               v-if="!timeWarning && modalState == 0 && finishedSurvey && !finished && !refreshed"
