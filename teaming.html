@@ -40,8 +40,8 @@
             <strong>Use the slider to specify how the system should treat your labels:</strong>
           </div>
           <div class="adherence-slider-holder">
-            <span class="adherence-label ignore">ignore</span>
-            <span class="adherence-label override">override</span>
+            <span class="adherence-label ignore">ignore your labels</span>
+            <span class="adherence-label override">override and use only your labels</span>
             <vue-slider class="adherence-slider" 
               v-model="sliderValue" 
               :adsorb="true" 
@@ -99,11 +99,10 @@
             </div> -->
         </div>
 
-        
-        
         <div class="projected">
-          <div class="classification-label projected-label">projected classification:</div>
-          <div v-if="!doc.updated" class="projected-instructions">choose a label to change projection</div>
+        <div class="classification-label projected-label">projected classification:</div>
+        <div v-if="!doc.updated" class="projected-instructions">choose a label to change projection</div>
+        <div class="projected-info">
           <div class="rating-label dem" v-if="doc.updated">
               Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
             </div>
@@ -114,6 +113,7 @@
               Rep <span style="color: #9e9999;">({{doc.projectedRep}}%)</span>
             </div>
         </div>
+      </div>
 
         <div class="radio">
           <span v-if="showAnswers">
@@ -125,13 +125,18 @@
                 Your label:
               </div>
             </div>
-            <button class="radio-selection" v-on:click="labelDoc(doc, labels[0].label+'1')"
+            <b-button class="radio-selection" 
+              :class="[doc.userLabel === labels[0].label+'1' ? 'selected': '']"
+              :pressed="doc.userLabel === labels[0].label+'1'"
+              v-on:click="labelDoc(doc, labels[0].label+'1')"
               v-bind:style="{'background-color': colors[labels[0].label]}">
               {{ expandLabel(labels[0].label) }}</br>
               <input type="radio" v-bind:value="labels[0].label+'1'" v-model="doc.userLabel" />
-            </button>
+          </b-button>
 
-            <button class="radio-selection" v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[0].label+'2')"
+            <button class="radio-selection"
+            :class="[doc.userLabel === labels[0].label+'2' ? 'selected': '']"
+             v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[0].label+'2')"
               v-bind:style="{'background-color':
                       lightenDarkenColor(colors[labels[0].label], -40)}">
               Possibly {{ expandLabel(labels[0].label) }}
@@ -139,7 +144,9 @@
               <input type="radio" v-bind:value="labels[0].label+'2'" v-model="doc.userLabel" />
             </button>
 
-            <button class="radio-selection" v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[1].label+'2')"
+            <button class="radio-selection" 
+            :class="[doc.userLabel === labels[1].label+'2' ? 'selected': '']"
+            v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[1].label+'2')"
               v-bind:style="{'background-color':
                       lightenDarkenColor(colors[labels[1].label], -40)}">
               Possibly {{ expandLabel(labels[1].label) }}
@@ -147,7 +154,9 @@
               <input type="radio" v-bind:value="labels[1].label+'2'" v-model="doc.userLabel" />
             </button>
 
-            <button class="radio-selection" v-on:click="labelDoc(doc, labels[1].label+'1')"
+            <button class="radio-selection" 
+            :class="[doc.userLabel === labels[1].label+'1' ? 'selected': '']"
+            v-on:click="labelDoc(doc, labels[1].label+'1')"
               v-bind:style="{'background-color': colors[labels[1].label]}">
               {{ expandLabel(labels[1].label) }}
               </br>
@@ -235,7 +244,7 @@
               </br>
               <div>
                 The model is "in training": it initially learned from a small set of tweets with labels describing
-                whether the posters were Republicans or Democrats. However, this initial model is not perfect and
+                whether the tweet authors were Republicans or Democrats. However, this initial model is not perfect and
                 sometimes makes mistakes. You will help improve the model by labeling additional tweets as Republican or
                 Democrat. <strong>Based on the final quality of the model, the top 50% of participants will be given a
                   $5 bonus</strong>.
@@ -255,14 +264,14 @@
                     political parties
                   <li><strong>Your new labels:</strong> the new Republican or Democrat labels that you provide for tweets</li>
                 </ol>
-                The "adherence slider" below lets you tell the model how to combine these two types of information during training:
-                <ol>
+                The "adherence slider" below lets you tell the model how to combine these two types of information during training. It goes all the way from <strong>ignore</strong>, which means the model ignores your labels and uses only previously learned information, to <strong>override</strong>, which means the model will use only your labels regardless of previously learned information.
+           <!--    <ol>
                   <li><strong>Ignore:</strong> use
                     only the previously learned information (ignoring your labels)</li>
                   <li><strong>Override:</strong> use only your labels (ignoring previously learned information)</li>
-                </ol>
+                </ol> -->
                 <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
-                In this example, we've set the slider to tell the model to train with a balance of prior information it's learned and the new labels we give.
+                In this example, we've set the slider to tell the model to equally balance the prior information it has learned and the new labels we give.
                 <strong> During the task, you will use a
                   similar slider to tell the model how to incorporate your input. </strong>
               </div>

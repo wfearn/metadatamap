@@ -154,7 +154,10 @@ button {
 
 .projected{
 	grid-area: projected;
-	display: grid;
+}
+
+.projected-info {
+  display: grid;
 	grid-template-columns: repeat(3, 1fr);
 }
 
