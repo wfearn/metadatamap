@@ -125,14 +125,13 @@
                 Your label:
               </div>
             </div>
-            <b-button class="radio-selection" 
+            <button class="radio-selection" 
               :class="[doc.userLabel === labels[0].label+'1' ? 'selected': '']"
-              :pressed="doc.userLabel === labels[0].label+'1'"
               v-on:click="labelDoc(doc, labels[0].label+'1')"
               v-bind:style="{'background-color': colors[labels[0].label]}">
               {{ expandLabel(labels[0].label) }}</br>
               <input type="radio" v-bind:value="labels[0].label+'1'" v-model="doc.userLabel" />
-          </b-button>
+          </button>
 
             <button class="radio-selection"
             :class="[doc.userLabel === labels[0].label+'2' ? 'selected': '']"

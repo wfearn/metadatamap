@@ -306,7 +306,7 @@ var app = new Vue({
                         highlight = doc.highlights[j];
                         logString += highlight + ';';
                     } 
-                    logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&conf," + doc.prediction.confidence + "%%";
+                    logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&currConfRep," + Math.round(doc.prediction.confidence * 100) + "%%";
                 }
 
                 this.logText += logString;
@@ -528,7 +528,7 @@ var app = new Vue({
             }
             Vue.set(doc, 'userLabel', label);
             // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + '||' + label + '||true:' + doc.trueLabel + ',pred:' + doc.prediction.label + ',confRep:' + doc.prediction.confidence + '\n');
+            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + '||' + label + '||true:' + doc.trueLabel + ',pred:' + doc.prediction.label + ',currConfRep:' + Math.round(doc.prediction.confidence * 100) + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
 
@@ -561,7 +561,7 @@ var app = new Vue({
                 doc.projectedDem = 100 - doc.projectedRep;
 
             }
-            logString += ('confRep:' + doc.projectedRep + '\n');
+            logString += ('currConfRep:' + Math.round(doc.prediction.confidence * 100) + ',projConfRep:' + doc.projectedRep + '\n');
             console.log('LOGGED:', logString);
             doc.updated = true;
         },
