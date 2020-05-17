@@ -55,7 +55,10 @@ USER_ID_LENGTH = 5
 vw_model_name = 'model_{userid}.vw'
 
 default_importance = 1
-desired_adherence_values = np.linspace(-1, 5, num=7)
+ignore_adherence = 1
+override_adherence = 6
+
+desired_adherence_values = np.geomspace(ignore_adherence, override_adherence, num=7)
 possibly_label = .5
 probably_label = 1
 
@@ -536,7 +539,8 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty, us
 
     new_vw = pyvw.vw(quiet=True, i=vw_model_name.format(userid=userid), loss_function='logistic', link='logistic')
 
-    document_importance = default_importance + desired_adherence * input_uncertainty
+    # geomspace doesn't allow for non-positive values
+    document_importance = (default_importance + (desired_adherence - 2)) * input_uncertainty
 
     doc_ex = new_vw.example(f'{label} {document_importance} | {doc}')
     new_vw.learn(doc_ex)
