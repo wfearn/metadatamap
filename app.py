@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request, send_from_directory, redirect
+import multiprocessing as mp
 import datetime
 from collections import namedtuple
 import re
@@ -9,6 +10,7 @@ import time
 from collections import defaultdict, Counter
 import argparse
 import os
+import psutil
 import sys
 import contextlib
 import random
@@ -20,6 +22,7 @@ from sklearn.metrics import accuracy_score, make_scorer
 from vowpalwabbit.sklearn_vw import VWClassifier
 from vowpalwabbit import pyvw
 from sklearn.preprocessing import MinMaxScaler, minmax_scale
+from pympler import muppy, summary
 
 # Init flask app
 app = Flask(__name__)
@@ -49,8 +52,7 @@ PERCENT_HIGHLIGHT = .3
 PRELABELED_SIZE = 500
 USER_ID_LENGTH = 5
 
-vw_model_name = 'model.vw'
-vw = None
+vw_model_name = 'model_{userid}.vw'
 
 default_importance = 1
 desired_adherence_values = np.linspace(-1, 5, num=7)
@@ -200,11 +202,6 @@ if clean: # If clean, remove file and remake
         os.remove(corpus_filename)
 
 def load_initial_data():
-    global vw
-
-    print('***Initializing vw model...')
-    initialize_vw_model()
-
     print('***Loading initial data...')
 
     print('***Splitting labeled/unlabeled and test...')
@@ -225,13 +222,7 @@ def load_initial_data():
     train_corpus = Corpus([democratic_documents[t] for t in train_ids], corpus.vocabulary, corpus.metadata)
     test_corpus = Corpus([democratic_documents[t] for t in test_ids], corpus.vocabulary, corpus.metadata)
 
-    #(train_ids, train_corpus), (test_ids, test_corpus) = ankura.pipeline.train_test_split(corpus, return_ids=True)
-
     # Must have at least one labeled for each label
-    # TODO What does this do?
-    # while (len({doc.metadata[GOLD_ATTR_NAME] for doc in train_corpus.documents}) < LABELS_COUNT):
-    #     split = ankura.pipeline.train_test_split(corpus, return_ids=True)
-    #     (train_ids, train_corpus), (test_ids, test_corpus) = split
 
     starting_labeled_labels = set()
     all_label_set = set(LABELS)
@@ -252,15 +243,6 @@ def load_initial_data():
 
     for doc in train_corpus.documents:
         c.update([doc.metadata[GOLD_ATTR_NAME]])
-
-    #print('Distribution:', c)
-
-    print('Initializing model')
-    corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(starting_labeled_ids)])
-    y = [1 if train_corpus.documents[doc_id].metadata['party'] == 'R' else -1 for doc_id in set(starting_labeled_ids)]
-
-    train_vw(vw, corpus_text, y)
-    train_vw(vw, corpus_text, y)
 
     return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
 
@@ -422,10 +404,28 @@ class UserList:
             print(user_id)
         print('***')
 
-def initialize_vw_model():
-    global vw
-    vw = pyvw.vw(quiet=True, f=vw_model_name, loss_function='logistic', link='logistic', i=vw_model_name)
+def start_new_vowpal_model(userid):
+    print('Starting new model for user', userid)
+    vw = initialize_vowpal_model(userid, True)
 
+    corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(STARTING_LABELED_IDS)])
+    y = [1 if train_corpus.documents[doc_id].metadata['party'] == 'R' else -1 for doc_id in set(STARTING_LABELED_IDS)]
+
+    train_vw(vw, corpus_text, y)
+    train_vw(vw, corpus_text, y)
+
+    return vw
+
+
+def initialize_vowpal_model(userid, start_new_model=True):
+    user_model_name = vw_model_name.format(userid=userid)
+
+    if(start_new_model):
+        vw = pyvw.vw(quiet=True, f=user_model_name, loss_function='logistic', link='logistic')
+    else:
+        vw = pyvw.vw(quiet=True, f=user_model_name, loss_function='logistic', link='logistic', i=user_model_name)
+
+    return vw
 
 def clean_vowpal_text(text):
     return text.replace(':', ' ').replace('|', '').replace('\n', ' ')
@@ -436,7 +436,8 @@ def train_vw(vw_model, data, y):
 
         ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
         ex.learn()
-        vw_model.finish_example(ex)
+
+        del ex
 
 (labels, train_ids, train_corpus, test_ids, test_corpus, STARTING_LABELED_IDS) = load_initial_data()
 del corpus
@@ -531,29 +532,22 @@ def write_to_logfile(text, user, uid):
             outfile.write(text)
 
 
-def get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
+def get_expected_prediction(doc, desired_adherence, label, input_uncertainty, userid):
 
-    #print('\tinput uncertainty:', input_uncertainty)
-    new_vw = pyvw.vw(quiet=True, i=vw_model_name, loss_function='logistic', link='logistic')
+    new_vw = pyvw.vw(quiet=True, i=vw_model_name.format(userid=userid), loss_function='logistic', link='logistic')
 
     document_importance = default_importance + desired_adherence * input_uncertainty
-    #print('\tdocument importance:', document_importance)
 
     doc_ex = new_vw.example(f'{label} {document_importance} | {doc}')
-    #print('\tdocument pre-prediction confidence:', doc_ex.get_prob())
-    #print('\tdocument pre-predicton', new_vw.predict(doc_ex))
     new_vw.learn(doc_ex)
     prediction_confidence = new_vw.predict(doc_ex)
-    #print('\tdocument post-train confidence:', prediction_confidence)
-    #print('\tprediction:', new_vw.predict(doc_ex))
-    #print('\tlabel:', label, end='\n\n')
 
-    new_vw.finish()
+    del doc_ex
     del new_vw
 
     return prediction_confidence
 
-def get_expected_future_predictions(doc):
+def get_expected_future_predictions(doc, userid):
     future_predictions = dict()
 
     future_predictions['democrat'] = dict()
@@ -565,24 +559,31 @@ def get_expected_future_predictions(doc):
 
     for value in desired_adherence_values:
         #print('Desired Adherence:', value)
-        future_predictions['democrat']['possibly'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, possibly_label))
-        future_predictions['democrat']['probably'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, probably_label))
+        future_predictions['democrat']['possibly'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, possibly_label, userid))
+        future_predictions['democrat']['probably'].append(get_expected_prediction(doc, value, DEMOCRATIC_LABEL, probably_label, userid))
 
-        future_predictions['republican']['possibly'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, possibly_label))
-        future_predictions['republican']['probably'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, probably_label))
+        future_predictions['republican']['possibly'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, possibly_label, userid))
+        future_predictions['republican']['probably'].append(get_expected_prediction(doc, value, REPUBLICAN_LABEL, probably_label, userid))
 
     return future_predictions
 
-
-
 @app.route('/api/update', methods=['POST'])
-def api_update():
+def call_update():
+
+    p = mp.Pool(processes=1)
+    data = p.map(update, range(1))
+    p.close()
+    process = psutil.Process(os.getpid())
+    print('Process Memory:', (((process.memory_info().rss / 1000) / 1000) / 1000), 'GB')
+
+    return data[0]
+
+def update(i):
     print('Calling Update')
     data = request.get_json()
 
     global ngrams
     global lossfn
-    global vw
 
     # Data is expected to come back in this form:
     # data = {anchor_tokens: [[token_str,..],...]
@@ -598,6 +599,14 @@ def api_update():
     labeled_docs = user['labeled_docs']
     unlabeled_ids = user['unlabeled_ids']
 
+    model_filename = vw_model_name.format(userid=user_id)
+
+    vw = None
+
+    if not os.path.exists(model_filename):
+        vw = start_new_vowpal_model(user_id)
+    else:
+        vw = initialize_vowpal_model(user_id, False)
 
     # Write the log file
     write_to_logfile(data.get('log_text'), user, user_id)
@@ -630,8 +639,7 @@ def api_update():
     print('***Time - Train:', time.time() - start)
 
     vw.finish()
-    del vw
-    initialize_vw_model()
+    vw = initialize_vowpal_model(user_id, start_new_model=False)
 
     test_docs = [doc.text for doc in test_corpus.documents]
     print('Test Doc Length:', len(test_docs))
@@ -646,7 +654,8 @@ def api_update():
         test_target = test_targets[i]
         ex = vw.example(f'{test_target} 1 | {cleaned_test}')
         prediction = vw.predict(ex)
-        vw.finish_example(ex)
+
+        del ex
 
         prediction = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
         results += 1 if prediction == test_target else 0
@@ -668,7 +677,8 @@ def api_update():
         prediction = vw.predict(ex)
         word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
         prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
-        vw.finish_example(ex)
+
+        del ex
 
         token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
 
@@ -703,14 +713,14 @@ def api_update():
         con = prediction
         rdif = con
 
-        vw.finish_example(ex)
+        del ex
 
         i_label = 0 if prediction < .5 else 1
         predict_label = labels[i_label]
 
         hls = get_highlights(new_text)
 
-        expected_future_predictions = get_expected_future_predictions(cleaned_test)
+        expected_future_predictions = get_expected_future_predictions(cleaned_test, user_id)
 
         unlabeled_docs.append(
            {
@@ -731,10 +741,10 @@ def api_update():
     labels_dict = {label: i for i, label in enumerate(labels)}
     # A bit of a complex sort, but gets the job done
     #TODO I don't know what this is doing and need to fix it to make sure it is behaving appropriately
-    doc_sort = lambda doc: (labels_dict[doc['prediction']['label']],
-                            (-1)**(labels_dict[doc['prediction']['label']] + 1)
-                                * doc['prediction']['relativeDif'])
-    unlabeled_docs.sort(key=doc_sort)
+    #doc_sort = lambda doc: (labels_dict[doc['prediction']['label']],
+    #                        (-1)**(labels_dict[doc['prediction']['label']] + 1)
+    #                            * doc['prediction']['relativeDif'])
+    #unlabeled_docs.sort(key=doc_sort)
 
     # Calculate average for each label
     # TODO Find a better way of doing this?
@@ -746,6 +756,11 @@ def api_update():
         label_count[label] += 1
 
     return_labels = [{'labelId': i, 'label': label, 'count': label_count[label]} for i, label in enumerate(labels)]
+
+    vw.finish()
+
+    process = psutil.Process(os.getpid())
+    print('Process Memory:', (((process.memory_info().rss / 1000) / 1000) / 1000), 'GB')
 
     return jsonify(labels=return_labels, unlabeledDocs=unlabeled_docs, modelAccuracy=model_accuracy)
 
