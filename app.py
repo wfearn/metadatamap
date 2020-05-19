@@ -187,7 +187,7 @@ ngrams = args.ngrams
 # 'binary_rating' contains 'negative' and 'positive' for yelp, amz, and TA
 corpus = get_twitter_corpus()
 
-rng = random.Random(args.seed)
+#rng = random.Random(args.seed)
 
 # Place to save pickle files
 
@@ -629,7 +629,8 @@ def update(i):
 
     # Remove elements without creating new object
     web_unlabeled_ids.clear()
-    web_unlabeled_ids.update(rng.sample(unlabeled_ids, UNLABELED_COUNT))
+    web_unlabeled_ids.update(random.sample(unlabeled_ids, UNLABELED_COUNT))
+    print('Web Unlabeled Ids', web_unlabeled_ids)
 
     newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
     labeled_ids = set(labeled_docs).union(newly_labeled_doc_ids)
