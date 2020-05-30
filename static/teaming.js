@@ -460,6 +460,7 @@ var app = new Vue({
             var label;
             var a;
             var b;
+            var offsets = [];
             for (var i = 0; i < doc.highlights.length; i++) {
                 var ngram = doc.highlights[i][0];
                 var label = doc.highlights[i][1];
@@ -467,10 +468,21 @@ var app = new Vue({
                 var doc_label = this.colors[label];
 
                 var re = new RegExp(ngrams_regex, 'g');
-                console.log(re);
-                console.log(html);
-                html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
-                console.log(html);
+                var start = html.search(re);
+                var end = start + ngrams_regex.length;
+                console.log(re, html, start, end, label);
+                offsets.push([start, end, doc_label]);
+
+              //  html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
+              //  console.log(html);
+            }
+
+            console.log(offsets);
+
+            // iterate over the offsets from end to start and add in the spans
+            for (var i = offsets.length + 1; i >= 0; i--) {
+                html = [html.slice(0, offsets[i][end]), "</span>", html.slice(offsets[i][end])].join(''); 
+                html = [html.slice(0, offsets[i][start], "<span class='rounded' style='background-color:" + doc_label + "'>" , html.slice[offsets[i][start]])].join('');
             }
 
             doc.formattedHtml = html;
