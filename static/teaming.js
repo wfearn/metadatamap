@@ -128,6 +128,7 @@ var app = new Vue({
             this.taskTime = this.totalTime;
 
             // two minutes remaining warning
+            console.log('set a two minute warning timeout for after 18 minutes', (this.totalTime - (2 * 60 * 1000)));
             this.twoMinute = setTimeout(() => {
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_WARNING \n')
                 this.logText += logString;
@@ -135,7 +136,14 @@ var app = new Vue({
                 // show in modal and pause task time
                 this.timeWarning = true;
                 this.openModal();
+                console.log('timeout!', (this.totalTime - this.taskTime));
             }, this.totalTime - (2 * 60 * 1000));
+
+            console.log('set a nineteen minute warning timeout for after 1 minutes', (this.totalTime - (19 * 60 * 1000)));
+
+            this.nineteenMinute = setTimeout(() => {
+                console.log('timeout!', (this.totalTime - this.taskTime));
+            }, this.totalTime - (19 * 60 * 100));
 
             // task timer
             this.timer = setInterval(() => {
