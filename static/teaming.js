@@ -476,13 +476,13 @@ var app = new Vue({
                 var start = html.substring(end).search(re); 
                 if (start !== -1) {
                     start = start + end;
+                    var end = start + ngram.length;
+                    console.log(ngram, start, end);
+                    offsets.push([start, end, this.colors[label]]);
                 } else {
-                    console.warn('unmatched highlighted token', ngram, "not found in", html);
-                    continue;
+                    console.warn('unmatched highlighted token', ngram, "not found in", html);    
                 }
-                var end = start + ngram.length;
-                console.log(ngram, start, end);
-                offsets.push([start, end, this.colors[label]]);
+
 
                 
 

@@ -273,13 +273,12 @@
                 </ol> -->
                 <div class="image-holder slider-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
                 In this example, we've set the slider to tell the model to equally balance the prior information it has learned and the new labels we give.
-
-                <div style="margin-top: 10px;">The next few screens explain the tool you will use for the task.</div> 
               </div>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
-              
+              <div style="margin-bottom: 10px;">The next few screens demonstrate how you will complete task.</div> 
+
               <div >
                 <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-1.png" />
                 <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-1.png" />
