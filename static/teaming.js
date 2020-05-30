@@ -473,15 +473,17 @@ var app = new Vue({
                 var ngrams_regex = this.convertToRegex(ngram.split(' '));
                 var re = new RegExp(ngrams_regex, 'g');
                 console.log(html.substring(end));
-                var start = html.substring(end).search(re) + end;
-                var end = start + ngram.length;
-                console.log(ngram, start, end);
-
+                var start = html.substring(end).search(re); 
                 if (start !== -1) {
-                    offsets.push([start, end, this.colors[label]]);
+                    start = start + end;
                 } else {
                     console.warn('unmatched highlighted token', ngram, "not found in", html);
+                    continue;
                 }
+                var end = start + ngram.length;
+                console.log(ngram, start, end);
+                offsets.push([start, end, this.colors[label]]);
+
                 
 
               //  html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');

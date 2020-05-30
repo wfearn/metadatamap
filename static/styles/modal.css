@@ -21,6 +21,15 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   font-weight: bold;
 }
 
+.slider-holder {
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+.tool-image {
+  width: 100%;
+}
+
 .underline {
   text-decoration: underline;
 }

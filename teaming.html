@@ -271,28 +271,26 @@
                     only the previously learned information (ignoring your labels)</li>
                   <li><strong>Override:</strong> use only your labels (ignoring previously learned information)</li>
                 </ol> -->
-              </br>
-                <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
-            </br>
+                <div class="image-holder slider-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
                 In this example, we've set the slider to tell the model to equally balance the prior information it has learned and the new labels we give.
-            </br>
-                The next few screens explain the tool you will use for the task. 
+
+                <div style="margin-top: 10px;">The next few screens explain the tool you will use for the task.</div> 
               </div>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
               
               <div >
-                <img v-if="inputUncertainty"  src="/static/images/tool-intro-uncertainty-1.png" />
-                <img v-if="!inputUncertainty" src="/static/images/tool-intro-1.png" />
+                <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-1.png" />
+                <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-1.png" />
 
               </div>
             </span>
 
             <span v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed">
               <div >
-                <img v-if="inputUncertainty"  src="/static/images/tool-intro-uncertainty-2.png" />
-                <img v-if="!inputUncertainty"  src="/static/images/tool-intro-2.png" />
+                <img v-if="inputUncertainty"   class="tool-image" src="/static/images/tool-intro-uncertainty-2.png" />
+                <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-2.png" />
 
               </div>
             </span>
@@ -300,8 +298,8 @@
 
 
               <div >
-                <img v-if="inputUncertainty"  src="/static/images/tool-intro-uncertainty-3.png" />
-                <img v-if="!inputUncertainty"  src="/static/images/tool-intro-3.png" />
+                <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-3.png" />
+                <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-3.png" />
 
               </div>
               </span>
