@@ -193,7 +193,7 @@
           </div>
           <div class="modal-body">
             <!-- TIME WARNING MODAL -->
-            <span v-if="timeWarning">
+            <span v-if="timeWarning && !finished">
               You have 2 minutes remaining to confirm or correct the system predictions. At the end of task time, all of
               your outstanding labels will be saved to the system.
             </span>
