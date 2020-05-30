@@ -475,8 +475,9 @@ var app = new Vue({
                 var start = html.substring(end).search(re) + end;
                 var end = start + ngram.length;
                 if (start !== -1) {
-                    console.warn('unmatched highlighted token', ngram, html);
                     offsets.push([start, end, this.colors[label]]);
+                } else {
+                    console.warn('unmatched highlighted token', ngram, "not found in", html);
                 }
                 
 
