@@ -464,14 +464,17 @@ var app = new Vue({
             for (var i = 0; i < doc.highlights.length; i++) {
                 var ngram = doc.highlights[i][0];
                 var label = doc.highlights[i][1];
-                var ngrams_regex = this.convertToRegex(ngram.split(' '));
+                var ngrams_regex = this.convertToRegex(ngram);
                 var doc_label = this.colors[label];
 
                 var re = new RegExp(ngrams_regex, 'g');
                 var start = html.search(re);
-                var end = start + ngrams_regex.length;
+                var end = start + ngram.length;
                 console.log(re, html, start, end, label);
-                offsets.push([start, end, doc_label]);
+                if (start !== -1) {
+                    offsets.push([start, end, doc_label]);
+                }
+                
 
               //  html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
               //  console.log(html);
