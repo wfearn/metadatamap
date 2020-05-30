@@ -140,10 +140,8 @@ var app = new Vue({
             // task timer
             this.timer = setInterval(() => {
                 if (this.taskTime > 0) {
-                    // count down the timer unless the tool is paused
-                    if (!this.paused) {
+                    // count down the timer 
                         this.taskTime -= 1000;
-                    }
                 } else {
                     clearInterval(this.timer);
                     logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_UP \n')
@@ -292,11 +290,8 @@ var app = new Vue({
                 // new set of unlabeled documents
                 this.unlabeledDocs = response.data.unlabeledDocs;
 
-                // determine the classifier accuracy for the returned set of documents, and track classifier accuracy for all documents the user has been exposed to
-
-                this.correctDocumentDelta = response.data.correctDocumentDelta
-
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.data.modelAccuracy + '||numDocsImproved,' + this.correctDocumentDelta + '||');
+                // track updated model accuracy
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.data.modelAccuracy + '||');
                 
                 // print info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {

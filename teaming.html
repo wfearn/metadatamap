@@ -70,8 +70,10 @@
         v-bind:class="doc.open ? 'doc-container-expanded' : 'doc-container-expanded'">
         <div class="title">
           <div class="vertical-align">
-            Tweet </br>
-            #{{ pad(doc.docId, 6) }}
+           <!-- Tweet </br>
+            #{{ pad(doc.docId, 6) }} -->
+            Tweeted on: </br>
+            {{ doc.date }}
           </div>
         </div>
         <div class="doc-text" v-if="doc.open">
