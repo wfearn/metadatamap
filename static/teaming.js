@@ -307,6 +307,11 @@ var app = new Vue({
                 this.logText += logString;
                 console.log('LOGGED:', logString);
 
+                this.labels = response.data.labels;
+                this.labeled_docs = [];
+                this.loading = false;
+                this.isMounted = true;
+
                 // set the dem/rep colors
                 if (!this.colorsChosen) {
                     this.chooseColors();
@@ -317,12 +322,6 @@ var app = new Vue({
                 this.unlabeledDocs.forEach(function(doc) {
                     this.setDocHtml(doc);
                 }, this);
-
-                this.labels = response.data.labels;
-                this.labeled_docs = [];
-                this.loading = false;
-                this.isMounted = true;
-
 
 
                 for (var i = 0; i < this.unlabeledDocs.length; i++) {
