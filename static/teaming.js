@@ -468,10 +468,11 @@ var app = new Vue({
             for (var i = 0; i < doc.highlights.length; i++) {
                 var ngram = doc.highlights[i][0];
                 var label = doc.highlights[i][1];
-             //   var ngrams_regex = this.convertToRegex(ngram.split(' '));
 
-            //    var re = new RegExp(ngrams_regex, 'g');
-                var start = html.substring(end).search(ngram) + end;
+                // convert to regex so we're only highlighting words (not matching substrings of other words)
+                var ngrams_regex = this.convertToRegex(ngram.split(' '));
+                var re = new RegExp(ngrams_regex, 'g');
+                var start = html.substring(end).search(re) + end;
                 var end = start + ngram.length;
                 if (start !== -1) {
                     console.warn('unmatched highlighted token', ngram, html);
