@@ -310,7 +310,7 @@ var app = new Vue({
                 // process the formatted html for each doc
                 this.unlabeledDocs.forEach(function(doc) {
                     this.setDocHtml(doc);
-                });
+                }, this);
 
                 this.labels = response.data.labels;
                 this.labeled_docs = [];
