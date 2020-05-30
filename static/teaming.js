@@ -463,13 +463,15 @@ var app = new Vue({
             var a;
             var b;
             var offsets = [];
+            var start = 0;
+            var end = 0;
             for (var i = 0; i < doc.highlights.length; i++) {
                 var ngram = doc.highlights[i][0];
                 var label = doc.highlights[i][1];
              //   var ngrams_regex = this.convertToRegex(ngram.split(' '));
 
             //    var re = new RegExp(ngrams_regex, 'g');
-                var start = html.search(ngram);
+                var start = html.substring(end).search(ngram);
                 var end = start + ngram.length;
                 console.log(ngram, html, start, end, label);
                 if (start !== -1) {
@@ -485,6 +487,7 @@ var app = new Vue({
 
             // iterate over the offsets from end to start and add in the spans
             for (var i = offsets.length; i >= 0; i--) {
+                console.log(i);
                 html = [html.slice(0, offsets[i][1]), "</span>", html.slice(offsets[i][1])].join(''); 
                 html = [html.slice(0, offsets[i][0], "<span class='rounded' style='background-color:" + offsets[i][2] + "'>" , html.slice[offsets[i][0]])].join('');
             }
