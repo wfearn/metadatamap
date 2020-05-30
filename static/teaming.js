@@ -143,7 +143,7 @@ var app = new Vue({
 
             this.nineteenMinute = setTimeout(() => {
                 console.log('timeout!', (this.totalTime - this.taskTime));
-            }, this.totalTime - (19 * 60 * 100));
+            }, this.totalTime - (19 * 60 * 1000));
 
             // task timer
             this.timer = setInterval(() => {
