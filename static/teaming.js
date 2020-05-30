@@ -472,12 +472,12 @@ var app = new Vue({
                 // convert to regex so we're only highlighting words (not matching substrings of other words)
                 var ngrams_regex = this.convertToRegex(ngram.split(' '));
                 var re = new RegExp(ngrams_regex, 'g');
-                console.log(html.substring(end));
+            //    console.log(html.substring(end));
                 var start = html.substring(end).search(re); 
                 if (start !== -1) {
                     start = start + end;
                     var end = start + ngram.length;
-                    console.log(ngram, start, end);
+             //       console.log(ngram, start, end);
                     offsets.push([start, end, this.colors[label]]);
                 } else {
                     console.warn('unmatched highlighted token', ngram, "not found in", html);    
@@ -490,13 +490,13 @@ var app = new Vue({
               //  console.log(html);
             }
 
-            console.log(offsets);
+         //   console.log(offsets);
             // iterate over the offsets from end to start and add in the spans
             for (var i = offsets.length-1; i >= 0; i--) {
-                console.log(html);
+           //     console.log(html);
                 html = html.slice(0, offsets[i][1]) +  "</span>" + html.slice(offsets[i][1]); 
                 html = html.slice(0, offsets[i][0]) +  "<span class='rounded' style='background-color:" + offsets[i][2] + "'>" + html.slice(offsets[i][0]);
-                console.log(html);
+            //    console.log(html);
             }
 
             doc.formattedHtml = html;
