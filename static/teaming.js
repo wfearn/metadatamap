@@ -46,7 +46,7 @@ var app = new Vue({
         timer: null,
         totalTime: 20 * 60 * 1000, // total time is 20 minutes
         taskTime: 0,
-        time: 0, // initially, time is 0
+      //  time: 0, // initially, time is 0
         paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
         timeWarning: false, // track whether the user should see the time warning alert
         modalState: 0,
@@ -465,8 +465,10 @@ var app = new Vue({
                 var doc_label = this.colors[label];
 
                 var re = new RegExp(ngrams_regex, 'g');
+                console.log(re);
+                console.log(html);
                 html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
-
+                console.log(html);
             }
 
             return html;
