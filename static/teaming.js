@@ -307,6 +307,12 @@ var app = new Vue({
                 this.logText += logString;
                 console.log('LOGGED:', logString);
 
+                // set the dem/rep colors
+                if (!this.colorsChosen) {
+                    this.chooseColors();
+                    this.colorsChosen = true;
+                }
+
                 // process the formatted html for each doc
                 this.unlabeledDocs.forEach(function(doc) {
                     this.setDocHtml(doc);
@@ -317,10 +323,7 @@ var app = new Vue({
                 this.loading = false;
                 this.isMounted = true;
 
-                if (!this.colorsChosen) {
-                    this.chooseColors();
-                    this.colorsChosen = true;
-                }
+
 
                 for (var i = 0; i < this.unlabeledDocs.length; i++) {
                     Vue.set(this.unlabeledDocs[i], 'open', true);
@@ -464,10 +467,10 @@ var app = new Vue({
             for (var i = 0; i < doc.highlights.length; i++) {
                 var ngram = doc.highlights[i][0];
                 var label = doc.highlights[i][1];
-                var ngrams_regex = this.convertToRegex(ngram.split(' '));
+             //   var ngrams_regex = this.convertToRegex(ngram.split(' '));
 
-                var re = new RegExp(ngrams_regex, 'g');
-                var start = html.search(re);
+            //    var re = new RegExp(ngrams_regex, 'g');
+                var start = html.search(ngram);
                 var end = start + ngram.length;
                 console.log(re, html, start, end, label);
                 if (start !== -1) {
