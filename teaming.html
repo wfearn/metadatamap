@@ -77,7 +77,7 @@
           </div>
         </div>
         <div class="doc-text" v-if="doc.open">
-          <div v-html="getDocHtml(doc)"></div>
+          <div v-if="doc.formattedHtml" v-html="doc.formattedHtml"></div>
         </div>
 
         <div class="rating">

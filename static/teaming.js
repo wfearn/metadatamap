@@ -293,7 +293,7 @@ var app = new Vue({
                 // track updated model accuracy
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.data.modelAccuracy + '||');
                 
-                // print info for each new item
+                // log info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
@@ -307,8 +307,11 @@ var app = new Vue({
                 this.logText += logString;
                 console.log('LOGGED:', logString);
 
-                // AMR 5/24: shuffle the order randomly (needed for teaming study)
-                this.unlabeledDocs = this.shuffle(this.unlabeledDocs);
+                // process the formatted html for each doc
+                this.unlabeledDocs.forEach(function(doc) {
+                    this.setDocHtml(doc);
+                });
+
                 this.labels = response.data.labels;
                 this.labeled_docs = [];
                 this.loading = false;
@@ -449,8 +452,7 @@ var app = new Vue({
 
             return fullRegex;
         },
-        getDocHtml: function (doc) {
-            //    console.log('Getting HTML');
+        setDocHtml: function (doc) {
             var htmltext = doc.text;
             var html = htmltext.replace("&lt;URL_TOKEN&gt;", "");
             var prev = 0
@@ -471,7 +473,7 @@ var app = new Vue({
                 console.log(html);
             }
 
-            return html;
+            doc.formattedHtml = html;
         },
         deleteLabel: function (doc) {
             Vue.delete(doc, 'userLabel');
