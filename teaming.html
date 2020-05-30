@@ -254,7 +254,7 @@
             <!-- Instructions (1) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
             <span v-if="!timeWarning && modalState == 1 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, the initial model was trained on only a <span class="italic">few</span> labeled tweets, so it is not perfect and sometimes
+                The initial model was trained on only a <span class="italic">few</span> labeled tweets, so it is not perfect and sometimes
                 makes mistakes.
               </div>
               </br>
@@ -265,40 +265,45 @@
                     political parties
                   <li><strong>Your new labels:</strong> the new Republican or Democrat labels that you provide for tweets</li>
                 </ol>
-                The "adherence slider" below lets you tell the model how to combine these two types of information during training. It goes all the way from <strong>ignore</strong>, which means the model ignores your labels and uses only previously learned information, to <strong>override</strong>, which means the model will use only your labels regardless of previously learned information.
+                During the task, you will use an "adherence slider" (shown below), which lets you tell the model how to combine these two types of information during training. It goes all the way from <strong>ignore</strong>, which means the model ignores your labels and uses only previously learned information, to <strong>override</strong>, which means the model will use only your labels regardless of previously learned information.
            <!--    <ol>
                   <li><strong>Ignore:</strong> use
                     only the previously learned information (ignoring your labels)</li>
                   <li><strong>Override:</strong> use only your labels (ignoring previously learned information)</li>
                 </ol> -->
+                <br/>
                 <div class="image-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
                 In this example, we've set the slider to tell the model to equally balance the prior information it has learned and the new labels we give.
-                <strong> During the task, you will use a
-                  similar slider to tell the model how to incorporate your input. </strong>
+                <br/>
+                The next few screens show how you will interact with the model for the task. 
               </div>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
-              During the task, you will review the model's predictions for the tweets. 
-              <div class="image-holder">
+              
+              <div >
                 <img v-if="inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-1.png" />
                 <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-1.png" />
 
               </div>
+            </span>
 
-              You can provide your labels for the tweets and adjust the adhernece slider to tell the model how to incorporate your labels when it updates.
-              <div class="image-holder">
+            <span v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed">
+              <div >
                 <img v-if="inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-2.png" />
                 <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-2.png" />
 
               </div>
+            </span>
+            <span v-if="!timeWarning && modalState == 4 && finishedSurvey && !finished && !refreshed">
 
-              When you specify labels or adjust the slider, the model shows how it will update its prediction.
-              <div class="image-holder">
+
+              <div >
                 <img v-if="inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-3.png" />
-                <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-2.png" />
+                <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-3.png" />
 
               </div>
+              </span>
         <!--      <div>
                 During the task:
                 <ul>
@@ -337,7 +342,7 @@
 
             </span>
             <!-- INSTRUCTIONS (3) MODAL -->
-            <span v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed">
+            <span v-if="!timeWarning && modalState == 5 && finishedSurvey && !finished && !refreshed">
               <div>
                 Remember, your goal is to review and correctly label as many tweets as possible to train the model so it can accurately distinguish between Republican and
                 Democrat tweets. You will have 20 minutes for this task.
@@ -372,11 +377,21 @@
               v-on:click="modalState = 3;">
               next
             </button>
-            <button class="modal-button" v-if="!timeWarning && !started && modalState == 3 && !finished && !refreshed"
+            <button class="modal-button"
+            v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed"
+            v-on:click="modalState = 3;">
+            next
+          </button>
+          <button class="modal-button"
+          v-if="!timeWarning && modalState == 4 && finishedSurvey && !finished && !refreshed"
+          v-on:click="modalState = 3;">
+          next
+        </button>
+            <button class="modal-button" v-if="!timeWarning && !started && modalState == 5 && !finished && !refreshed"
               v-on:click="startTask()">
               start task
             </button>
-            <button class="modal-button" v-if="!timeWarning && started && modalState == 2 && !finished && !refreshed"
+            <button class="modal-button" v-if="!timeWarning && started && modalState == 5 && !finished && !refreshed"
               v-on:click="closeModal()">
               ok
             </button>
