@@ -471,7 +471,7 @@ var app = new Vue({
             //    var re = new RegExp(ngrams_regex, 'g');
                 var start = html.search(ngram);
                 var end = start + ngram.length;
-                console.log(re, html, start, end, label);
+                console.log(ngram, html, start, end, label);
                 if (start !== -1) {
                     offsets.push([start, end, this.colors[label]]);
                 }
