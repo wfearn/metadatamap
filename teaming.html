@@ -279,7 +279,27 @@
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
-              <div>
+              During the task, you will review the model's predictions for the tweets. 
+              <div class="image-holder">
+                <img v-if="inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-1.png" />
+                <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-1.png" />
+
+              </div>
+
+              You can provide your labels for the tweets and adjust the adhernece slider to tell the model how to incorporate your labels when it updates.
+              <div class="image-holder">
+                <img v-if="inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-2.png" />
+                <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-2.png" />
+
+              </div>
+
+              When you specify labels or adjust the slider, the model shows how it will update its prediction.
+              <div class="image-holder">
+                <img v-if="inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-3.png" />
+                <img v-if="!inputUncertainty" class="modal-image slider" src="/static/images/tool-intro-uncertainty-2.png" />
+
+              </div>
+        <!--      <div>
                 During the task:
                 <ul>
                   <li>For five randomly chosen tweets, the model will predict whether each tweet is from a Republican or
@@ -310,7 +330,7 @@
                     on and get 5 new ones.</li>
                   <li>Repeat this process until the 20 minute timer is up</li>
                 </ul>
-              </div>
+              </div> -->
               <!--  <div>
                 <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
               </div> -->
