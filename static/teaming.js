@@ -471,7 +471,7 @@ var app = new Vue({
              //   var ngrams_regex = this.convertToRegex(ngram.split(' '));
 
             //    var re = new RegExp(ngrams_regex, 'g');
-                var start = html.substring(end).search(ngram);
+                var start = html.substring(end).search(ngram) + end;
                 var end = start + ngram.length - 1;
                 console.log(ngram, html, start, end, label);
                 if (start !== -1) {
