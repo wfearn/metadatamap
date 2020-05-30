@@ -53,6 +53,7 @@ PRELABELED_SIZE = 500
 USER_ID_LENGTH = 5
 
 vw_model_name = 'model_{userid}.vw'
+vw_dictionary_name = '{userid}.dictionary'
 
 default_importance = 1
 ignore_adherence = 1
@@ -419,6 +420,22 @@ def start_new_vowpal_model(userid):
 
     return vw
 
+def save_user_dictionary(userid, dictionary):
+    dictionary_file_path = vw_dictionary_name.format(userid=userid)
+
+    with open(dictionary_file_path, 'wb') as f:
+        pickle.dump(dictionary, f)
+
+def load_user_dictionary(userid):
+    dictionary_file_path = vw_dictionary_name.format(userid=userid)
+    if os.path.isfile(dictionary_file_path):
+        with open(dictionary_file_path, 'rb') as f:
+            user_dictionary = pickle.load(f)
+
+    else:
+        user_dictionary = dict()
+
+    return user_dictionary
 
 def initialize_vowpal_model(userid, start_new_model=True):
     user_model_name = vw_model_name.format(userid=userid)
@@ -546,6 +563,9 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty, us
     new_vw.learn(doc_ex)
     prediction_confidence = new_vw.predict(doc_ex)
 
+    if desired_adherence == override_adherence:
+            prediction_confidence = 1 if input_uncertainty == probably_label else .75
+
     del doc_ex
     del new_vw
 
@@ -605,6 +625,8 @@ def update(i):
 
     model_filename = vw_model_name.format(userid=user_id)
 
+    user_dictionary = load_user_dictionary(user_id)
+
     vw = None
 
     if not os.path.exists(model_filename):
@@ -620,8 +642,16 @@ def update(i):
 
     # Label docs onto user
     for doc in newly_labeled_docs:
-        labeled_docs[doc['doc_id']] = doc[USER_LABEL_ATTR]
-        unlabeled_ids.discard(doc['doc_id'])
+        doc_id = doc['doc_id']
+        labeled_docs[doc_id] = doc[USER_LABEL_ATTR]
+        unlabeled_ids.discard(doc_id)
+
+        #tag = doc['tag']
+
+        #prediction = 1 if tag == 'probably' else .75 if 'possibly' else 0
+
+        #if prediction > 0:
+        #    user_dictionary[doc_id] = (doc[USER_LABEL_ATTR], prediction)
 
     # Label docs into corpus
     for doc_id, label in labeled_docs.items():
@@ -654,8 +684,9 @@ def update(i):
 
     results = int(0)
 
-    for i, test_doc in enumerate(test_docs):
-        cleaned_test = clean_vowpal_text(test_doc)
+    for i, test_doc in enumerate(test_corpus.documents):
+        test_doc_text = test_doc.text
+        cleaned_test = clean_vowpal_text(test_doc_text)
         test_target = test_targets[i]
         ex = vw.example(f'{test_target} 1 | {cleaned_test}')
         prediction = vw.predict(ex)
@@ -731,6 +762,7 @@ def update(i):
            {
                'docId': doc_id,
                'text': new_text,
+               'date': train_corpus.documents[doc_id].metadata[DATE_CREATED],
                'tokens': new_text.split(),
                'trueLabel': train_corpus.documents[doc_id].metadata[GOLD_ATTR_NAME], # FIXME Needs to be taken out before user study
                'prediction': {
