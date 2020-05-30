@@ -240,7 +240,7 @@ var app = new Vue({
                 doc => doc.hasOwnProperty('userLabel'))
                 .map(doc => ({
                     doc_id: doc.docId,
-                    user_label: doc.userLabel.slice(0, -1)
+                    user_label: doc.userLabel
                 }));
             this.labeledCount += curLabeledDocs.length;
             logString += curLabeledDocs.length + ',total,' + this.labeledCount + '||';
