@@ -490,7 +490,7 @@ var app = new Vue({
                 console.log(html);
                 html = [html.slice(0, offsets[i][1]), "</span>", html.slice(offsets[i][1])].join(''); 
                 html = [html.slice(0, offsets[i][0], "<span class='rounded' style='background-color:" + offsets[i][2] + "'>" , html.slice[offsets[i][0]])].join('');
-                comsole.log(html);
+                console.log(html);
             }
 
             doc.formattedHtml = html;
