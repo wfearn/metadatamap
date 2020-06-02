@@ -58,6 +58,8 @@ vw_dictionary_name = '{userid}.dictionary'
 default_importance = 1
 ignore_adherence = 1
 override_adherence = 6
+STARTING_ADHERENCE = 4
+STARTING_UNCERTAINTY = 1
 
 desired_adherence_values = np.geomspace(ignore_adherence, override_adherence, num=7)
 possibly_label = .5
@@ -79,6 +81,7 @@ NOPUNCT = str.maketrans('', '', string.punctuation)
 GOLD_ATTR_NAME = 'party'
 TWEET_ID = 'tweet_id'
 DATE_CREATED = 'created_date'
+INPUT_UNCERTAINTY = 'input_uncertainty'
 url_find = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
 LABELS = ['D', 'R']
@@ -246,6 +249,7 @@ def load_initial_data():
     c = Counter()
 
     for doc in train_corpus.documents:
+        doc.metadata[INPUT_UNCERTAINTY] = STARTING_UNCERTAINTY
         c.update([doc.metadata[GOLD_ATTR_NAME]])
 
     return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
@@ -415,8 +419,8 @@ def start_new_vowpal_model(userid):
     corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(STARTING_LABELED_IDS)])
     y = [1 if train_corpus.documents[doc_id].metadata['party'] == 'R' else -1 for doc_id in set(STARTING_LABELED_IDS)]
 
-    train_vw(vw, corpus_text, y)
-    train_vw(vw, corpus_text, y)
+    train_vw(vw, corpus_text, y, STARTING_ADHERENCE, np.ones(len(corpus_text)))
+    train_vw(vw, corpus_text, y, STARTING_ADHERENCE, np.ones(len(corpus_text)))
 
     return vw
 
@@ -450,11 +454,14 @@ def initialize_vowpal_model(userid, start_new_model=True):
 def clean_vowpal_text(text):
     return text.replace(':', ' ').replace('|', '').replace('\n', ' ')
 
-def train_vw(vw_model, data, y):
+def train_vw(vw_model, data, y, adherence, input_uncertainties):
     for i, train_doc in enumerate(data):
         cleaned_train = clean_vowpal_text(train_doc)
 
-        ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
+        input_uncertainty = input_uncertainties[i]
+        document_importance = (default_importance + (adherence - 2)) * input_uncertainty
+
+        ex = vw_model.example(f'{y[i]} {document_importance} | {cleaned_train}')
         ex.learn()
 
         del ex
@@ -617,6 +624,8 @@ def update(i):
     #        }
 
     user_id = data.get('user_id')
+    adherence = data.get('desired_adherence')
+    print('User Adherence:', adherence)
     user = users.get_user_data(user_id)
     users.save_user(user_id)
     web_unlabeled_ids = user['web_unlabeled_ids']
@@ -640,10 +649,17 @@ def update(i):
 
     newly_labeled_docs = data.get('labeled_docs')
 
+    print('Newly Labeled Docs:', newly_labeled_docs)
+
     # Label docs onto user
     for doc in newly_labeled_docs:
+        user_label = doc[USER_LABEL_ATTR]
+        input_uncertainty = user_label[1]
+        user_label = user_label[0]
         doc_id = doc['doc_id']
-        labeled_docs[doc_id] = doc[USER_LABEL_ATTR]
+
+        labeled_docs[doc_id] = user_label
+        train_corpus.documents[doc_id].metadata[INPUT_UNCERTAINTY] = int(input_uncertainty) if input_uncertainty == '1' else .5
         unlabeled_ids.discard(doc_id)
 
         #tag = doc['tag']
@@ -655,7 +671,7 @@ def update(i):
 
     # Label docs into corpus
     for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
+        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label[0]
 
     # Remove elements without creating new object
     web_unlabeled_ids.clear()
@@ -668,9 +684,12 @@ def update(i):
     corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in labeled_ids])
     y = [REPUBLICAN_LABEL if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else DEMOCRATIC_LABEL for doc_id in labeled_ids]
 
+    input_uncertainties = [train_corpus.documents[doc_id].metadata[INPUT_UNCERTAINTY] for doc_id in labeled_ids]
+    print('Labeled Input Uncertainties:', input_uncertainties)
+
     # I should add function wrappers to do this timing so its cleaner
     start = time.time()
-    train_vw(vw, corpus_text, y)
+    train_vw(vw, corpus_text, y, adherence, input_uncertainties)
     print('***Time - Train:', time.time() - start)
 
     vw.finish()
