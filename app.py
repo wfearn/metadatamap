@@ -58,6 +58,8 @@ vw_dictionary_name = '{userid}.dictionary'
 default_importance = 1
 ignore_adherence = 1
 override_adherence = 6
+STARTING_ADHERENCE = 4
+STARTING_UNCERTAINTY = 1
 
 desired_adherence_values = np.geomspace(ignore_adherence, override_adherence, num=7)
 possibly_label = .5
@@ -79,6 +81,7 @@ NOPUNCT = str.maketrans('', '', string.punctuation)
 GOLD_ATTR_NAME = 'party'
 TWEET_ID = 'tweet_id'
 DATE_CREATED = 'created_date'
+INPUT_UNCERTAINTY = 'input_uncertainty'
 url_find = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\), ]|(?:%[0-9a-fA-F][0-9a-fA-F]))+')
 
 LABELS = ['D', 'R']
@@ -246,6 +249,7 @@ def load_initial_data():
     c = Counter()
 
     for doc in train_corpus.documents:
+        doc.metadata[INPUT_UNCERTAINTY] = STARTING_UNCERTAINTY
         c.update([doc.metadata[GOLD_ATTR_NAME]])
 
     return (labels, train_ids, train_corpus, test_ids, test_corpus, starting_labeled_ids)
@@ -415,8 +419,11 @@ def start_new_vowpal_model(userid):
     corpus_text = np.asarray([train_corpus.documents[doc_id].text.strip('\n') for doc_id in set(STARTING_LABELED_IDS)])
     y = [1 if train_corpus.documents[doc_id].metadata['party'] == 'R' else -1 for doc_id in set(STARTING_LABELED_IDS)]
 
-    train_vw(vw, corpus_text, y)
-    train_vw(vw, corpus_text, y)
+    np.random.shuffle(corpus_text)
+    train_vw(vw, corpus_text, y, STARTING_ADHERENCE, np.ones(len(corpus_text)))
+
+    #np.random.shuffle(corpus_text)
+    #train_vw(vw, corpus_text, y, STARTING_ADHERENCE, np.ones(len(corpus_text)))
 
     return vw
 
@@ -450,11 +457,14 @@ def initialize_vowpal_model(userid, start_new_model=True):
 def clean_vowpal_text(text):
     return text.replace(':', ' ').replace('|', '').replace('\n', ' ')
 
-def train_vw(vw_model, data, y):
+def train_vw(vw_model, data, y, adherence, input_uncertainties):
     for i, train_doc in enumerate(data):
         cleaned_train = clean_vowpal_text(train_doc)
 
-        ex = vw_model.example(f'{y[i]} 1 | {cleaned_train}')
+        input_uncertainty = input_uncertainties[i]
+        document_importance = (default_importance + (adherence - 2)) * input_uncertainty
+
+        ex = vw_model.example(f'{y[i]} {document_importance} | {cleaned_train}')
         ex.learn()
 
         del ex
@@ -564,7 +574,11 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty, us
     prediction_confidence = new_vw.predict(doc_ex)
 
     if desired_adherence == override_adherence:
-            prediction_confidence = 1 if input_uncertainty == probably_label else .75
+            if label == REPUBLICAN_LABEL:
+                prediction_confidence = 1 if input_uncertainty == probably_label else .75
+            else:
+                prediction_confidence = 0 if input_uncertainty == probably_label else .25
+
 
     del doc_ex
     del new_vw
@@ -617,6 +631,7 @@ def update(i):
     #        }
 
     user_id = data.get('user_id')
+    adherence = data.get('desired_adherence')
     user = users.get_user_data(user_id)
     users.save_user(user_id)
     web_unlabeled_ids = user['web_unlabeled_ids']
@@ -642,35 +657,34 @@ def update(i):
 
     # Label docs onto user
     for doc in newly_labeled_docs:
+        user_label = doc[USER_LABEL_ATTR]
+        input_uncertainty = user_label[1]
+        user_label = user_label[0]
         doc_id = doc['doc_id']
-        labeled_docs[doc_id] = doc[USER_LABEL_ATTR]
+
+        labeled_docs[doc_id] = user_label
+        train_corpus.documents[doc_id].metadata[INPUT_UNCERTAINTY] = int(input_uncertainty) if input_uncertainty == '1' else .5
         unlabeled_ids.discard(doc_id)
-
-        #tag = doc['tag']
-
-        #prediction = 1 if tag == 'probably' else .75 if 'possibly' else 0
-
-        #if prediction > 0:
-        #    user_dictionary[doc_id] = (doc[USER_LABEL_ATTR], prediction)
 
     # Label docs into corpus
     for doc_id, label in labeled_docs.items():
-        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label
+        train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] = label[0]
 
     # Remove elements without creating new object
     web_unlabeled_ids.clear()
     web_unlabeled_ids.update(random.sample(unlabeled_ids, UNLABELED_COUNT))
-    print('Web Unlabeled Ids', web_unlabeled_ids)
 
     newly_labeled_doc_ids = {doc['doc_id'] for doc in newly_labeled_docs}
     labeled_ids = set(labeled_docs).union(newly_labeled_doc_ids)
 
-    corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in labeled_ids])
-    y = [REPUBLICAN_LABEL if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else DEMOCRATIC_LABEL for doc_id in labeled_ids]
+    corpus_text = np.asarray([train_corpus.documents[doc_id].text for doc_id in newly_labeled_doc_ids])
+    y = [REPUBLICAN_LABEL if train_corpus.documents[doc_id].metadata[USER_LABEL_ATTR] == 'R' else DEMOCRATIC_LABEL for doc_id in newly_labeled_doc_ids]
+
+    input_uncertainties = [train_corpus.documents[doc_id].metadata[INPUT_UNCERTAINTY] for doc_id in newly_labeled_doc_ids]
 
     # I should add function wrappers to do this timing so its cleaner
     start = time.time()
-    train_vw(vw, corpus_text, y)
+    train_vw(vw, corpus_text, y, adherence, input_uncertainties)
     print('***Time - Train:', time.time() - start)
 
     vw.finish()
@@ -696,8 +710,8 @@ def update(i):
         prediction = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
         results += 1 if prediction == test_target else 0
 
-    print('Number of correct documents', results)
     model_accuracy = results / len(test_targets)
+    print('Model Accuracy', model_accuracy)
 
     # PREPARE TO SEND OBJECTS BACK
 
@@ -719,10 +733,6 @@ def update(i):
         token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
 
     token_data.sort(key=lambda d: d['probs'], reverse=True)
-
-    for i, t in enumerate(token_data):
-        if i > 20: break
-        #print('Token:', t['token'], 'Decision:', t['decision'])
 
     # 1 for R (Republican) and 0 for Democrat (D)
     highlight_dict = {d['token']: 0 if d['decision'] < 0 else 1
