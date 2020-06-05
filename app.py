@@ -574,7 +574,11 @@ def get_expected_prediction(doc, desired_adherence, label, input_uncertainty, us
     prediction_confidence = new_vw.predict(doc_ex)
 
     if desired_adherence == override_adherence:
-            prediction_confidence = 1 if input_uncertainty == probably_label else .75
+            if label == REPUBLICAN_LABEL:
+                prediction_confidence = 1 if input_uncertainty == probably_label else .75
+            else:
+                prediction_confidence = 0 if input_uncertainty == probably_label else .25
+
 
     del doc_ex
     del new_vw
