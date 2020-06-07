@@ -28,7 +28,7 @@
         <div>
 
           <span id="timer-box" class="time-remaining" title="task time remaining">
-            Time Remaining: 20:00<!--{{ prettyTime }}-->
+            Time Remaining: {{ prettyTime }}
           </span>
           <!--<span class="right inline">number improved: {{ correctDocumentDelta }}</span>-->
 
@@ -199,8 +199,9 @@
             </span>
             <!-- REFRESH CONFIRMATION MODAL -->
             <span v-if="refreshed && !timeWarning && !finished">
-              The model incorporated your provided labels (if any) as you told it to using the slider and predicted labels for five new tweets. 
-              Don't forget that you can adjust how the model treats your labels using the adherence slider.
+              <div>The model incorporated your provided labels (if any) as you told it to using the slider and predicted labels for five new tweets. </div>
+              <br />
+              <div>Don't forget that you can adjust how the model treats your labels using the adherence slider.</div>
             </span>
             <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
@@ -273,7 +274,6 @@
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
               <div style="margin-bottom: 10px;">The next few screens demonstrate how you will complete the task.</div> 
-
               <div >
                 <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-1.png" />
                 <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-1.png" />
@@ -283,7 +283,6 @@
 
             <span v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed">
            <!--   <div style="margin-bottom: 10px;">You can label the tweets and adjust the adherence slider.</div> -->
-
               <div >
                 <img v-if="inputUncertainty"   class="tool-image" src="/static/images/tool-intro-uncertainty-2.png" />
                 <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-2.png" />
@@ -292,8 +291,6 @@
             </span>
             <span v-if="!timeWarning && modalState == 4 && finishedSurvey && !finished && !refreshed">
            <!--   <div style="margin-bottom: 10px;">When you specify labels or adjust the slider, the model will show how it will update its prediction.</div> -->
-
-
               <div >
                 <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-3.png" />
                 <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-3.png" />
@@ -303,6 +300,26 @@
            <!--   <div style="margin-top: 10px;">At any point, save your labels to update the model and get a new set of tweets to review.</div>  -->
 
               </span>
+
+              <span v-if="!timeWarning && modalState == 5 && finishedSurvey && !finished && !refreshed">
+                   <div >
+                     <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-4.png" />
+                     <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-4.png" />
+     
+                   </div>
+     
+     
+                   </span>
+
+                   <span v-if="!timeWarning && modalState == 6 && finishedSurvey && !finished && !refreshed">
+                       <div >
+                         <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-5.png" />
+                         <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-5.png" />
+         
+                       </div>
+         
+         
+                       </span>
         <!--      <div>
                 During the task:
                 <ul>
@@ -341,7 +358,7 @@
 
             </span>
             <!-- FINAL INSTRUCTIONS MODAL -->
-            <span v-if="!timeWarning && modalState == 5 && finishedSurvey && !finished && !refreshed">
+            <span v-if="!timeWarning && modalState == 7 && finishedSurvey && !finished && !refreshed">
               <div>
                 Remember, your goal is to review and correctly label as many tweets as possible to help train the model to accurately distinguish Republican and Democrat tweets. You will have 20 minutes for this task. 
               <br/>
@@ -358,7 +375,7 @@
               continue to task
             </button>
             <button class="modal-button"
-              v-if="!timeWarning && (modalState == 0 || modalState == 1 || modalState == 2 || modalState == 3 || modalState == 4) && finishedSurvey && !finished && !refreshed"
+              v-if="!timeWarning && (modalState == 0 || modalState == 1 || modalState == 2 || modalState == 3 || modalState == 4 || modalState == 5 || modalState == 6) && finishedSurvey && !finished && !refreshed"
               v-on:click="modalState += 1;">
               next
             </button>
@@ -382,11 +399,11 @@
           v-on:click="modalState = 5;">
           next
         </button> -->
-            <button class="modal-button" v-if="!timeWarning && !started && modalState == 5 && !finished && !refreshed"
+            <button class="modal-button" v-if="!timeWarning && !started && modalState == 7 && !finished && !refreshed"
               v-on:click="startTask()">
               start task
             </button>
-            <button class="modal-button" v-if="!timeWarning && started && modalState == 5 && !finished && !refreshed"
+            <button class="modal-button" v-if="!timeWarning && started && modalState == 7 && !finished && !refreshed"
               v-on:click="closeModal()">
               ok
             </button>
