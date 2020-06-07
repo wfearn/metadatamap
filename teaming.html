@@ -361,7 +361,7 @@
             </button>
             <button class="modal-button"
               v-if="!timeWarning && modalState == 0 && finishedSurvey && !finished && !refreshed"
-              v-on:click="modalState = modalState + 1;">
+              v-on:click="incrementModal()">
               next
             </button>
          <!---   <button class="modal-button"
