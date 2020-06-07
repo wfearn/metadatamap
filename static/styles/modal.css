@@ -17,6 +17,10 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   display: block;
 }
 
+.instructions{
+  width: 950px;
+}
+
 .bold {
   font-weight: bold;
 }

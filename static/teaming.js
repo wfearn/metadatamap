@@ -628,7 +628,7 @@ var app = new Vue({
             return rcon;
         },
         incrementModal: function() {
-            modalState += 1;
+            this.modalState += 1;
         }
     }, //End methods
 });
