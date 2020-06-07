@@ -254,7 +254,7 @@
               <div>
                 The model learns from two types of information:
                 <ol>
-                  <li><strong>previously learned information:</strong> the words in tweets that it has learned are useful for distinguishing between
+                  <li><strong>Previously learned information:</strong> the words in tweets that it has learned are useful for distinguishing between
                     political parties
                   <li><strong>Your new labels:</strong> the new Republican or Democrat labels that you provide for tweets</li>
                 </ol>
@@ -361,7 +361,7 @@
             </button>
             <button class="modal-button"
               v-if="!timeWarning && modalState == 0 && finishedSurvey && !finished && !refreshed"
-              v-on:click="modalState += 1;">
+              v-on:click="modalState = modalState + 1;">
               next
             </button>
          <!---   <button class="modal-button"

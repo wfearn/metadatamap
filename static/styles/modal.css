@@ -48,7 +48,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
 }
 
 .modal-content {
-  font-size: 16pt;
+  font-size: 14pt;
   background: #FFFFFF;
   box-shadow: 2px 2px 20px 1px;
   overflow-x: auto;
@@ -63,7 +63,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
   display: flex;
 }
 .modal-footer {
-  padding: 15px;
+  padding: 5px;
   display: flex;
 }
 
@@ -80,7 +80,7 @@ Modal css from https://alligator.io/vuejs/vue-modal-component/
 
 .modal-body {
   position: relative;
-  padding: 20px 10px;
+  padding: 10px;
 }
 
 .btn-close {
