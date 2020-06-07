@@ -355,8 +355,8 @@
               continue to task
             </button>
             <button class="modal-button"
-              v-if="!timeWarning && modalState == 0 && finishedSurvey && !finished && !refreshed"
-              v-on:click="incrementModal()">
+              v-if="!timeWarning && (modalState == 0 || modalState == 1 || modalState == 2 || modalState == 3 || modalState == 4) && finishedSurvey && !finished && !refreshed"
+              v-on:click="modalState += 1;">
               next
             </button>
          <!---   <button class="modal-button"

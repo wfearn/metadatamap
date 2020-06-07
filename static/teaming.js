@@ -626,10 +626,6 @@ var app = new Vue({
         getRepConfidence: function (doc) {
             rcon = Math.round(doc.prediction.confidence * 100);
             return rcon;
-        },
-        incrementModal: function() {
-            this.modalState = this.modalState + 1;
-            console.log(this.modalState);
         }
     }, //End methods
 });
