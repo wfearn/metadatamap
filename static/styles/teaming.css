@@ -36,7 +36,16 @@ body {
 .projected-instructions {
   position: absolute;
   font-style: italic;
-  margin-left: 25px;
+  width: 300px;
+}
+
+.helper {
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 5px;
+  background-color: rgb(90, 140, 214);
+  color: white;
+  font-weight: bold;
 }
 
 .italic {

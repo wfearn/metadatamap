@@ -28,7 +28,7 @@
         <div>
 
           <span id="timer-box" class="time-remaining" title="task time remaining">
-            Time Remaining: {{ prettyTime }}
+            Time Remaining: 20:00<!--{{ prettyTime }}-->
           </span>
           <!--<span class="right inline">number improved: {{ correctDocumentDelta }}</span>-->
 
@@ -37,7 +37,7 @@
       <div class="sub-toolbar">
         <div class="adherence-row">
           <div class="adherence-instructions-holder">
-            <strong>Use the slider to specify how the model should treat your labels:</strong>
+            <strong>Use the slider to specify how the model should treat your labels <span class="helper" title="this value tells the model how to learn from your new labels when you save; the model can either ignore your labels, use your labels to override all prior learned information, or something in between.">?</span>:</strong>
           </div>
           <div class="adherence-slider-holder">
             <span class="adherence-label ignore">ignore</span>
@@ -72,7 +72,7 @@
           <div class="vertical-align">
            <!-- Tweet </br>
             #{{ pad(doc.docId, 6) }} -->
-            Tweet Date: </br>
+            <strong>Tweet Date:</strong></br>
             {{ doc.date }}
           </div>
         </div>
@@ -102,8 +102,8 @@
         </div>
 
         <div class="projected">
-        <div class="classification-label projected-label"><span title="compare to the current classification to see how your input is projected to affect the model; change labels or adjust slider to change the projection">(?)</span>projected classification:</div>
-        <div v-if="!doc.updated" class="projected-instructions">choose a label to see how your input is projected to affect the model</div>
+        <div class="classification-label projected-label"><span class="helper" title="compare to the current classification to see how your input is projected to affect the model; change labels or adjust slider to change the projection">?</span>projected classification:</div>
+        <div v-if="!doc.updated" class="projected-instructions">choose a label to see how it is projected to affect the model</div>
         <div class="projected-info">
           <div class="rating-label dem" v-if="doc.updated">
               Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
@@ -343,9 +343,12 @@
             <!-- FINAL INSTRUCTIONS MODAL -->
             <span v-if="!timeWarning && modalState == 5 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, your goal is to review and correctly label as many tweets as possible to help train the model to accurately distinguish Republican and Democrat tweets. You will have 20 minutes for this task. When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to with the slider (between ignoring your labels and overriding its previously learned information with your labels) and predicts the political party for five new tweets.
-               <strong>The top 50% of participants with the most accurate models at the end of the task
-                  will receive a $5 bonus.</strong>
+                Remember, your goal is to review and correctly label as many tweets as possible to help train the model to accurately distinguish Republican and Democrat tweets. You will have 20 minutes for this task. 
+              <br/>
+                <div>When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to with the slider (between ignoring your labels and overriding all previously learned information with your labels) and predicts the political party for five new tweets.</div>
+               <br/>
+                <div><strong>The top 50% of participants with the most accurate models at the end of the task
+                  will receive a $5 bonus.</strong></div>
               </div>
             </span>
           </div> <!-- Modal body -->
