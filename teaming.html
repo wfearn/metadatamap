@@ -180,9 +180,9 @@
               <span v-if="!timeWarning && finishedSurvey && modalState == 1 && !finished && !refreshed">How Does the
                 Model Learn from Your Labels?</span>
               <span
-                v-if="!timeWarning && finishedSurvey && (modalState == 2 || modalState == 3 || modalState == 4) && !finished && !refreshed">Tool Instructions</span>
+                v-if="!timeWarning && finishedSurvey && (modalState == 2 || modalState == 3 || modalState == 4 || modalState == 5 || modalState == 6) && !finished && !refreshed">Tool Instructions</span>
               <!--for the debate labeling task-->
-              <span v-if="!timeWarning && finishedSurvey && modalState == 5 && !finished && !refreshed">Final
+              <span v-if="!timeWarning && finishedSurvey && modalState == 7 && !finished && !refreshed">Final
                 Instructions</span>
               <span v-if="finished">Time is up</span>
               <span v-if="timeWarning && !finished">Time is almost up!</span>
@@ -361,9 +361,9 @@
             <span v-if="!timeWarning && modalState == 7 && finishedSurvey && !finished && !refreshed">
               <div>
                 Remember, your goal is to review and correctly label as many tweets as possible to help train the model to accurately distinguish Republican and Democrat tweets. You will have 20 minutes for this task. 
-              <br/>
+                <br />
                 <div>When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to with the slider (between ignoring your labels and overriding all previously learned information with your labels) and predicts the political party for five new tweets.</div>
-               <br/>
+                <br />
                 <div><strong>The top 50% of participants with the most accurate models at the end of the task
                   will receive a $5 bonus.</strong></div>
               </div>

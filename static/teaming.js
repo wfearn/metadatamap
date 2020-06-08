@@ -298,6 +298,9 @@ var app = new Vue({
                 // log info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
+                    if (doc.text.contains('URL_TOKEN')) {
+                        doc.text = doc.text.replace("URL_TOKEN", "URL");
+                    }
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
                     for (var j=0; j<doc.highlights.length; j++) {
                         highlight = doc.highlights[j];
