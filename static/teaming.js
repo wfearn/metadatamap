@@ -298,7 +298,7 @@ var app = new Vue({
                 // log info for each new item
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
-                    if (doc.text.contains('URL_TOKEN')) {
+                    if (doc.text && doc.text.contains('URL_TOKEN')) {
                         doc.text = doc.text.replace("URL_TOKEN", "URL");
                     }
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
