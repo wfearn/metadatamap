@@ -299,7 +299,7 @@ var app = new Vue({
                 for (var i=0; i<response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
                     if (doc.text && doc.text.includes('URL_TOKEN')) {
-                        doc.text = doc.text.replace("URL_TOKEN", "URL");
+                        doc.text = doc.text.replace("<URL_TOKEN>", "[URL]");
                     }
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
                     for (var j=0; j<doc.highlights.length; j++) {
