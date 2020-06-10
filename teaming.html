@@ -210,8 +210,11 @@
               <br />
               <br />
               Thank you for participating in the task. Please complete the following survey:
-              <a href="https://forms.gle/c2BUJKQwjcE9esMK7" target="_blank">post-task
-                survey</a>, with your assigned user id: <span class="bold">{{userId}}</span>.
+              <a href="https://forms.gle/fvWtk36mnCMcaWvC9" target="_blank" v-if="!inputUncertainty">post-task
+                survey</a>
+                <a href="https://forms.gle/xR7uiW9hnjHZYDSg8" target="_blank" v-if="inputUncertainty">post-task
+                  survey</a>
+                , with your assigned user id: <span class="bold">{{userId}}</span>.
             </span>
             <!-- welcome MODAL -->
             <span v-if="!timeWarning && !finishedSurvey && !finished && !refreshed">
@@ -356,7 +359,8 @@
                   When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to with the slider (between ignoring your labels and overriding all previously learned information with your labels) and predicts the political party for five new tweets.
                 </div>
               </br>
-                <div><strong>At least the top 50% of participants with the most accurate models at the end of the task
+                <div><strong>At least the top 50% of participants with t
+                  he most accurate models at the end of the task
                   will receive a $5 bonus.</strong></div>
             </span>
           </div> <!-- Modal body -->
@@ -370,26 +374,6 @@
               v-on:click="modalState += 1;">
               next
             </button>
-         <!---   <button class="modal-button"
-              v-if="!timeWarning && modalState == 1 && finishedSurvey && !finished && !refreshed"
-              v-on:click="modalState = 2;">
-              next
-            </button>
-            <button class="modal-button"
-              v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed"
-              v-on:click="modalState = 3;">
-              next
-            </button>
-            <button class="modal-button"
-            v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed"
-            v-on:click="modalState = 4;">
-            next
-          </button>
-          <button class="modal-button"
-          v-if="!timeWarning && modalState == 4 && finishedSurvey && !finished && !refreshed"
-          v-on:click="modalState = 5;">
-          next
-        </button> -->
             <button class="modal-button" v-if="!timeWarning && !started && modalState == 7 && !finished && !refreshed"
               v-on:click="startTask()">
               start task
