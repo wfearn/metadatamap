@@ -233,7 +233,7 @@
               </div>
               </br>
               <div>
-                The model is "in training": it initially learned from a small set of tweets with labels describing whether the politicians who posted them were Republicans or Democrats. 
+                The model is "in training": it initially learned from a small set of tweets that had been labeled as Republican or Democrat. 
                 However, this initial model is not perfect and
                 sometimes makes mistakes. 
               </div>
@@ -241,32 +241,24 @@
               <div>
                 <strong>You will help improve the model by labeling additional tweets as Republican or
                 Democrat.</strong> 
-                Based on the final quality of the model, the top 50% of participants will be given a $5 bonus.
+                Based on the final quality of the model, at least the top 50% of participants will be given a $5 bonus.
               </div>
             </span>
             <!-- Instructions (1) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
             <span v-if="!timeWarning && modalState == 1 && finishedSurvey && !finished && !refreshed">
-           <!--   <div>
-                The initial model was trained on only a <span class="italic">few</span> labeled tweets, so it is not perfect and sometimes
-                makes mistakes.
-              </div>
-              </br> -->
               <div>
-                The model learns from two types of information:
-                <ol>
-                  <li><strong>Previously learned information:</strong> the words in tweets that it has learned are useful for distinguishing between
-                    Republicans and Democrats.
-                  <li><strong>Your new labels:</strong> the new Republican or Democrat labels that you provide for tweets.</li>
-                </ol>
-                During the task, you will use an "adherence slider" (shown below), which lets you tell the model how to combine these two types of information during training. It goes all the way from <strong>ignore</strong>, which means the model ignores your labels and uses only previously learned information, to <strong>override</strong>, which means the model will use only your labels regardless of previously learned information.
-           <!--    <ol>
-                  <li><strong>Ignore:</strong> use
-                    only the previously learned information (ignoring your labels)</li>
-                  <li><strong>Override:</strong> use only your labels (ignoring previously learned information)</li>
-                </ol> -->
-                <div class="image-holder slider-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
-                In this example, we've set the slider to tell the model to equally balance the prior information it has learned and the new labels we give.
+                To predict labels for new tweets, the model learns to identify words that distinguish between Republican and Democrat tweets by using two sources of information: (1) previously labeled tweets and (2) new tweet labels that you provide.
               </div>
+            </br>
+              <div>
+                During the task, you can use an "adherence slider" (shown below) to tell the model how to treat your labels, from <strong>ignoring</strong> your labels and only using previously learned information, all the way to fully <strong>overriding</strong> previously learned information with your new labels.
+              </div>
+
+
+                <div class="image-holder slider-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
+                <div>
+                  In this example, we've set the slider to tell the model to equally balance the new labels we give with the previously labeled tweets.
+                </div>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
             <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
@@ -357,14 +349,14 @@
             <!-- FINAL INSTRUCTIONS MODAL -->
             <span v-if="!timeWarning && modalState == 7 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, your goal is to review and correctly label as many tweets as possible to help train the model to accurately distinguish Republican and Democrat tweets. You will have 20 minutes for this task. 
+                Remember, your goal is to review and correctly label as many tweets as possible to help train the model to distinguish Republican and Democrat tweets. You will have 20 minutes for this task. 
               </div>
               </br>
                 <div>
                   When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to with the slider (between ignoring your labels and overriding all previously learned information with your labels) and predicts the political party for five new tweets.
                 </div>
               </br>
-                <div><strong>The top 50% of participants with the most accurate models at the end of the task
+                <div><strong>At least the top 50% of participants with the most accurate models at the end of the task
                   will receive a $5 bonus.</strong></div>
             </span>
           </div> <!-- Modal body -->
