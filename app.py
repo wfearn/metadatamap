@@ -54,6 +54,7 @@ USER_ID_LENGTH = 5
 
 vw_model_name = 'model_{userid}.vw'
 vw_dictionary_name = '{userid}.dictionary'
+vw_model_dir = 'vw_models'
 
 default_importance = 1
 ignore_adherence = 1
@@ -446,11 +447,12 @@ def load_user_dictionary(userid):
 
 def initialize_vowpal_model(userid, start_new_model=True):
     user_model_name = vw_model_name.format(userid=userid)
+    user_model_filename = os.path.join(vw_model_dir, user_model_name)
 
     if(start_new_model):
-        vw = pyvw.vw(quiet=True, f=user_model_name, loss_function='logistic', link='logistic')
+        vw = pyvw.vw(quiet=True, f=user_model_filename, loss_function='logistic', link='logistic')
     else:
-        vw = pyvw.vw(quiet=True, f=user_model_name, loss_function='logistic', link='logistic', i=user_model_name)
+        vw = pyvw.vw(quiet=True, f=user_model_filename, loss_function='logistic', link='logistic', i=user_model_filename)
 
     return vw
 
@@ -564,7 +566,9 @@ def write_to_logfile(text, user, uid):
 
 def get_expected_prediction(doc, desired_adherence, label, input_uncertainty, userid):
 
-    new_vw = pyvw.vw(quiet=True, i=vw_model_name.format(userid=userid), loss_function='logistic', link='logistic')
+    user_model_filename = os.path.join(vw_model_dir, vw_model_name.format(userid=userid))
+
+    new_vw = pyvw.vw(quiet=True, i=user_model_filename, loss_function='logistic', link='logistic')
 
     # geomspace doesn't allow for non-positive values
     document_importance = (default_importance + (desired_adherence - 2)) * input_uncertainty
@@ -638,7 +642,7 @@ def update(i):
     labeled_docs = user['labeled_docs']
     unlabeled_ids = user['unlabeled_ids']
 
-    model_filename = vw_model_name.format(userid=user_id)
+    model_filename = os.path.join(vw_model_dir, vw_model_name.format(userid=user_id))
 
     user_dictionary = load_user_dictionary(user_id)
 
