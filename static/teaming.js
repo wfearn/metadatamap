@@ -181,8 +181,9 @@ var app = new Vue({
 
 
        //     logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||STARTING_TASK||uncertainty:' + this.inputUncertainty + '||adherence:',this.sliderValue + '\n');
-            this.logText += log.toString();
-            console.log('LOGGED:', log.toString());
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log('LOGGED:', JSON.stringify(log));
 
             // close the modal
             //this.toggleModal();
@@ -237,8 +238,9 @@ var app = new Vue({
                     'uncertainty': this.inputUncertainty
                 };
             //    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
-                this.logText += log.toString();
-                console.log('LOGGED:', log.toString());
+                this.logText += JSON.stringify(log);
+                this.logText += '\n';
+                console.log('LOGGED:', JSON.stringify(log));
                 // include the below to hide the tutorial
                 // this.sendUpdate();
             }).catch(error => {
