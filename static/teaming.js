@@ -102,15 +102,21 @@ var app = new Vue({
          * @param {*} ev 
          */
         sliderChange: function (ev) {
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
-            this.logText += logString;
-            console.log('LOGGED:', logString);
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'adherence': this.sliderValue,
+                'activity': 'adherenceChange'
+            };
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log('LOGGED:', JSON.stringify(log));
             for (i = 0; i < this.unlabeledDocs.length; i++) {
                 let doc = this.unlabeledDocs[i];
                 if (doc.hasOwnProperty('userLabel')) {
                     label = doc.userLabel;
                     this.computedProjectedClassification(doc, label, this.sliderValue);
-                    // TODO: LOG THIS
                 }
             }
 

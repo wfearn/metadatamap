@@ -54,7 +54,7 @@
               Save labels and get new tweets </button>
           </div>
         </div>
-        <!-- <button v-on:click='labelAllCorrect'>Cheat</button> -->
+         <button v-on:click='labelAllCorrect'>Cheat</button> 
 
         <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
       </div>
@@ -194,7 +194,7 @@
               You have 2 minutes remaining to review and label tweets to help train the model. 
             </span>
             <!-- TIME WARNING MODAL -->
-            <span v-if="timeWarningFifteen && !finished">
+            <span v-if="timeWarningFifteen && !timeWarning && !finished">
               <div>
                 You have 15 minutes remaining to review and label tweets to help train the model.
               </div> 
@@ -211,16 +211,14 @@
             </span>
             <!-- TASK FINISHED MODAL -->
             <span v-if="finished">
-              Time is now up; any outstanding labels were saved to the
-              model.
+              Time is up!
               <br />
               <br />
-              Thank you for participating in the task. Please complete the following survey:
+              Thank you for participating in the task! Please complete the 
               <a href="https://forms.gle/fvWtk36mnCMcaWvC9" target="_blank" v-if="!inputUncertainty">post-task
                 survey</a>
               <a href="https://forms.gle/xR7uiW9hnjHZYDSg8" target="_blank" v-if="inputUncertainty">post-task
-                survey</a>
-              , with your assigned user id: <span class="bold">{{userId}}</span>.
+                survey</a>, with your assigned user id: <span class="bold">{{userId}}</span>.
             </span>
             <!-- welcome MODAL -->
             <span v-if="!(timeWarning || timeWarningFifteen) && !finishedSurvey && !finished && !refreshed">
@@ -376,13 +374,13 @@
               v-if="!(timeWarning || timeWarningFifteen) && modalState == 7 && finishedSurvey && !finished && !refreshed">
               <div>
                 Remember, your goal is to review and correctly label as many tweets as possible to help train the model
-                to distinguish Republican and Democrat tweets. 
+                to distinguish whether tweets are posted by Republicans and Democrats. 
               </div>
               </br>
               <div>
-                When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to
-                with the slider (between ignoring your labels and overriding all previously learned information with
-                your labels) and predicts the political party for five new tweets.
+                When you click “Save labels and get new tweets”, the model learns from your as you told it to
+                with the slider (between ignoring your labels or overriding all previously learned information with
+                your labels) and predicts the political party for five new tweets. You do not need to label all five tweets before saving.
               </div>
               </br>
               <div>You will have 30 minutes for this task. <strong>At least the top 50% of participants with the most accurate models at the end of the task will receive a $5 bonus.</strong></div>
