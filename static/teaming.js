@@ -310,9 +310,9 @@ var app = new Vue({
                 // log info for each new item
                 for (var i = 0; i < response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
-                    if (doc.text && doc.text.includes('URL_TOKEN')) {
+                   /* if (doc.text && doc.text.includes('URL_TOKEN')) {
                         doc.text = doc.text.replace("<URL_TOKEN>", "[URL]");
-                    }
+                    } */
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
                     for (var j = 0; j < doc.highlights.length; j++) {
                         highlight = doc.highlights[j];
@@ -474,7 +474,9 @@ var app = new Vue({
         },
         setDocHtml: function (doc) {
             var htmltext = doc.text;
-            var html = htmltext.replace("&lt;URL_TOKEN&gt;", "");
+            // remove the url token
+            var html = doc.text.replace("&lt;URL_TOKEN&gt;", "");
+            html = html.replace("<URL_TOKEN>", "");
             var prev = 0
             var loc;
             var label;

@@ -15,7 +15,7 @@
 
   <div id="app">
     <!-- hide the app during the instructions -->
-    <div v-show="!showModal && !finishedSurvey" class="header">
+    <div v-show="finishedSurvey" class="header">
       <div class="toolbar">
         <button v-on:click='toggleModal()' title="show instructions"
           style="background-color: #5a8cd6 !important; color: #ffffff !important;">View Instructions</button>
