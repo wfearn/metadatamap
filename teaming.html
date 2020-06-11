@@ -191,8 +191,7 @@
           <div class="modal-body">
             <!-- TIME WARNING MODAL -->
             <span v-if="timeWarning && !finished">
-              You have 2 minutes remaining to eview and label tweets to help train the model. 
-              At the end of task time, all of your outstanding labels will be saved to the model.
+              You have 2 minutes remaining to review and label tweets to help train the model. 
             </span>
             <!-- TIME WARNING MODAL -->
             <span v-if="timeWarningFifteen && !finished">
@@ -377,7 +376,7 @@
               v-if="!(timeWarning || timeWarningFifteen) && modalState == 7 && finishedSurvey && !finished && !refreshed">
               <div>
                 Remember, your goal is to review and correctly label as many tweets as possible to help train the model
-                to distinguish Republican and Democrat tweets. You will have 30 minutes for this task.
+                to distinguish Republican and Democrat tweets. 
               </div>
               </br>
               <div>
@@ -386,9 +385,7 @@
                 your labels) and predicts the political party for five new tweets.
               </div>
               </br>
-              <div><strong>At least the top 50% of participants with t
-                  he most accurate models at the end of the task
-                  will receive a $5 bonus.</strong></div>
+              <div>You will have 30 minutes for this task. <strong>At least the top 50% of participants with the most accurate models at the end of the task will receive a $5 bonus.</strong></div>
             </span>
           </div> <!-- Modal body -->
           <div class="modal-footer">

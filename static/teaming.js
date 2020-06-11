@@ -130,9 +130,15 @@ var app = new Vue({
 
             // two minutes remaining warning
             this.twoMinute = setTimeout(() => {
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_2 \n')
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                log = {
+                    'user': this.userId,
+                    'currTime': this.getCurrTimeStamp(),
+                    'activeTime': this.getActiveTime(),
+                    'activity': 'time2'
+                };
+                this.logText += JSON.stringify(log);
+                this.logText += '\n';
+                console.log('LOGGED:', JSON.stringify(log));
                 // show in modal and pause task time
                 this.timeWarning = true;
                 this.openModal();
@@ -140,9 +146,15 @@ var app = new Vue({
 
             // fifteen minutes remaining warning
             this.twoMinute = setTimeout(() => {
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_15 \n')
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                log = {
+                    'user': this.userId,
+                    'currTime': this.getCurrTimeStamp(),
+                    'activeTime': this.getActiveTime(),
+                    'activity': 'time15'
+                };
+                this.logText += JSON.stringify(log);
+                this.logText += '\n';
+                console.log('LOGGED:', JSON.stringify(log));
                 // show in modal and pause task time
                 this.timeWarningFifteen = true;
                 this.openModal();
@@ -155,11 +167,17 @@ var app = new Vue({
                     this.taskTime -= 1000;
                 } else {
                     clearInterval(this.timer);
-                    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_0 \n')
-                    this.logText += logString;
-                    console.log("LOGGED:", logString);
-                    // send final update
-                    this.sendUpdate();
+                    log = {
+                        'user': this.userId,
+                        'currTime': this.getCurrTimeStamp(),
+                        'activeTime': this.getActiveTime(),
+                        'activity': 'time0'
+                    };
+                    this.logText += JSON.stringify(log);
+                    this.logText += '\n';
+                    console.log('LOGGED:', JSON.stringify(log));
+                    // send final log
+                    this.saveLog();
                     // set finished status to true
                     this.finished = true;
                     // open the modal
@@ -179,8 +197,6 @@ var app = new Vue({
                 'adherence': this.sliderValue
             };
 
-
-       //     logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||STARTING_TASK||uncertainty:' + this.inputUncertainty + '||adherence:',this.sliderValue + '\n');
             this.logText += JSON.stringify(log);
             this.logText += '\n';
             console.log('LOGGED:', JSON.stringify(log));
@@ -204,22 +220,18 @@ var app = new Vue({
         },
         getIdData: function (id) {
             if (id === '') {
-                alert('That user id was not found');
+                console.error('no user id provided');
                 return;
             }
             axios.get('/api/checkuserid/' + id).then(response => {
-                logString = (response);
-
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                console.warn('checking user id', id);
                 this.checked = response.data.hasId;
                 if (response.data.hasId) {
                     this.userId = id;
                     this.sendUpdate();
                 }
                 else {
-                    this.logText += ("The user id was not found");
-                    alert('That user id was not found');
+                    console.error('That user id was not found', id);
                 }
             }).catch(error => {
                 console.error('error in /api/checkuserid', error)
@@ -237,7 +249,6 @@ var app = new Vue({
                     'activity': 'loadTool',
                     'uncertainty': this.inputUncertainty
                 };
-            //    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
                 this.logText += JSON.stringify(log);
                 this.logText += '\n';
                 console.log('LOGGED:', JSON.stringify(log));
@@ -249,19 +260,44 @@ var app = new Vue({
         },
 
         save: function () {
-            logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||CLICKED_SAVE\n';
-            this.logText += logString;
-            console.log("LOGGED:", logString);
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activity': 'clickedSave'
+            };
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log("LOGGED:", JSON.stringify(log));
             this.sendUpdate();
+        },
+
+        saveLog: function() {
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'activity': 'endTask'
+            };
+
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log("LOGGED:", JSON.stringify(log));
+
+            axios.post('/api/update', {
+                labeled_docs: [],
+                user_id: this.userId,
+
+                // updates the log text on call to update
+                log_text: this.logText,
+                desired_adherence: this.sliderValue,
+            })
         },
 
         sendUpdate: function () {
             if (this.finished) {
                 return;
             }
-            if (!this.firstUpdate) {
-                logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATE||labeled:'
-            }
+
             this.loading = true;
             var curLabeledDocs = this.unlabeledDocs.filter(
                 doc => doc.hasOwnProperty('userLabel'))
@@ -271,10 +307,6 @@ var app = new Vue({
                 }));
             this.labeledCount += curLabeledDocs.length;
 
-            if (!this.firstUpdate) {
-                logString += curLabeledDocs.length + ',total:' + this.labeledCount + '||';
-            }
-
             if (curLabeledDocs.length > 0) {
                 this.inputProvided = true;
 
@@ -282,7 +314,19 @@ var app = new Vue({
                 this.inputProvided = false;
 
             }
-            // Something like this?
+
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'activity': 'saveLabels',
+                'labels': [],
+                'totalLabeled': this.labeledCount,
+                'labeled': curLabeledDocs.length,
+                'adherence': this.sliderValue,
+                'condition': this.inputUncertainty
+            };
+
             var correctLabels = 0;
             var incorrectLabels = 0;
 
@@ -298,14 +342,21 @@ var app = new Vue({
                 }
 
                 // doc id, true label, system label, system label confidence, user label, highlights
-                logString += (d.docId + ':' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',');
+                log.labels.push({
+                    'id':d.docId,
+                    'label': (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled')
+                });
             }
-            // adherence, number of correct labels, number of incorrect labels (for the user)
+
+            log['correctLabels'] = correctLabels;
+            log['incorrectLabels'] = incorrectLabels;
+
+
+            // if it's not the first update, write the log
             if(!this.firstUpdate) {
-                logString += "||adherence:" + this.sliderValue + ",correct:" + correctLabels + ',incorrect:' + incorrectLabels;
-                logString += '\n';
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                this.logText += JSON.stringify(log);
+                this.logText += '\n';
+                console.log('LOGGED:', JSON.stringify(log));
             }
             
             axios.post('/api/update', {
@@ -323,25 +374,32 @@ var app = new Vue({
                 this.unlabeledDocs = response.data.unlabeledDocs;
 
                 // track updated model accuracy
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||modelAccuracy:' + response.data.modelAccuracy + '||');
+                log = {
+                    'user': this.userId,
+                    'currTime': this.getCurrTimeStamp(),
+                    'activeTime': this.getActiveTime(),
+                    'activity': 'updatedModel',
+                    'documents': [],
+                    'modelAccuracy': response.data.modelAccuracy
+                };
 
                 // log info for each new item
                 for (var i = 0; i < response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
-                   /* if (doc.text && doc.text.includes('URL_TOKEN')) {
-                        doc.text = doc.text.replace("<URL_TOKEN>", "[URL]");
-                    } */
-                    logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
-                    for (var j = 0; j < doc.highlights.length; j++) {
-                        highlight = doc.highlights[j];
-                        logString += highlight + ';';
-                    }
-                    logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&currConfRep," + Math.round(doc.prediction.confidence * 100) + "%%";
-
+                    d = {
+                        'id': doc.docId,
+                        'text': doc.text,
+                        'highlights': doc.highlights,
+                        'trueLabel': doc.trueLabel,
+                        'confRep': Math.round(doc.prediction.confidence * 100),
+                        'confDem': Math.round((1 - doc.prediction.confidence) * 100),
+                        'predictedLabel': doc.prediction.label
+                    };
+                    log.documents.push(d);
                 }
-                logString += '\n';
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                this.logText += JSON.stringify(log);
+                this.logText += '\n';
+                console.log('LOGGED:', JSON.stringify(log));
 
                 this.labels = response.data.labels;
                 this.labeled_docs = [];
@@ -443,18 +501,30 @@ var app = new Vue({
                 this.paused = false;
                 this.showModal = false;
                 this.refreshed = false;
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||CLOSE_INSTRUCTIONS \n');
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                log = {
+                    'user': this.userId,
+                    'currTime': this.getCurrTimeStamp(),
+                    'activeTime': this.getActiveTime(),
+                    'activity': 'closeInstructions'
+                };
+                this.logText += JSON.stringify(log);
+                this.logText += '\n';
+                console.log('LOGGED:', JSON.stringify(log));
             }
         },
         openModal: function () {
             this.paused = true;
             this.showModal = true;
             this.modalState = 0;
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||OPEN_INSTRUCTIONS \n');
-            this.logText += logString;
-            console.log('LOGGED:', logString);
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'activity': 'openInstructions'
+            };
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log('LOGGED:', JSON.stringify(log));
         },
         toggleModal: function () {
             if (this.showModal) {
@@ -580,28 +650,45 @@ var app = new Vue({
             return "width:" + w + "%;"
         },
         labelDoc: function (doc, label) {
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'doc': {
+                    'id':doc.docId,
+                    'text': doc.text,
+                    'highlights': doc.highlights,
+                    'trueLabel': doc.trueLabel,
+                    'confRep': Math.round(doc.prediction.confidence * 100),
+                    'confDem': Math.round((1 - doc.prediction.confidence) * 100),
+                    'predictedLabel': doc.prediction.label
+                }
+            };
+
             if (doc.hasOwnProperty('userLabel')) {
+                // unlabel
                 if (doc.userLabel === label) {
                     this.deleteLabel(doc);
-                    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UNLABEL_DOC||' + doc.docId + '\n');
-                    this.logText += logString;
-                    console.log('LOGGED:', logString);
+                    log['activity'] = "unlabelDoc";
+                    this.logText += JSON.stringify(log);
+                    this.logText += '\n';
+                    console.log('LOGGED:', JSON.stringify(log));
                     doc.updated = false;
                     return;
                 }
             }
             Vue.set(doc, 'userLabel', label);
-            // timestamp, active time, label doc event, doc id, true label, system provided label, confidence, user provided label
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||LABEL_DOC||' + doc.docId + '||' + label + '||true:' + doc.trueLabel + ',pred:' + doc.prediction.label + ',currConfRep:' + Math.round(doc.prediction.confidence * 100) + '\n');
-            this.logText += logString;
-            console.log('LOGGED:', logString);
+            log['activity'] = 'labelDoc';
+            log['label'] = label;
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log('LOGGED:', JSON.stringify(log));
 
             // get the expected prediction
             //axio.get("get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
             this.computedProjectedClassification(doc, label, this.sliderValue);
         },
         computedProjectedClassification: function (doc, label, adherence) {
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_PROJECTION||' + doc.docId + '||');
 
             if (label === 'R2') {
                 // possibly rep
@@ -625,8 +712,24 @@ var app = new Vue({
                 doc.projectedDem = 100 - doc.projectedRep;
 
             }
-            logString += ('currConfRep:' + Math.round(doc.prediction.confidence * 100) + ',projConfRep:' + doc.projectedRep + '\n');
-            console.log('LOGGED:', logString);
+
+            log = {
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'activity': 'updatedProjection',
+                'doc': {
+                    'id': doc.docId,
+                    'confRep': Math.round(doc.prediction.confidence * 100)
+                },
+                'label': label,
+                'adherence': adherence,
+                'projectedConfRep': doc.projectedRep
+            };
+
+            this.logText += JSON.stringify(log);
+            this.logText += '\n';
+            console.log('LOGGED:', JSON.stringify(log));
             doc.updated = true;
         },
         getConfidenceWord: function (doc) {
