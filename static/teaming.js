@@ -129,7 +129,6 @@ var app = new Vue({
             this.taskTime = this.totalTime;
 
             // two minutes remaining warning
-            console.log('set a two minute warning timeout for after 28 minutes', (this.totalTime - (2 * 60 * 1000)));
             this.twoMinute = setTimeout(() => {
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_2 \n')
                 this.logText += logString;
@@ -140,7 +139,6 @@ var app = new Vue({
             }, this.totalTime - (2 * 60 * 1000));
 
             // fifteen minutes remaining warning
-            console.log('set a 15 minute warning timeout for after 15 minutes', (this.totalTime - (15 * 60 * 1000)));
             this.twoMinute = setTimeout(() => {
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_15 \n')
                 this.logText += logString;
@@ -151,7 +149,6 @@ var app = new Vue({
             }, this.totalTime - (15 * 60 * 1000));
 
             // set a task timer for 30 minutes (this.taskTime)
-            console.log('set a 30 minute task timer', this.totalTime);
             this.timer = setInterval(() => {
                 if (this.taskTime > 0) {
                     // count down the timer 
@@ -172,9 +169,20 @@ var app = new Vue({
 
             this.showModal = false;
             this.started = true;
-            logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||STARTING_TASK||' + this.userId + '||' + this.inputUncertainty + '||' + this.sliderValue + '\n');
-            this.logText += logString;
-            console.log('LOGGED:', logString);
+
+            log = {
+                'user':this.userId,
+                'currTime':this.currentTimeStamp(),
+                'activeTime': this.getActiveTime(),
+                'activity': 'startTask',
+                'uncertainty': this.inputUncertainty,
+                'adherence': this.sliderValue
+            };
+
+
+       //     logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||STARTING_TASK||uncertainty:' + this.inputUncertainty + '||adherence:',this.sliderValue + '\n');
+            this.logText += log.toString();
+            console.log('LOGGED:', log.toString());
 
             // close the modal
             //this.toggleModal();
@@ -243,11 +251,8 @@ var app = new Vue({
             if (this.finished) {
                 return;
             }
-            if (this.firstUpdate) {
-                logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||FIRST_UPDATE||labeled,'
-
-            } else {
-                logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||SEND_UPDATE||labeled,'
+            if (!this.firstUpdate) {
+                logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATE||labeled:'
             }
             this.loading = true;
             var curLabeledDocs = this.unlabeledDocs.filter(
@@ -257,7 +262,10 @@ var app = new Vue({
                     user_label: doc.userLabel
                 }));
             this.labeledCount += curLabeledDocs.length;
-            logString += curLabeledDocs.length + ',total,' + this.labeledCount + '||';
+
+            if (!this.firstUpdate) {
+                logString += curLabeledDocs.length + ',total:' + this.labeledCount + '||';
+            }
 
             if (curLabeledDocs.length > 0) {
                 this.inputProvided = true;
@@ -282,14 +290,16 @@ var app = new Vue({
                 }
 
                 // doc id, true label, system label, system label confidence, user label, highlights
-                logString += (d.docId + ',' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ';');
+                logString += (d.docId + ':' + (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled') + ',');
             }
             // adherence, number of correct labels, number of incorrect labels (for the user)
-            logString += "||adherence," + this.sliderValue + "correct," + correctLabels + ',incorrect,' + incorrectLabels;
-            logString += '\n';
-            this.logText += logString;
-            console.log('LOGGED:', logString);
-
+            if(!this.firstUpdate) {
+                logString += "||adherence:" + this.sliderValue + ",correct:" + correctLabels + ',incorrect:' + incorrectLabels;
+                logString += '\n';
+                this.logText += logString;
+                console.log('LOGGED:', logString);
+            }
+            
             axios.post('/api/update', {
                 labeled_docs: curLabeledDocs,
                 user_id: this.userId,
@@ -305,7 +315,7 @@ var app = new Vue({
                 this.unlabeledDocs = response.data.unlabeledDocs;
 
                 // track updated model accuracy
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.data.modelAccuracy + '||');
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||modelAccuracy:' + response.data.modelAccuracy + '||');
 
                 // log info for each new item
                 for (var i = 0; i < response.data.unlabeledDocs.length; i++) {
@@ -319,8 +329,9 @@ var app = new Vue({
                         logString += highlight + ';';
                     }
                     logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&currConfRep," + Math.round(doc.prediction.confidence * 100) + "%%";
-                }
 
+                }
+                logString += '\n';
                 this.logText += logString;
                 console.log('LOGGED:', logString);
 

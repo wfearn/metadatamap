@@ -1,35 +1,41 @@
 import os, json
 
 users = {}
-for user in os.listdir('../users'):
-    if '.DS_Store' in user:
+for file in os.listdir('../users'):
+    if '.DS_Store' in file:
         continue
     # sort the files in the folder and grab only the most recent .txt log
-    logs = []
-    for file in os.listdir('../users/' + user):
-        if '.txt' in file:
-            logs.append(file)
-    logs.sort()
-    final = logs[-1]
+   # logs = []
+   # for file in os.listdir('../users/' + user):
+   #     if '.txt' in file:
+   #         logs.append(file)
+   # logs.sort()
+   # final = logs[-1]
+    
+    user = file.replace('.txt','')
+    user = user[3:]
+    print(user)
     users[user] = {}
     users[user]['iters'] = {}
-    with open('../users/' + user + '/' + final) as f:
-        # each line contains timestamp, active time, activity, and information regarding the activity
+    with open('../users/' + file) as f:
+        # each line contains timestamp, userid, active time, activity, and information regarding the activity
         iters = 0
         totalCorrect = 0
         totalLabeled = 0
         totalAccuracy = 0
         users[user]['iters'][iters] = {}
         for line in f:
+            print(line)
             line = line.split('||')
             timeStamp = line[0]
-            activeTime = int(line[1])
-            action = line[2]
+            user = line[1]
+            activeTime = int(line[2])
+            action = line[3]
             if action == 'INITIAL_LOAD':
-                condition = line[4].split(',')
+                condition = line[5]
+                print(users)
                 users[user]['startSession'] = timeStamp
-                users[user]['perceivedControl'] = condition[1]
-                users[user]['inputUncertainty'] = condition[3]
+                users[user]['inputUncertainty'] = condition
             if action == 'STARTING_TASK':
                 users[user]['startTask'] = timeStamp
             if action == 'NEW_DEBATES':
