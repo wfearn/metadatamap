@@ -552,7 +552,8 @@ var app = new Vue({
             }
         },
         convertToRegex: function (ngrams) {
-            anything = '[^a-zA-Z]+'
+          //  anything = '[^a-zA-Z]+'
+            antyhing = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/
             //anything = '.*?'
 
             var regexBeginning = '(^|\\b)(';
