@@ -46,9 +46,10 @@ var app = new Vue({
         timer: null,
         totalTime: 30 * 60 * 1000, // total time is 30 minutes
         taskTime: 0,
-      //  time: 0, // initially, time is 0
+        //  time: 0, // initially, time is 0
         paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
         timeWarning: false, // track whether the user should see the time warning alert
+        timeWarningFifteen: false,
         modalState: 0,
         secondPage: false,
         started: false, // track whether the user has started the task
@@ -104,7 +105,7 @@ var app = new Vue({
             logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||ADHERENCE_CHANGE||' + this.sliderValue + '\n');
             this.logText += logString;
             console.log('LOGGED:', logString);
-            for (i=0; i<this.unlabeledDocs.length; i++) {
+            for (i = 0; i < this.unlabeledDocs.length; i++) {
                 let doc = this.unlabeledDocs[i];
                 if (doc.hasOwnProperty('userLabel')) {
                     label = doc.userLabel;
@@ -130,24 +131,34 @@ var app = new Vue({
             // two minutes remaining warning
             console.log('set a two minute warning timeout for after 28 minutes', (this.totalTime - (2 * 60 * 1000)));
             this.twoMinute = setTimeout(() => {
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_WARNING \n')
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_2 \n')
                 this.logText += logString;
                 console.log('LOGGED:', logString);
                 // show in modal and pause task time
                 this.timeWarning = true;
                 this.openModal();
-                console.log('timeout!', (this.totalTime - this.taskTime)/1000);
             }, this.totalTime - (2 * 60 * 1000));
+
+            // fifteen minutes remaining warning
+            console.log('set a 15 minute warning timeout for after 15 minutes', (this.totalTime - (15 * 60 * 1000)));
+            this.twoMinute = setTimeout(() => {
+                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_15 \n')
+                this.logText += logString;
+                console.log('LOGGED:', logString);
+                // show in modal and pause task time
+                this.timeWarningFifteen = true;
+                this.openModal();
+            }, this.totalTime - (15 * 60 * 1000));
 
             // set a task timer for 30 minutes (this.taskTime)
             console.log('set a 30 minute task timer', this.totalTime);
             this.timer = setInterval(() => {
                 if (this.taskTime > 0) {
                     // count down the timer 
-                        this.taskTime -= 1000;
+                    this.taskTime -= 1000;
                 } else {
                     clearInterval(this.timer);
-                    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_UP \n')
+                    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_0 \n')
                     this.logText += logString;
                     console.log("LOGGED:", logString);
                     // send final update
@@ -221,7 +232,7 @@ var app = new Vue({
             });
         },
 
-        save: function() {
+        save: function () {
             logString = this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||CLICKED_SAVE\n';
             this.logText += logString;
             console.log("LOGGED:", logString);
@@ -295,18 +306,18 @@ var app = new Vue({
 
                 // track updated model accuracy
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_MODEL||' + this.userId + '||modelAccuracy,' + response.data.modelAccuracy + '||');
-                
+
                 // log info for each new item
-                for (var i=0; i<response.data.unlabeledDocs.length; i++) {
+                for (var i = 0; i < response.data.unlabeledDocs.length; i++) {
                     doc = response.data.unlabeledDocs[i];
                     if (doc.text && doc.text.includes('URL_TOKEN')) {
                         doc.text = doc.text.replace("<URL_TOKEN>", "[URL]");
                     }
                     logString += 'id,' + doc.docId + "&&" + doc.text + "&&highlights,";
-                    for (var j=0; j<doc.highlights.length; j++) {
+                    for (var j = 0; j < doc.highlights.length; j++) {
                         highlight = doc.highlights[j];
                         logString += highlight + ';';
-                    } 
+                    }
                     logString += "&&true," + doc.trueLabel + "&&pred," + doc.prediction.label + "&&currConfRep," + Math.round(doc.prediction.confidence * 100) + "%%";
                 }
 
@@ -325,7 +336,7 @@ var app = new Vue({
                 }
 
                 // process the formatted html for each doc
-                this.unlabeledDocs.forEach(function(doc) {
+                this.unlabeledDocs.forEach(function (doc) {
                     this.setDocHtml(doc);
                 }, this);
 
@@ -409,6 +420,7 @@ var app = new Vue({
             // if the task has started we want to log that the instructions were closed
             if (this.started) {
                 this.timeWarning = false;
+                this.timeWarningFifteen = false;
                 this.paused = false;
                 this.showModal = false;
                 this.refreshed = false;
@@ -478,31 +490,31 @@ var app = new Vue({
                 // convert to regex so we're only highlighting words (not matching substrings of other words)
                 var ngrams_regex = this.convertToRegex(ngram.split(' '));
                 var re = new RegExp(ngrams_regex, 'g');
-            //    console.log(html.substring(end));
-                var start = html.substring(end).search(re); 
+                //    console.log(html.substring(end));
+                var start = html.substring(end).search(re);
                 if (start !== -1) {
                     start = start + end;
                     var end = start + ngram.length;
-             //       console.log(ngram, start, end);
+                    //       console.log(ngram, start, end);
                     offsets.push([start, end, this.colors[label]]);
                 } else {
-                    console.warn('unmatched highlighted token', ngram, "not found in", html);    
+                    console.warn('unmatched highlighted token', ngram, "not found in", html);
                 }
 
 
-                
 
-              //  html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
-              //  console.log(html);
+
+                //  html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
+                //  console.log(html);
             }
 
-         //   console.log(offsets);
+            //   console.log(offsets);
             // iterate over the offsets from end to start and add in the spans
-            for (var i = offsets.length-1; i >= 0; i--) {
-           //     console.log(html);
-                html = html.slice(0, offsets[i][1]) +  "</span>" + html.slice(offsets[i][1]); 
-                html = html.slice(0, offsets[i][0]) +  "<span class='rounded' style='background-color:" + offsets[i][2] + "'>" + html.slice(offsets[i][0]);
-            //    console.log(html);
+            for (var i = offsets.length - 1; i >= 0; i--) {
+                //     console.log(html);
+                html = html.slice(0, offsets[i][1]) + "</span>" + html.slice(offsets[i][1]);
+                html = html.slice(0, offsets[i][0]) + "<span class='rounded' style='background-color:" + offsets[i][2] + "'>" + html.slice(offsets[i][0]);
+                //    console.log(html);
             }
 
             doc.formattedHtml = html;
@@ -526,21 +538,21 @@ var app = new Vue({
          * @param {*} color 
          * @param {*} val 
          */
-        lightenDarkenColor: function(color, val){
-            if (typeof(color) === 'string'){
-              var rgb = hexToRgb(color);
-              rgb = [rgb.r, rgb.g, rgb.b];
+        lightenDarkenColor: function (color, val) {
+            if (typeof (color) === 'string') {
+                var rgb = hexToRgb(color);
+                rgb = [rgb.r, rgb.g, rgb.b];
             }
-            for (var i=0; i<3; i++){
-              rgb[i] -= val;
-              rgb[i] = Math.min(255, Math.max(0, rgb[i]));
+            for (var i = 0; i < 3; i++) {
+                rgb[i] -= val;
+                rgb[i] = Math.min(255, Math.max(0, rgb[i]));
             }
-            return '#' + (rgb[2] | rgb[1]<<8 | rgb[0]<<16).toString(16);
-          },
-          /**
-           * computes the democrat bar width
-           * @param {} doc 
-           */
+            return '#' + (rgb[2] | rgb[1] << 8 | rgb[0] << 16).toString(16);
+        },
+        /**
+         * computes the democrat bar width
+         * @param {} doc 
+         */
         updateWidth: function (doc) {
             // TODO: confirm assumption that confidence always refers to republican percentage
             w = Math.round((1 - doc.prediction.confidence) * 100);
@@ -565,30 +577,30 @@ var app = new Vue({
 
             // get the expected prediction
             //axio.get("get_expected_prediction(doc, desired_adherence, label, input_uncertainty):
-            this.computedProjectedClassification(doc, label, this.sliderValue);            
+            this.computedProjectedClassification(doc, label, this.sliderValue);
         },
         computedProjectedClassification: function (doc, label, adherence) {
             logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||UPDATED_PROJECTION||' + doc.docId + '||');
 
             if (label === 'R2') {
                 // possibly rep
-                doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence-1] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.republican.possibly[adherence - 1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
             } else if (label === 'R1') {
                 // probably rep
-                doc.projectedRep = Math.round(doc.expected_predictions.republican.probably[adherence-1] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.republican.probably[adherence - 1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
 
             } else if (label === 'D2') {
                 // possibly dem
-                doc.projectedRep = Math.round(doc.expected_predictions.democrat.possibly[adherence-1] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.democrat.possibly[adherence - 1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
             } else if (label === 'D1') {
                 // probably dem
-                doc.projectedRep = Math.round(doc.expected_predictions.democrat.probably[adherence-1] * 100);
+                doc.projectedRep = Math.round(doc.expected_predictions.democrat.probably[adherence - 1] * 100);
                 doc.projectedDem = 100 - doc.projectedRep;
 
             }
@@ -614,7 +626,7 @@ var app = new Vue({
             if (this.taskTime === 0) {
                 return -1;
             } else {
-                return (this.totalTime - this.taskTime)/1000;
+                return (this.totalTime - this.taskTime) / 1000;
             }
         },
         getCurrTimeStamp: function () {

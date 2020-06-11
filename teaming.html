@@ -22,7 +22,8 @@
         <br><br>
         <div>
           USER ID: {{ userId }}
-          <strong style="margin-left: 100px;"> GOAL: review and label as many tweets as possible to help train the model </strong>
+          <strong style="margin-left: 100px;"> GOAL: review and label as many tweets as possible to help train the model
+          </strong>
           <span class="right inline user-id">Number labeled: {{ labeledCount }} </span>
         </div>
         <div>
@@ -37,24 +38,18 @@
       <div class="sub-toolbar">
         <div class="adherence-row">
           <div class="adherence-instructions-holder">
-            <strong>Use the slider to specify how the model should treat your labels <span class="helper" title="this value tells the model how to learn from your new labels when you save; the model can either ignore your labels, use your labels to override all prior learned information, or something in between.">?</span>:</strong>
+            <strong>Use the slider to specify how the model should treat your labels <span class="helper"
+                title="this value tells the model how to learn from your new labels when you save; the model can either ignore your labels, use your labels to override all prior learned information, or something in between.">?</span>:</strong>
           </div>
           <div class="adherence-slider-holder">
             <span class="adherence-label ignore">ignore</span>
             <span class="adherence-label override">override</span>
-            <vue-slider class="adherence-slider" 
-              v-model="sliderValue" 
-              :adsorb="true" 
-              :data="sliderData" 
-              :marks="true"
+            <vue-slider class="adherence-slider" v-model="sliderValue" :adsorb="true" :data="sliderData" :marks="true"
               @change="sliderChange($event)">
             </vue-slider>
           </div>
           <div class="save-labels-button-holder">
-            <button 
-              v-on:click="save"
-              title="save input and get new set of debates" 
-              class="right save-button"
+            <button v-on:click="save" title="save input and get new set of debates" class="right save-button"
               style="background-color: rgb(90, 140, 214) !important; color: rgb(255, 255, 255) !important; width: 140px !important; ">
               Save labels and get new tweets </button>
           </div>
@@ -70,7 +65,7 @@
         v-bind:class="doc.open ? 'doc-container-expanded' : 'doc-container-expanded'">
         <div class="title">
           <div class="vertical-align">
-           <!-- Tweet </br>
+            <!-- Tweet </br>
             #{{ pad(doc.docId, 6) }} -->
             <strong>Tweet Date:</strong></br>
             {{ doc.date }}
@@ -102,10 +97,13 @@
         </div>
 
         <div class="projected">
-        <div class="classification-label projected-label"><span class="helper" title="compare to the current classification to see how your input is projected to affect the model; change labels or adjust slider to change the projection">?</span>projected classification:</div>
-        <div v-if="!doc.updated" class="projected-instructions">choose a label to see how it is projected to affect the model</div>
-        <div class="projected-info">
-          <div class="rating-label dem" v-if="doc.updated">
+          <div class="classification-label projected-label"><span class="helper"
+              title="compare to the current classification to see how your input is projected to affect the model; change labels or adjust slider to change the projection">?</span>projected
+            classification:</div>
+          <div v-if="!doc.updated" class="projected-instructions">choose a label to see how it is projected to affect
+            the model</div>
+          <div class="projected-info">
+            <div class="rating-label dem" v-if="doc.updated">
               Dem <span style="color: #9e9999;">({{doc.projectedDem}}%) </span>
             </div>
             <div class="ratingBar" v-if="doc.updated">
@@ -114,8 +112,8 @@
             <div class="rating-label rep" v-if="doc.updated">
               Rep <span style="color: #9e9999;">({{doc.projectedRep}}%)</span>
             </div>
+          </div>
         </div>
-      </div>
 
         <div class="radio">
           <span v-if="showAnswers">
@@ -127,37 +125,31 @@
                 Your label:
               </div>
             </div>
-            <button class="radio-selection" 
-              :class="[doc.userLabel === labels[0].label+'1' ? 'selected': '']"
+            <button class="radio-selection" :class="[doc.userLabel === labels[0].label+'1' ? 'selected': '']"
               v-on:click="labelDoc(doc, labels[0].label+'1')"
               v-bind:style="{'background-color': colors[labels[0].label]}">
               {{ expandLabel(labels[0].label) }}</br>
               <input type="radio" v-bind:value="labels[0].label+'1'" v-model="doc.userLabel" />
-          </button>
+            </button>
 
-            <button class="radio-selection"
-            :class="[doc.userLabel === labels[0].label+'2' ? 'selected': '']"
-             v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[0].label+'2')"
-              v-bind:style="{'background-color':
+            <button class="radio-selection" :class="[doc.userLabel === labels[0].label+'2' ? 'selected': '']"
+              v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[0].label+'2')" v-bind:style="{'background-color':
                       lightenDarkenColor(colors[labels[0].label], -40)}">
               Possibly {{ expandLabel(labels[0].label) }}
               </br>
               <input type="radio" v-bind:value="labels[0].label+'2'" v-model="doc.userLabel" />
             </button>
 
-            <button class="radio-selection" 
-            :class="[doc.userLabel === labels[1].label+'2' ? 'selected': '']"
-            v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[1].label+'2')"
-              v-bind:style="{'background-color':
+            <button class="radio-selection" :class="[doc.userLabel === labels[1].label+'2' ? 'selected': '']"
+              v-if="inputUncertainty" v-on:click="labelDoc(doc, labels[1].label+'2')" v-bind:style="{'background-color':
                       lightenDarkenColor(colors[labels[1].label], -40)}">
               Possibly {{ expandLabel(labels[1].label) }}
               </br>
               <input type="radio" v-bind:value="labels[1].label+'2'" v-model="doc.userLabel" />
             </button>
 
-            <button class="radio-selection" 
-            :class="[doc.userLabel === labels[1].label+'1' ? 'selected': '']"
-            v-on:click="labelDoc(doc, labels[1].label+'1')"
+            <button class="radio-selection" :class="[doc.userLabel === labels[1].label+'1' ? 'selected': '']"
+              v-on:click="labelDoc(doc, labels[1].label+'1')"
               v-bind:style="{'background-color': colors[labels[1].label]}">
               {{ expandLabel(labels[1].label) }}
               </br>
@@ -175,17 +167,22 @@
           <div class="modal-header doc-header">
             <h2>
               <span v-if="!finishedSurvey">Welcome</span>
-              <span v-if="!timeWarning && finishedSurvey && modalState == 0 && !finished && !refreshed">Task
+              <span
+                v-if="!(timeWarning || timeWarningFifteen) && finishedSurvey && modalState == 0 && !finished && !refreshed">Task
                 Overview</span>
-              <span v-if="!timeWarning && finishedSurvey && modalState == 1 && !finished && !refreshed">How Does the
+              <span
+                v-if="!(timeWarning || timeWarningFifteen) && finishedSurvey && modalState == 1 && !finished && !refreshed">How
+                Does the
                 Model Learn from Your Labels?</span>
               <span
-                v-if="!timeWarning && finishedSurvey && (modalState == 2 || modalState == 3 || modalState == 4 || modalState == 5 || modalState == 6) && !finished && !refreshed">Tool Instructions</span>
+                v-if="!(timeWarning || timeWarningFifteen) && finishedSurvey && (modalState == 2 || modalState == 3 || modalState == 4 || modalState == 5 || modalState == 6) && !finished && !refreshed">Tool
+                Instructions</span>
               <!--for the debate labeling task-->
-              <span v-if="!timeWarning && finishedSurvey && modalState == 7 && !finished && !refreshed">Final
+              <span
+                v-if="!(timeWarning || timeWarningFifteen) && finishedSurvey && modalState == 7 && !finished && !refreshed">Final
                 Instructions</span>
               <span v-if="finished">Time is up</span>
-              <span v-if="timeWarning && !finished">Time is almost up!</span>
+              <span v-if="(timeWarning || timeWarningFifteen) && !finished">Time is almost up!</span>
             </h2>
             <button class="btn-close" v-on:click="closeModal()" v-if="started && !finished && !refreshed">
               &times;
@@ -194,12 +191,22 @@
           <div class="modal-body">
             <!-- TIME WARNING MODAL -->
             <span v-if="timeWarning && !finished">
-              You have 2 minutes remaining to confirm or correct the model's predictions. At the end of task time, all of
-              your outstanding labels will be saved to the model.
+              You have 2 minutes remaining to eview and label tweets to help train the model. 
+              At the end of task time, all of your outstanding labels will be saved to the model.
+            </span>
+            <!-- TIME WARNING MODAL -->
+            <span v-if="timeWarningFifteen && !finished">
+              <div>
+                You have 15 minutes remaining to review and label tweets to help train the model.
+              </div> 
+<br/>
+              <div>Don't forget that you can adjust how the model treats your labels using the adherence slider.</div>
+
             </span>
             <!-- REFRESH CONFIRMATION MODAL -->
-            <span v-if="refreshed && !timeWarning && !finished">
-              <div>The model incorporated your provided labels (if any) as you told it to using the slider and predicted labels for five new tweets. </div>
+            <span v-if="refreshed && !(timeWarning || timeWarningFifteen) && !finished">
+              <div>The model incorporated your provided labels (if any) as you told it to using the slider and predicted
+                labels for five new tweets. </div>
               <br />
               <div>Don't forget that you can adjust how the model treats your labels using the adherence slider.</div>
             </span>
@@ -212,12 +219,12 @@
               Thank you for participating in the task. Please complete the following survey:
               <a href="https://forms.gle/fvWtk36mnCMcaWvC9" target="_blank" v-if="!inputUncertainty">post-task
                 survey</a>
-                <a href="https://forms.gle/xR7uiW9hnjHZYDSg8" target="_blank" v-if="inputUncertainty">post-task
-                  survey</a>
-                , with your assigned user id: <span class="bold">{{userId}}</span>.
+              <a href="https://forms.gle/xR7uiW9hnjHZYDSg8" target="_blank" v-if="inputUncertainty">post-task
+                survey</a>
+              , with your assigned user id: <span class="bold">{{userId}}</span>.
             </span>
             <!-- welcome MODAL -->
-            <span v-if="!timeWarning && !finishedSurvey && !finished && !refreshed">
+            <span v-if="!(timeWarning || timeWarningFifteen) && !finishedSurvey && !finished && !refreshed">
               Welcome to the political party prediction task! Your assigned user id is: <span
                 class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive
               compensation for this task.
@@ -229,90 +236,106 @@
               continue the task.
             </span>
             <!-- INSTRUCTIONS (0) MODAL -->
-            <span v-if="!timeWarning && modalState == 0 && finishedSurvey && !finished && !refreshed">
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 0 && finishedSurvey && !finished && !refreshed">
               <div>
-                <strong>Imagine you have a large set of tweets posted by different politicians and need to determine their political party</strong>.
-                There are too many tweets for you to do this without help, so you will have access to a machine learning model that predicts if tweets are from Republican or Democrats.
+                <strong>Imagine you have a large set of tweets posted by different politicians and need to determine
+                  their political party</strong>.
+                There are too many tweets for you to do this without help, so you will have access to a machine learning
+                model that predicts if tweets are from Republican or Democrats.
               </div>
               </br>
               <div>
-                The model is "in training": it initially learned from a small set of tweets that had been labeled as Republican or Democrat. 
+                The model is "in training": it initially learned from a small set of tweets that had been labeled as
+                Republican or Democrat.
                 However, this initial model is not perfect and
-                sometimes makes mistakes. 
+                sometimes makes mistakes.
               </div>
-            </br>
+              </br>
               <div>
                 <strong>You will help improve the model by labeling additional tweets as Republican or
-                Democrat.</strong> 
+                  Democrat.</strong>
                 Based on the final quality of the model, at least the top 50% of participants will be given a $5 bonus.
               </div>
             </span>
             <!-- Instructions (1) MODAL: HOW DOES MODEL LEARN FROM YOUR LABELS -->
-            <span v-if="!timeWarning && modalState == 1 && finishedSurvey && !finished && !refreshed">
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 1 && finishedSurvey && !finished && !refreshed">
               <div>
-                To predict labels for new tweets, the model learns to identify words that distinguish between Republican and Democrat tweets by using two sources of information: (1) previously labeled tweets and (2) new tweet labels that you provide.
+                To predict labels for new tweets, the model learns to identify words that distinguish between Republican
+                and Democrat tweets by using two sources of information: (1) previously labeled tweets and (2) new tweet
+                labels that you provide.
               </div>
-            </br>
+              </br>
               <div>
-                During the task, you can use an "adherence slider" (shown below) to tell the model how to treat your labels, from <strong>ignoring</strong> your labels and only using previously learned information, all the way to fully <strong>overriding</strong> previously learned information with your new labels.
+                During the task, you can use an "adherence slider" (shown below) to tell the model how to treat your
+                labels, from <strong>ignoring</strong> your labels and only using previously learned information, all
+                the way to fully <strong>overriding</strong> previously learned information with your new labels.
               </div>
 
 
-                <div class="image-holder slider-holder"><img class="modal-image slider" src="/static/images/slider.png" /></div>
-                <div>
-                  In this example, we've set the slider to tell the model to equally balance the new labels we give with the previously labeled tweets.
-                </div>
+              <div class="image-holder slider-holder"><img class="modal-image slider" src="/static/images/slider.png" />
+              </div>
+              <div>
+                In this example, we've set the slider to tell the model to equally balance the new labels we give with
+                the previously labeled tweets.
+              </div>
             </span>
             <!-- INSTRUCTIONS (2) MODAL -->
-            <span v-if="!timeWarning && modalState == 2 && finishedSurvey && !finished && !refreshed">
-              <div style="margin-bottom: 10px;">The next few screens demonstrate how you will complete the task.</div> 
-              <div >
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 2 && finishedSurvey && !finished && !refreshed">
+              <div style="margin-bottom: 10px;">The next few screens demonstrate how you will complete the task.</div>
+              <div>
                 <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-1.png" />
-                <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-1.png" />
+                <img v-if="!inputUncertainty" class="tool-image" src="/static/images/tool-intro-1.png" />
 
               </div>
             </span>
 
-            <span v-if="!timeWarning && modalState == 3 && finishedSurvey && !finished && !refreshed">
-           <!--   <div style="margin-bottom: 10px;">You can label the tweets and adjust the adherence slider.</div> -->
-              <div >
-                <img v-if="inputUncertainty"   class="tool-image" src="/static/images/tool-intro-uncertainty-2.png" />
-                <img v-if="!inputUncertainty"  class="tool-image" src="/static/images/tool-intro-2.png" />
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 3 && finishedSurvey && !finished && !refreshed">
+              <!--   <div style="margin-bottom: 10px;">You can label the tweets and adjust the adherence slider.</div> -->
+              <div>
+                <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-2.png" />
+                <img v-if="!inputUncertainty" class="tool-image" src="/static/images/tool-intro-2.png" />
 
               </div>
             </span>
-            <span v-if="!timeWarning && modalState == 4 && finishedSurvey && !finished && !refreshed">
-           <!--   <div style="margin-bottom: 10px;">When you specify labels or adjust the slider, the model will show how it will update its prediction.</div> -->
-              <div >
-                <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-3.png" />
-                <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-3.png" />
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 4 && finishedSurvey && !finished && !refreshed">
+              <!--   <div style="margin-bottom: 10px;">When you specify labels or adjust the slider, the model will show how it will update its prediction.</div> -->
+              <div>
+                <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-3.png" />
+                <img v-if="!inputUncertainty" class="tool-image" src="/static/images/tool-intro-3.png" />
 
               </div>
 
-           <!--   <div style="margin-top: 10px;">At any point, save your labels to update the model and get a new set of tweets to review.</div>  -->
+              <!--   <div style="margin-top: 10px;">At any point, save your labels to update the model and get a new set of tweets to review.</div>  -->
 
-              </span>
+            </span>
 
-              <span v-if="!timeWarning && modalState == 5 && finishedSurvey && !finished && !refreshed">
-                   <div >
-                     <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-4.png" />
-                     <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-4.png" />
-     
-                   </div>
-     
-     
-                   </span>
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 5 && finishedSurvey && !finished && !refreshed">
+              <div>
+                <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-4.png" />
+                <img v-if="!inputUncertainty" class="tool-image" src="/static/images/tool-intro-4.png" />
 
-                   <span v-if="!timeWarning && modalState == 6 && finishedSurvey && !finished && !refreshed">
-                       <div >
-                         <img v-if="inputUncertainty"  class="tool-image" src="/static/images/tool-intro-uncertainty-5.png" />
-                         <img v-if="!inputUncertainty"   class="tool-image" src="/static/images/tool-intro-5.png" />
-         
-                       </div>
-         
-         
-                       </span>
-        <!--      <div>
+              </div>
+
+
+            </span>
+
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 6 && finishedSurvey && !finished && !refreshed">
+              <div>
+                <img v-if="inputUncertainty" class="tool-image" src="/static/images/tool-intro-uncertainty-5.png" />
+                <img v-if="!inputUncertainty" class="tool-image" src="/static/images/tool-intro-5.png" />
+
+              </div>
+
+
+            </span>
+            <!--      <div>
                 During the task:
                 <ul>
                   <li>For five randomly chosen tweets, the model will predict whether each tweet is from a Republican or
@@ -344,22 +367,26 @@
                   <li>Repeat this process until the 20 minute timer is up</li>
                 </ul>
               </div> -->
-              <!--  <div>
+            <!--  <div>
                 <div class="image-holder"><img class="modal-image" :src="getScreenshotUrl()" /></div>
               </div> -->
 
             </span>
             <!-- FINAL INSTRUCTIONS MODAL -->
-            <span v-if="!timeWarning && modalState == 7 && finishedSurvey && !finished && !refreshed">
+            <span
+              v-if="!(timeWarning || timeWarningFifteen) && modalState == 7 && finishedSurvey && !finished && !refreshed">
               <div>
-                Remember, your goal is to review and correctly label as many tweets as possible to help train the model to distinguish Republican and Democrat tweets. You will have 30 minutes for this task. 
+                Remember, your goal is to review and correctly label as many tweets as possible to help train the model
+                to distinguish Republican and Democrat tweets. You will have 30 minutes for this task.
               </div>
               </br>
-                <div>
-                  When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to with the slider (between ignoring your labels and overriding all previously learned information with your labels) and predicts the political party for five new tweets.
-                </div>
+              <div>
+                When you click “Save labels and get new tweets”, the model incorporates your labels as you told it to
+                with the slider (between ignoring your labels and overriding all previously learned information with
+                your labels) and predicts the political party for five new tweets.
+              </div>
               </br>
-                <div><strong>At least the top 50% of participants with t
+              <div><strong>At least the top 50% of participants with t
                   he most accurate models at the end of the task
                   will receive a $5 bonus.</strong></div>
             </span>
@@ -370,15 +397,17 @@
               continue to task
             </button>
             <button class="modal-button"
-              v-if="!timeWarning && (modalState == 0 || modalState == 1 || modalState == 2 || modalState == 3 || modalState == 4 || modalState == 5 || modalState == 6) && finishedSurvey && !finished && !refreshed"
+              v-if="!(timeWarning || timeWarningFifteen) && (modalState == 0 || modalState == 1 || modalState == 2 || modalState == 3 || modalState == 4 || modalState == 5 || modalState == 6) && finishedSurvey && !finished && !refreshed"
               v-on:click="modalState += 1;">
               next
             </button>
-            <button class="modal-button" v-if="!timeWarning && !started && modalState == 7 && !finished && !refreshed"
+            <button class="modal-button"
+              v-if="!(timeWarning || timeWarningFifteen) && !started && modalState == 7 && !finished && !refreshed"
               v-on:click="startTask()">
               start task
             </button>
-            <button class="modal-button" v-if="!timeWarning && started && modalState == 7 && !finished && !refreshed"
+            <button class="modal-button"
+              v-if="!(timeWarning || timeWarningFifteen) && started && modalState == 7 && !finished && !refreshed"
               v-on:click="closeModal()">
               ok
             </button>
