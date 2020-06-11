@@ -172,7 +172,7 @@ var app = new Vue({
 
             log = {
                 'user':this.userId,
-                'currTime':this.currentTimeStamp(),
+                'currTime':this.getCurrentTimeStamp(),
                 'activeTime': this.getActiveTime(),
                 'activity': 'startTask',
                 'uncertainty': this.inputUncertainty,
@@ -230,9 +230,15 @@ var app = new Vue({
         getNewUser: function () {
             axios.post('/api/adduser').then(response => {
                 this.userId = response.data.userId;
-                logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
-                this.logText += logString;
-                console.log('LOGGED:', logString);
+                log = {
+                    'user': this.userId,
+                    'currTime': this.getCurrentTimeStamp(),
+                    'activity': 'loadTool',
+                    'uncertainty': this.inputUncertainty
+                };
+            //    logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||INITIAL_LOAD||' + this.userId + '||' + this.inputUncertainty + '\n')
+                this.logText += log.toString();
+                console.log('LOGGED:', log.toString());
                 // include the below to hide the tutorial
                 // this.sendUpdate();
             }).catch(error => {
