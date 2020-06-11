@@ -40,6 +40,7 @@ var app = new Vue({
         inputUncertainty: Math.random() >= 0.5,
         labeledCount: 0,
         correctDocumentDelta: 0,
+        modelAccuracy: 0,
         logText: '',
         firstUpdate: true, // track whether its the first load of data (treated differently then later saves)
         startDate: null,
@@ -380,6 +381,7 @@ var app = new Vue({
                 this.unlabeledDocs = response.data.unlabeledDocs;
 
                 // track updated model accuracy
+                this.modelAccuracy = response.data.modelAccuracy;
                 log = {
                     'user': this.userId,
                     'currTime': this.getCurrTimeStamp(),
