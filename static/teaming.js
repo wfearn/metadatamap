@@ -44,7 +44,7 @@ var app = new Vue({
         firstUpdate: true, // track whether its the first load of data (treated differently then later saves)
         startDate: null,
         timer: null,
-        totalTime: 20 * 60 * 1000, // total time is 20 minutes
+        totalTime: 30 * 60 * 1000, // total time is 30 minutes
         taskTime: 0,
       //  time: 0, // initially, time is 0
         paused: false, // track when the user is on the instructions or alert page (at which time we pause the task)
@@ -128,7 +128,7 @@ var app = new Vue({
             this.taskTime = this.totalTime;
 
             // two minutes remaining warning
-            console.log('set a two minute warning timeout for after 18 minutes', (this.totalTime - (2 * 60 * 1000)));
+            console.log('set a two minute warning timeout for after 28 minutes', (this.totalTime - (2 * 60 * 1000)));
             this.twoMinute = setTimeout(() => {
                 logString = (this.getCurrTimeStamp() + '||' + this.userId + '||' + this.getActiveTime() + '||TIME_WARNING \n')
                 this.logText += logString;
@@ -139,7 +139,8 @@ var app = new Vue({
                 console.log('timeout!', (this.totalTime - this.taskTime)/1000);
             }, this.totalTime - (2 * 60 * 1000));
 
-            // task timer
+            // set a task timer for 30 minutes (this.taskTime)
+            console.log('set a 30 minute task timer', this.totalTime);
             this.timer = setInterval(() => {
                 if (this.taskTime > 0) {
                     // count down the timer 
