@@ -552,6 +552,7 @@ var app = new Vue({
             }
         },
         convertToRegex: function (ngrams) {
+            
           //  anything = '[^a-zA-Z]+'
             antyhing = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/
             //anything = '.*?'
@@ -588,10 +589,12 @@ var app = new Vue({
                 var label = doc.highlights[i][1];
 
                 // convert to regex so we're only highlighting words (not matching substrings of other words)
-                var ngrams_regex = this.convertToRegex(ngram.split(' '));
-                var re = new RegExp(ngrams_regex, 'g');
+            //    var ngrams_regex = this.convertToRegex(ngram.split(' '));
+            //    var re = new RegExp(ngrams_regex, 'g');
                 //    console.log(html.substring(end));
-                var start = html.substring(end).search(re);
+               // var start = html.substring(end).search(re);
+               var re = '/\b' + ngram + '\b/';
+               var start = html.indexOf(re);
                 if (start !== -1) {
                     start = start + end;
                     var end = start + ngram.length;
