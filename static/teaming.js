@@ -172,7 +172,7 @@ var app = new Vue({
 
             log = {
                 'user':this.userId,
-                'currTime':this.getCurrentTimeStamp(),
+                'currTime':this.getCurrTimeStamp(),
                 'activeTime': this.getActiveTime(),
                 'activity': 'startTask',
                 'uncertainty': this.inputUncertainty,
@@ -232,7 +232,7 @@ var app = new Vue({
                 this.userId = response.data.userId;
                 log = {
                     'user': this.userId,
-                    'currTime': this.getCurrentTimeStamp(),
+                    'currTime': this.getCurrTimeStamp(),
                     'activity': 'loadTool',
                     'uncertainty': this.inputUncertainty
                 };
