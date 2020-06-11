@@ -593,7 +593,7 @@ var app = new Vue({
             //    var re = new RegExp(ngrams_regex, 'g');
                 //    console.log(html.substring(end));
                // var start = html.substring(end).search(re);
-               var re = '/\b' + ngram + '\b/';
+               var re = new RexgExp('/\b' + ngram + '\b/');
                var start = html.indexOf(re);
                 if (start !== -1) {
                     start = start + end;
