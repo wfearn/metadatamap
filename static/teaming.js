@@ -592,9 +592,18 @@ var app = new Vue({
                 var ngrams_regex = this.convertToRegex(ngram.split(' '));
               //  var re = new RegExp(ngrams_regex, 'g');
                 //    console.log(html.substring(end));
-                var re = new RegExp(' ' + ngram + ' ');
-                console.log(re);
-                var start = html.substring(end).search(re);
+             //   var re = ' ' + ngram + ' ';
+             //   console.log(re);
+                var start = html.substring(end).search(' ' + ngram + ' ');
+                if (start == -1) {
+                   start = html.substring(end).search(ngram + ' ');
+                    if (start == -1) {
+                        start = html.substring.search(' ' + ngram);
+                        if (start == -1) {
+                            start = html.substring.search(ngram);
+                        }
+                    }
+                }
                 console.log('match index', start + end);
                     if (start !== -1) {
                         start = start + end;
