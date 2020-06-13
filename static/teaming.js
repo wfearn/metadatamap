@@ -128,6 +128,9 @@ var app = new Vue({
             // get a new user
             //this.getNewUser();
 
+            this.showModal = false;
+            this.started = true;
+
             // INITIAL UPDATE
             // comment out the below to hide the tutorial
             this.sendUpdate();
@@ -192,9 +195,6 @@ var app = new Vue({
                 }
             }, 1000);
 
-            this.showModal = false;
-            this.started = true;
-
             log = {
                 'user':this.userId,
                 'currTime':this.getCurrTimeStamp(),
@@ -207,9 +207,6 @@ var app = new Vue({
             this.logText += JSON.stringify(log);
             this.logText += '\n';
             console.log('LOGGED:', JSON.stringify(log));
-
-            // close the modal
-            //this.toggleModal();
 
             // Event listener to close the modal on Esc
             document.addEventListener("keydown", (e) => {
@@ -502,12 +499,13 @@ var app = new Vue({
             }
         },
         closeModal: function () {
+            // hide the modal
+            this.showModal = false;
             // if the task has started we want to log that the instructions were closed
             if (this.started) {
                 this.timeWarning = false;
                 this.timeWarningFifteen = false;
                 this.paused = false;
-                this.showModal = false;
                 this.refreshed = false;
                 log = {
                     'user': this.userId,
@@ -533,13 +531,6 @@ var app = new Vue({
             this.logText += JSON.stringify(log);
             this.logText += '\n';
             console.log('LOGGED:', JSON.stringify(log));
-        },
-        toggleModal: function () {
-            if (this.showModal) {
-                this.closeModal()
-            } else {
-                this.openModal()
-            }
         },
         filterDocs: function (label) {
             return this.docs.filter(function (doc) {
@@ -571,16 +562,15 @@ var app = new Vue({
 
             return fullRegex;
         },
+        
+        /**
+         * Given a document and list of words to highlight, produce the html with highlighted spans.
+         * @param {*} doc 
+         */
         setDocHtml: function (doc) {
             var html = doc.text;
-            // remove the url token
-          //  var html = doc.text.replace("&lt;URL_TOKEN&gt;", "");
-          //  html = html.replace("<URL_TOKEN>", "");
-            var prev = 0
-            var loc;
+
             var label;
-            var a;
-            var b;
             var offsets = [];
             var start = 0;
             var end = 0;
@@ -588,12 +578,7 @@ var app = new Vue({
                 var ngram = doc.highlights[i][0];
                 var label = doc.highlights[i][1];
 
-                // convert to regex so we're only highlighting words (not matching substrings of other words)
-                var ngrams_regex = this.convertToRegex(ngram.split(' '));
-              //  var re = new RegExp(ngrams_regex, 'g');
-                //    console.log(html.substring(end));
-             //   var re = ' ' + ngram + ' ';
-             //   console.log(re);
+                // hacky code to determine the index offset of the highlighted word
                 var start = html.substring(end).search(' ' + ngram + ' ');
                 if (start == -1) {
                    start = html.substring(end).search(ngram + ' ');
@@ -608,7 +593,6 @@ var app = new Vue({
                 } else {
                     start = start + 1;
                 }
-                console.log('match index', start + end);
                     if (start !== -1) {
                         start = start + end;
                         var end = start + ngram.length;
@@ -617,22 +601,12 @@ var app = new Vue({
                     } else {
                         console.warn('unmatched highlighted token', ngram, "not found in", html);
                     }
-
-
-
-
-
-                //  html = html.replace(re, '$1<span class="rounded" style="background-color: ' + doc_label + '">$2</span>$3');
-                //  console.log(html);
             }
 
-            //   console.log(offsets);
             // iterate over the offsets from end to start and add in the spans
             for (var i = offsets.length - 1; i >= 0; i--) {
-                //     console.log(html);
                 html = html.slice(0, offsets[i][1]) + "</span>" + html.slice(offsets[i][1]);
                 html = html.slice(0, offsets[i][0]) + "<span class='rounded' style='background-color:" + offsets[i][2] + "'>" + html.slice(offsets[i][0]);
-                //    console.log(html);
             }
 
             doc.formattedHtml = html;
