@@ -223,6 +223,7 @@
             </span>
             <!-- welcome MODAL -->
             <span v-if="!(timeWarning || timeWarningFifteen) && !finishedSurvey && !finished && !refreshed">
+              <button v-on:click="modalState = 7">skip intro</button>
               Welcome to the political party prediction task! Your assigned user id is: <span
                 class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive
               compensation for this task.
