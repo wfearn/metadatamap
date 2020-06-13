@@ -572,10 +572,10 @@ var app = new Vue({
             return fullRegex;
         },
         setDocHtml: function (doc) {
-            var htmltext = doc.text;
+            var html = doc.text;
             // remove the url token
-            var html = doc.text.replace("&lt;URL_TOKEN&gt;", "");
-            html = html.replace("<URL_TOKEN>", "");
+          //  var html = doc.text.replace("&lt;URL_TOKEN&gt;", "");
+          //  html = html.replace("<URL_TOKEN>", "");
             var prev = 0
             var loc;
             var label;
@@ -590,11 +590,14 @@ var app = new Vue({
 
                 // convert to regex so we're only highlighting words (not matching substrings of other words)
                 var ngrams_regex = this.convertToRegex(ngram.split(' '));
-                var re = new RegExp(ngrams_regex, 'g');
+              //  var re = new RegExp(ngrams_regex, 'g');
                 //    console.log(html.substring(end));
                 var start = html.substring(end).search(re);
-              // var re = new RegExp('/\b' + ngram + '\b/');
-             //  var start = html.indexOf(re);
+               var re = new RegExp('\\b' + ngram + '\\b');
+               let m = re.exec(html);
+           console.log(m, m.index);
+               var start = html.indexOf(re);
+               console.log(start);
                 if (start !== -1) {
                     start = start + end;
                     var end = start + ngram.length;
