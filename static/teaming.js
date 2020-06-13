@@ -598,9 +598,9 @@ var app = new Vue({
                 if (start == -1) {
                    start = html.substring(end).search(ngram + ' ');
                     if (start == -1) {
-                        start = html.substring.search(' ' + ngram);
+                        start = html.substring(end).search(' ' + ngram);
                         if (start == -1) {
-                            start = html.substring.search(ngram);
+                            start = html.substring(end).search(ngram);
                         } else {
                             start = start + 1;
                         }
