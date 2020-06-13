@@ -592,20 +592,26 @@ var app = new Vue({
                 var ngrams_regex = this.convertToRegex(ngram.split(' '));
               //  var re = new RegExp(ngrams_regex, 'g');
                 //    console.log(html.substring(end));
+                var re = new RegExp('\\b' + ngram + '\\b');
                 var start = html.substring(end).search(re);
-               var re = new RegExp('\\b' + ngram + '\\b');
-               let match = re.exec(html);
-           console.log(match);
-               var start = match.index;
-               console.log(start);
-                if (start !== -1) {
-                    start = start + end;
-                    var end = start + ngram.length;
-                    //       console.log(ngram, start, end);
-                    offsets.push([start, end, this.colors[label]]);
+                console.log('start', start);
+                let match =  re.exec(html);
+                console.log('match', match);
+                if (match) {
+                    console.log('index', match.index);
+                    start = match.index;
+                    if (start !== -1) {
+                        start = start + end;
+                        var end = start + ngram.length;
+                        //       console.log(ngram, start, end);
+                        offsets.push([start, end, this.colors[label]]);
+                    } else {
+                        console.warn('unmatched highlighted token', ngram, "not found in", html);
+                    }
                 } else {
-                    console.warn('unmatched highlighted token', ngram, "not found in", html);
+                    console.warn('unmatched highlighted token', ngram, "not matched in", html);
                 }
+
 
 
 
