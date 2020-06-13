@@ -601,8 +601,12 @@ var app = new Vue({
                         start = html.substring.search(' ' + ngram);
                         if (start == -1) {
                             start = html.substring.search(ngram);
+                        } else {
+                            start = start + 1;
                         }
                     }
+                } else {
+                    start = start + 1;
                 }
                 console.log('match index', start + end);
                     if (start !== -1) {
