@@ -594,9 +594,9 @@ var app = new Vue({
                 //    console.log(html.substring(end));
                 var start = html.substring(end).search(re);
                var re = new RegExp('\\b' + ngram + '\\b');
-               let m = re.exec(html);
-           console.log(m, m.index);
-               var start = html.indexOf(re);
+               let match = re.exec(html);
+           console.log(match);
+               var start = match.index;
                console.log(start);
                 if (start !== -1) {
                     start = start + end;
