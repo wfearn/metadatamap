@@ -58,8 +58,8 @@ vw_model_dir = 'vw_models'
 
 default_importance = 1
 ignore_adherence = 1
-override_adherence = 6
-STARTING_ADHERENCE = 4
+override_adherence = 3
+STARTING_ADHERENCE = 2
 STARTING_UNCERTAINTY = 1
 
 desired_adherence_values = np.geomspace(ignore_adherence, override_adherence, num=7)
@@ -145,7 +145,7 @@ def get_twitter_corpus():
             #print('Retweet:', text)
             continue
 
-        text = url_find.sub('&lt;URL_TOKEN&gt;', text)
+        text = url_find.sub('', text)
 
         tokens = list()
 
@@ -257,9 +257,9 @@ def load_initial_data():
 
 class UserList:
     """List of user data in memory on the server"""
-    def __init__(self, user_base_dir='UserData', timeout=20, zfill=3):
+    def __init__(self, user_base_dir='user_logs', timeout=20, zfill=3):
         # Directory to save user info
-        self.user_base_dir = os.path.join(PICKLE_FOLDER, user_base_dir)
+        self.user_base_dir = user_base_dir
         os.makedirs(self.user_base_dir, exist_ok=True)
         self.zfill = zfill
 
@@ -278,10 +278,10 @@ class UserList:
 
     def generate_user_id(self):
         user_id = ''.join([random.choice(string.ascii_letters)
-                           for i in range(self.user_id_length)])
+                           for i in range(self.user_id_length)]).upper()
         while self.is_duplicate(user_id):
             user_id = ''.join([random.choice(string.ascii_letters)
-                               for i in range(self.user_id_length)])
+                               for i in range(self.user_id_length)]).upper()
         return user_id
 
     def add_user(self, corpus_file):
