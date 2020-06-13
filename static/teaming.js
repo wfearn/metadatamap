@@ -594,12 +594,7 @@ var app = new Vue({
                 //    console.log(html.substring(end));
                 var re = new RegExp('\\b' + ngram + '\\b');
                 var start = html.substring(end).search(re);
-                console.log('start', start);
-                let match =  re.exec(html);
-                console.log('match', match);
-                if (match) {
-                    console.log('index', match.index);
-                    start = match.index;
+                console.log('match index', start + end);
                     if (start !== -1) {
                         start = start + end;
                         var end = start + ngram.length;
@@ -608,9 +603,6 @@ var app = new Vue({
                     } else {
                         console.warn('unmatched highlighted token', ngram, "not found in", html);
                     }
-                } else {
-                    console.warn('unmatched highlighted token', ngram, "not matched in", html);
-                }
 
 
 
