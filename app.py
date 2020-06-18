@@ -484,10 +484,13 @@ for doc_id in STARTING_LABELED_IDS:
 def index():
     return send_from_directory('.','index.html')
 
-@app.route('/')
-@app.route('/teaming')
+@app.route('/<int:post_id>')
+@app.route('/teaming/<int:uncertainty>')
 def teaming():
-    return send_from_directory('.', 'teaming.html')
+    if uncertainty == 1:
+        return send_from_directory('.', 'teaming-uncertainty.html')
+    else:
+        return send_from_directory('.', 'teaming.html')
 
 @app.route('/index3')
 def index3():

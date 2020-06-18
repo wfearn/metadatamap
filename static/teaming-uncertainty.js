@@ -37,7 +37,7 @@ var app = new Vue({
         totalDocs: 0, // track the total number of predicted documents the user was exposed to
         // TODO: currently randomly choosing these conditions, but need to ensure that we get equal numbers in all conditions, so instead should use server to track how many participants of each condition
         // if input uncertainty is true, that means it's the four option condition
-        inputUncertainty: false,
+        inputUncertainty: true,
         labeledCount: 0,
         correctDocumentDelta: 0,
         modelAccuracy: 0,
