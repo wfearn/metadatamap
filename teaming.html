@@ -167,7 +167,7 @@
         <div class="modal-content instructions" v-on:click.stop>
           <div class="modal-header doc-header">
             <h2>
-              <span v-if="!finishedSurvey & !refreshed">Welcome</span>
+              <span v-if="!finishedSurvey">Welcome</span>
               <span
                 v-if="!(timeWarning || timeWarningFifteen) && finishedSurvey && modalState == 0 && !finished && !refreshed">Task
                 Overview</span>

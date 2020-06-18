@@ -245,6 +245,8 @@ var app = new Vue({
          * Method to register a new user for the task; returns the userId 
          */
         getNewUser: function () {
+            // determine input uncertainty from the route
+            console.log('condition', this.$route.query.cond);
             axios.post('/api/adduser').then(response => {
                 this.userId = response.data.userId;
                 log = {
