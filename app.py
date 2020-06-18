@@ -487,9 +487,12 @@ def index():
 @app.route('/<int:uncertainty>')
 @app.route('/teaming/<int:uncertainty>')
 def teaming(uncertainty):
+    print('condition', uncertainty)
     if uncertainty == 1:
+        print('uncertainty')
         return send_from_directory('.', 'teaming-uncertainty.html')
     else:
+        print('no uncertainty')
         return send_from_directory('.', 'teaming.html')
 
 @app.route('/index3')
