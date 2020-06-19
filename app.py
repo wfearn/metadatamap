@@ -44,7 +44,7 @@ LABELS_COUNT = 2
 USER_LABEL_ATTR = 'user_label'
 
 # Percentage of documents to highlight
-PERCENT_HIGHLIGHT = .3
+PERCENT_HIGHLIGHT = .8
 
 # Parameters that affect the naming of the pickle (changing these will rename
 #  the pickle, generating a new pickle if one of that name doesn't already
@@ -53,6 +53,7 @@ PRELABELED_SIZE = 500
 USER_ID_LENGTH = 5
 
 vw_model_name = 'model_{userid}.vw'
+vw_hash_dictionary_name = 'hash_dictionary_{userid}.vw'
 vw_dictionary_name = '{userid}.dictionary'
 vw_model_dir = 'vw_models'
 
@@ -62,7 +63,7 @@ override_adherence = 3
 STARTING_ADHERENCE = 2
 STARTING_UNCERTAINTY = 1
 
-desired_adherence_values = np.geomspace(ignore_adherence, override_adherence, num=7)
+desired_adherence_values = np.linspace(ignore_adherence, override_adherence, num=7)
 possibly_label = .5
 probably_label = 1
 
@@ -449,10 +450,13 @@ def initialize_vowpal_model(userid, start_new_model=True):
     user_model_name = vw_model_name.format(userid=userid)
     user_model_filename = os.path.join(vw_model_dir, user_model_name)
 
+    user_hash_dictionary_name = vw_hash_dictionary_name.format(userid=userid)
+    user_hash_dictionary_filename = os.path.join(vw_model_dir, user_hash_dictionary_name)
+
     if(start_new_model):
-        vw = pyvw.vw(quiet=True, f=user_model_filename, loss_function='logistic', link='logistic')
+        vw = pyvw.vw(quiet=True, invert_hash=user_hash_dictionary_filename, f=user_model_filename, loss_function='logistic', link='logistic')
     else:
-        vw = pyvw.vw(quiet=True, f=user_model_filename, loss_function='logistic', link='logistic', i=user_model_filename)
+        vw = pyvw.vw(quiet=True, invert_hash=user_hash_dictionary_filename, f=user_model_filename, loss_function='logistic', link='logistic', i=user_model_filename)
 
     return vw
 
@@ -615,6 +619,24 @@ def get_expected_future_predictions(doc, userid):
 
     return future_predictions
 
+def convert_adherence_to_index(adherence):
+    return adherence - 1
+
+def get_vowpal_hash_dictionary(userid):
+    user_hash_dictionary_name = vw_hash_dictionary_name.format(userid=userid)
+    user_hash_dictionary_filename = os.path.join(vw_model_dir, user_hash_dictionary_name)
+
+    d = dict()
+    with open(user_hash_dictionary_filename, 'r') as f:
+        for i, line in enumerate(f):
+            print('Line:', i, 'Content:', line)
+            if i < 11:
+                continue
+            values = line.strip('\n').split(':')
+            d[values[0]] = float(values[2])
+
+    return [(k, v) for k, v in d.items()]
+
 @app.route('/api/update', methods=['POST'])
 def call_update():
 
@@ -641,7 +663,7 @@ def update(i):
     #        }
 
     user_id = data.get('user_id')
-    adherence = data.get('desired_adherence')
+    adherence = desired_adherence_values[convert_adherence_to_index(data.get('desired_adherence'))]
     user = users.get_user_data(user_id)
     users.save_user(user_id)
     web_unlabeled_ids = user['web_unlabeled_ids']
@@ -658,6 +680,7 @@ def update(i):
         vw = start_new_vowpal_model(user_id)
     else:
         vw = initialize_vowpal_model(user_id, False)
+
 
     # Write the log file
     write_to_logfile(data.get('log_text'), user, user_id)
@@ -729,24 +752,33 @@ def update(i):
     web_tokens = list(set(' '.join(unlabeled_docs).split()))
     token_data = list()
 
-    for i, token in enumerate(web_tokens):
-        cleaned_token = clean_vowpal_text(token)
-
-        # use a label of 1 because algorithm doesn't read it when its just predicting
-        ex = vw.example(f'1 {default_importance} | {cleaned_token}')
-        prediction = vw.predict(ex)
-        word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
-        prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
-
-        del ex
-
-        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
-
-    token_data.sort(key=lambda d: d['probs'], reverse=True)
+#    for i, token in enumerate(web_tokens):
+#        cleaned_token = clean_vowpal_text(token)
+#
+#        # use a label of 1 because algorithm doesn't read it when its just predicting
+#        ex = vw.example(f'1 {default_importance} | {cleaned_token}')
+#        prediction = vw.predict(ex)
+#        word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
+#        prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
+#
+#        del ex
+#
+#        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
+#
+#    token_data.sort(key=lambda d: d['probs'], reverse=True)
 
     # 1 for R (Republican) and 0 for Democrat (D)
-    highlight_dict = {d['token']: 0 if d['decision'] < 0 else 1
-                      for d in token_data[:int( len(token_data) * PERCENT_HIGHLIGHT )]}
+#    highlight_dict = {d['token']: 0 if d['decision'] < 0 else 1
+#                      for d in token_data[:int( len(token_data) * PERCENT_HIGHLIGHT )]}
+
+    vowpal_hash_dictionary = get_vowpal_hash_dictionary(user_id)
+    vowpal_hash_dictionary.sort(key=lambda x : abs(x[1]), reverse=True)
+
+
+    highlight_dict = { k:0 if v < 0 else 1
+                    for k, v in
+                    vowpal_hash_dictionary[:int( len(vowpal_hash_dictionary) * PERCENT_HIGHLIGHT )] }
+
 
     def get_highlights(doc):
         highlights = []
