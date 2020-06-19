@@ -752,25 +752,6 @@ def update(i):
     web_tokens = list(set(' '.join(unlabeled_docs).split()))
     token_data = list()
 
-#    for i, token in enumerate(web_tokens):
-#        cleaned_token = clean_vowpal_text(token)
-#
-#        # use a label of 1 because algorithm doesn't read it when its just predicting
-#        ex = vw.example(f'1 {default_importance} | {cleaned_token}')
-#        prediction = vw.predict(ex)
-#        word_label = DEMOCRATIC_LABEL if prediction < DEMOCRATIC_CUTOFF else REPUBLICAN_LABEL
-#        prob = prediction if word_label == REPUBLICAN_LABEL else (1 - prediction)
-#
-#        del ex
-#
-#        token_data.append({'token' : web_tokens[i], 'probs' : np.float32(prob), 'decision' : word_label})
-#
-#    token_data.sort(key=lambda d: d['probs'], reverse=True)
-
-    # 1 for R (Republican) and 0 for Democrat (D)
-#    highlight_dict = {d['token']: 0 if d['decision'] < 0 else 1
-#                      for d in token_data[:int( len(token_data) * PERCENT_HIGHLIGHT )]}
-
     vowpal_hash_dictionary = get_vowpal_hash_dictionary(user_id)
     vowpal_hash_dictionary.sort(key=lambda x : abs(x[1]), reverse=True)
 
