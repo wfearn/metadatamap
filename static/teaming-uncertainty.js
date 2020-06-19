@@ -196,8 +196,8 @@ var app = new Vue({
             }, 1000);
 
             log = {
-                'user':this.userId,
-                'currTime':this.getCurrTimeStamp(),
+                'user': this.userId,
+                'currTime': this.getCurrTimeStamp(),
                 'activeTime': this.getActiveTime(),
                 'activity': 'startTask',
                 'uncertainty': this.inputUncertainty,
@@ -258,6 +258,18 @@ var app = new Vue({
                 console.log('LOGGED:', JSON.stringify(log));
                 // include the below to hide the tutorial
                 // this.sendUpdate();
+                // do an initial update to fix the highlighting issue
+                axios.post('/api/update', {
+                    labeled_docs: [],
+                    user_id: this.userId,
+
+                    // updates the log text on call to update
+                    log_text: this.logText,
+                    desired_adherence: 4,
+                }).then(response => {
+                    console.log('loaded initial doc set');
+                    // do nothing with these docs, they're just for fun
+                });
             }).catch(error => {
                 console.error('error in /api/adduser', error);
             });
@@ -275,7 +287,7 @@ var app = new Vue({
             this.sendUpdate();
         },
 
-        saveLog: function() {
+        saveLog: function () {
             log = {
                 'user': this.userId,
                 'currTime': this.getCurrTimeStamp(),
@@ -347,7 +359,7 @@ var app = new Vue({
 
                 // doc id, true label, system label, system label confidence, user label, highlights
                 log.labels.push({
-                    'id':d.docId,
+                    'id': d.docId,
                     'label': (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled'),
                     'trueLabel': d.trueLabel,
                     'confRep': Math.round(d.prediction.confidence * 100),
@@ -361,12 +373,12 @@ var app = new Vue({
 
 
             // if it's not the first update, write the log
-            if(!this.firstUpdate) {
+            if (!this.firstUpdate) {
                 this.logText += JSON.stringify(log);
                 this.logText += '\n';
                 console.log('LOGGED:', JSON.stringify(log));
             }
-            
+
             axios.post('/api/update', {
                 labeled_docs: curLabeledDocs,
                 user_id: this.userId,
@@ -547,8 +559,8 @@ var app = new Vue({
             }
         },
         convertToRegex: function (ngrams) {
-            
-          //  anything = '[^a-zA-Z]+'
+
+            //  anything = '[^a-zA-Z]+'
             anything = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/
             //anything = '.*?'
 
@@ -566,7 +578,7 @@ var app = new Vue({
 
             return fullRegex;
         },
-        
+
         /**
          * Given a document and list of words to highlight, produce the html with highlighted spans.
          * @param {*} doc 
@@ -585,7 +597,7 @@ var app = new Vue({
                 // hacky code to determine the index offset of the highlighted word
                 var start = html.substring(end).search(' ' + ngram + ' ');
                 if (start == -1) {
-                   start = html.substring(end).search(ngram + ' ');
+                    start = html.substring(end).search(ngram + ' ');
                     if (start == -1) {
                         start = html.substring(end).search(' ' + ngram);
                         if (start == -1) {
@@ -597,14 +609,14 @@ var app = new Vue({
                 } else {
                     start = start + 1;
                 }
-                    if (start !== -1) {
-                        start = start + end;
-                        var end = start + ngram.length;
-                        //       console.log(ngram, start, end);
-                        offsets.push([start, end, this.colors[label]]);
-                    } else {
-                        console.warn('unmatched highlighted token', ngram, "not found in", html);
-                    }
+                if (start !== -1) {
+                    start = start + end;
+                    var end = start + ngram.length;
+                    //       console.log(ngram, start, end);
+                    offsets.push([start, end, this.colors[label]]);
+                } else {
+                    console.warn('unmatched highlighted token', ngram, "not found in", html);
+                }
             }
 
             // iterate over the offsets from end to start and add in the spans
@@ -660,7 +672,7 @@ var app = new Vue({
                 'currTime': this.getCurrTimeStamp(),
                 'activeTime': this.getActiveTime(),
                 'doc': {
-                    'id':doc.docId,
+                    'id': doc.docId,
                     'text': doc.text,
                     'highlights': doc.highlights,
                     'trueLabel': doc.trueLabel,

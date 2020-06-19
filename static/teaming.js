@@ -258,6 +258,18 @@ var app = new Vue({
                 console.log('LOGGED:', JSON.stringify(log));
                 // include the below to hide the tutorial
                 // this.sendUpdate();
+                // do an initial update to fix the highlighting issue
+                axios.post('/api/update', {
+                    labeled_docs: [],
+                    user_id: this.userId,
+    
+                    // updates the log text on call to update
+                    log_text: this.logText,
+                    desired_adherence: 4,
+                }).then(response => {
+                    console.log('loaded initial doc set');
+                    // do nothing with these docs, they're just for fun
+                });
             }).catch(error => {
                 console.error('error in /api/adduser', error);
             });
