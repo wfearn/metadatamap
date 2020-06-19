@@ -348,7 +348,11 @@ var app = new Vue({
                 // doc id, true label, system label, system label confidence, user label, highlights
                 log.labels.push({
                     'id':d.docId,
-                    'label': (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled')
+                    'label': (d.hasOwnProperty('userLabel') ? d.userLabel : 'Unlabeled'),
+                    'trueLabel': d.trueLabel,
+                    'confRep': Math.round(d.prediction.confidence * 100),
+                    'confDem': Math.round((1 - d.prediction.confidence) * 100),
+                    'predictedLabel': d.prediction.label
                 });
             }
 

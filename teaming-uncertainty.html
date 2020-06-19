@@ -54,8 +54,8 @@
               Save labels and get new tweets </button>
           </div>
         </div>
-         <button v-on:click='labelAllCorrect'>Cheat</button> 
-         <span>current accuracy: {{ modelAccuracy }}</span>
+     <!--    <button v-on:click='labelAllCorrect'>Cheat</button> 
+         <span>current accuracy: {{ modelAccuracy }}</span> -->
 
         <!-- <button v-on:click="getAccuracy">Get Accuracy</button>-->
       </div>
@@ -223,7 +223,7 @@
             </span>
             <!-- welcome MODAL -->
             <span v-if="!(timeWarning || timeWarningFifteen) && !finishedSurvey && !finished && !refreshed">
-              <button v-on:click="modalState = 7">skip intro</button>
+         <!--     <button v-on:click="modalState = 7">skip intro</button> -->
               Welcome to the political party prediction task! Your assigned user id is: <span
                 class="bold">{{userId}}</span>. Please write this down - you will need it for the surveys and to receive
               compensation for this task.
