@@ -548,6 +548,13 @@ var app = new Vue({
             this.logText += '\n';
             console.log('LOGGED:', JSON.stringify(log));
         },
+        toggleModal: function () {
+            if (this.showModal) {
+                this.closeModal()
+            } else {
+                this.openModal()
+            }
+        },
         filterDocs: function (label) {
             return this.docs.filter(function (doc) {
                 return doc.label === label;
