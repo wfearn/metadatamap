@@ -603,7 +603,7 @@ var app = new Vue({
         var fullRegex = regexBeginning;
 
         for(i = 0; i < ngrams.length; i++) {
-            ngram = ngrams[i].replace(/()/g, "");
+            ngram = ngrams[i].replace(/\(\)/g, "");
             fullRegex += ngram;
             if(i < (ngrams.length - 1)) {
                 fullRegex += `${anything}`;

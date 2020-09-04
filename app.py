@@ -228,6 +228,11 @@ def load_initial_data():
         train_ids = train_indices
         test_ids = test_indices
 
+    print('Number of train documents:', train_ids)
+
+    train_text = [democratic_documents[t] for t in train_ids]
+    test_text = [democratic_documents[t] for t in test_ids]
+
     train_corpus = Corpus([democratic_documents[t] for t in train_ids], corpus.vocabulary, corpus.metadata)
     test_corpus = Corpus([democratic_documents[t] for t in test_ids], corpus.vocabulary, corpus.metadata)
 
@@ -626,16 +631,22 @@ def get_vowpal_hash_dictionary(userid):
     user_hash_dictionary_name = vw_hash_dictionary_name.format(userid=userid)
     user_hash_dictionary_filename = os.path.join(vw_model_dir, user_hash_dictionary_name)
 
-    d = dict()
-    with open(user_hash_dictionary_filename, 'r') as f:
-        for i, line in enumerate(f):
-            print('Line:', i, 'Content:', line)
-            if i < 11:
-                continue
-            values = line.strip('\n').split(':')
-            d[values[0]] = float(values[2])
+    return_list = list()
 
-    return [(k, v) for k, v in d.items()]
+    if os.path.exists(user_hash_dictionary_filename):
+        d = dict()
+
+        with open(user_hash_dictionary_filename, 'r+') as f:
+            f.flush()
+            for i, line in enumerate(f):
+                if i < 11:
+                    continue
+                values = line.strip('\n').split(':')
+                d[values[0]] = float(values[2])
+
+        return_list = [(k, v) for k, v in d.items()]
+
+    return return_list
 
 @app.route('/api/update', methods=['POST'])
 def call_update():
@@ -720,6 +731,13 @@ def update(i):
     train_vw(vw, corpus_text, y, adherence, input_uncertainties)
     print('***Time - Train:', time.time() - start)
 
+    vowpal_hash_dictionary = get_vowpal_hash_dictionary(user_id)
+
+    if vowpal_hash_dictionary:
+        vowpal_hash_dictionary.sort(key=lambda x : abs(x[1]), reverse=True)
+
+    print('Hash dictionary length:', len(vowpal_hash_dictionary))
+
     vw.finish()
     vw = initialize_vowpal_model(user_id, start_new_model=False)
 
@@ -752,14 +770,9 @@ def update(i):
     web_tokens = list(set(' '.join(unlabeled_docs).split()))
     token_data = list()
 
-    vowpal_hash_dictionary = get_vowpal_hash_dictionary(user_id)
-    vowpal_hash_dictionary.sort(key=lambda x : abs(x[1]), reverse=True)
-
-
     highlight_dict = { k:0 if v < 0 else 1
                     for k, v in
                     vowpal_hash_dictionary[:int( len(vowpal_hash_dictionary) * PERCENT_HIGHLIGHT )] }
-
 
     def get_highlights(doc):
         highlights = []
